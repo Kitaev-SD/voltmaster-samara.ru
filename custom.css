@@ -1,0 +1,104 @@
+.footer-tizers-container {
+  background: #f6f6f7;
+}
+
+.footer-tizers-container .maxwidth-theme {
+  background: #f6f6f7;
+}
+.footer-tizers {
+  display: flex;
+  justify-content: center;
+  padding-top: 30px;
+  padding-bottom: 20px;
+}
+
+.footer-tizer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 230px;
+  padding-left: 15px;
+  padding-right: 15px;
+  line-height: 1.2;
+}
+
+.footer-tizer__img {
+  width: 100%;
+  height: 60px;
+  display: flex;
+}
+
+.footer-tizer__img img {
+  width: 44px;
+  height: 44px;
+  margin: auto;
+}
+
+.footer-tizer__text > div {
+  margin-bottom: 5px;
+  margin-top: 5px;
+  font-size: 20px;
+}
+.footer_bottom_inner .left_block {
+  width: 180px;float: left;position: relative;zoom: 1;z-index: 390;padding-top:0px;/*right: calc(100% - 264px);*/}
+.footer_bottom_inner > .right_block {
+  padding-left: 180px;
+}
+
+#footer .footer_bottom_inner .social_wrapper {
+  float: none;
+}
+#footer .footer_bottom_inner .adresses {
+  float: none;
+  width: 250px;
+  margin-bottom: 15px;
+  padding-left: 55px;
+
+}
+#footer .soc .social-icons {
+  text-align: center;
+}
+#footer .soc .social-icons ul {
+  text-align: center;
+}
+
+.pay_system_icons_wrap .pay_system_icons {
+}
+.pay_system_icons_wrap .pay_system_icons i.webmoney {
+  margin-right: 0;
+  width: 20px;
+}
+#footer .footer_bottom_inner .phones {
+  float: none;
+  padding-left: 25px;
+}
+@media (max-width: 991px) {
+  #footer .footer_bottom_inner .social_wrapper .social {
+    margin-top: -50px;
+    padding-left: 15px;
+  }
+}
+@media (max-width: 900px) {
+  .footer_inner .left_block {
+    display: none;
+  }
+  .footer_inner .right_block {
+    padding-left: 0px;
+  }
+}
+@media (max-width: 768px) {
+.title_block {
+    margin: 0 0 0 0 !important;
+  }
+  #footer .footer_bottom_inner .phones, #footer .footer_bottom_inner .social_wrapper, #footer .footer_bottom_inner .adresses {
+    padding-left: 0;
+    width: auto;
+  }
+  #footer .footer_bottom_inner .phones {
+    margin-top: 15px;
+  }
+  #footer .footer_bottom_inner .adresses {
+    margin-bottom: 15px;
+  }
+}

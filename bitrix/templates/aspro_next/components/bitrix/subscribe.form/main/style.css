@@ -1,0 +1,21 @@
+body .filter.label_block input + label.checkbox_label_light,
+.checkbox_label_light{
+	color: #fff;
+}
+.checkbox_label_light a {
+	color: #fff;
+}
+.checkbox_label_light:hover a {
+	color: #b6cadd;
+}
+.more_text_ajax:before, 
+.captcha_reload:before,
+.bg_block:before{
+	background: #b6cadd;
+}
+label.checkbox_label_light:after,
+.licence_block.filter.label_block:hover label:before,
+
+.filter input[type="checkbox"] + label:before{
+	background: #b6cadd;
+}

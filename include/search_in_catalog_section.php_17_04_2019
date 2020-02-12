@@ -1,0 +1,20 @@
+<?php
+/**
+ * @var $arParams
+ */
+?>
+<div class="container">
+    <div class="section-search__container">
+        <form class="section-search__form" action="<?= $arParams['FORM_ACTION'] ?>" method="get">
+            <input id="section-search__query" type="search" name="q" placeholder="<?= $arParams['SEARCH_INPUT_PLACEHOLDER'] ?>">
+            <input id="section-id" type="hidden" name="section_search" value="<?= $arParams['SECTION_ID'] ?>">
+            <input id="found-elements" type="hidden" name="found_elements">
+            <button class="section-search__form-submit" type="submit">
+                <?= $arParams['SEARCH_SUBMIT_NAME'] ?>
+            </button>
+        </form>
+        <div class="section-search__hint">
+            <div class="section-search__hint-list"></div>
+        </div>
+    </div>
+</div>

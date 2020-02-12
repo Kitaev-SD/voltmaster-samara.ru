@@ -1,0 +1,222 @@
+.top-block-item .logout {
+  padding: 10px;
+  margin-right: 20px;
+}
+.top-block-item .logout-btn {
+  margin-top: 3px;
+}
+.top-block-item .form-footer a {
+  box-shadow: none;
+}
+.sect_descript_add {
+  border: 1px solid #f2f2f2;
+  padding: 11px 31px 13px 17px;
+  margin-bottom: 21px;
+  font-size: 12px;
+  color: #666;
+}
+.stores_block_wrap .stores_block:before {
+  content: none;
+}
+.stores_block_wrap .stores_block .stores_text_wrapp .main_info {
+  display: none;
+}
+.stores_block_wrap .stores_block.wo_image .item-stock {
+  left: 0px;
+}
+.footer-tizers-container {
+  background: #f6f6f7;
+}
+
+.footer-tizers-container .maxwidth-theme {
+  background: #f6f6f7;
+}
+.footer-tizers {
+  display: flex;
+  justify-content: center;
+  padding-top: 30px;
+  padding-bottom: 20px;
+}
+
+.footer-tizer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 230px;
+  padding-left: 15px;
+  padding-right: 15px;
+  line-height: 1.2;
+}
+
+.footer-tizer__img {
+  width: 100%;
+  height: 60px;
+  display: flex;
+}
+
+.footer-tizer__img img {
+  width: 44px;
+  height: 44px;
+  margin: auto;
+}
+
+.footer-tizer__text > div {
+  margin-bottom: 5px;
+  margin-top: 5px;
+  font-size: 20px;
+}
+.right_block .bottom-menu .item-link .item {
+  margin-bottom: 8px;
+}
+.right_block .bottom-menu .items > .item-link a {
+  font-weight: normal;
+}
+.product-code {
+  font-size: 14px;
+  color: #666;
+}
+.stock_wrapper .stock_board {
+  padding: 22px 0px 19px 0;
+}
+.stock_wrapper .stock_board:before {
+  content: none;
+}
+.subscribe-block-wrapper>.maxwidth-theme, .subscribe-block-wrapper {
+  background: #f9f9f9;
+}
+.subscribe-block-wrapper {
+  background: #f9f9f9;
+}
+.subscribe-block-wrapper .outer-wrapper {
+  background: 0 0;
+}
+.subscribe-block-wrapper .outer-wrapper:before {
+  background: url(/bitrix/templates/aspro_next/images/plane-black.png) -6px 0 no-repeat;
+}
+.subscribe-block-wrapper .text {
+  color: #555;
+}
+.subscribe-block-wrapper .form-control.subscribe-input {
+  background: #fff;
+}
+
+.top-block > .maxwidth-theme {
+  padding-top: 23px;
+  padding-bottom: 23px;
+}
+.top-block .top-block-item.top-ctrl {
+  display: flex;
+}
+.top-block .menu >li>a,
+.breadcrumbs a span, .breadcrumbs span {
+  color: #000;
+}
+.top-block-item .form-footer {
+  max-width: 250px;
+}
+.top-block-item .form-footer .btn {
+  border: none;
+  padding: 0;
+}
+.tizers_block {
+  padding: 9px 9px;
+  margin: 0;
+}
+.tizers_block .item {
+  margin: 0;
+}
+footer .info .blocks:before, #footer .footer_bottom_inner .phone_block .phone:before {
+  left: 40px;
+}
+
+/* search in section form */
+.section-search__container {
+  position: relative;
+}
+
+.section-search__hint {
+  display: none;
+  position: absolute;
+  background: #FFF;
+  width: 70%;
+  height: 25vw;
+  border: 1px solid #eeeeee;
+  z-index: 1000;
+  overflow: auto;
+}
+.section-search__hint-list{
+  max-width: 680px;
+}
+.section-search__hint-list a {
+  color: #000;
+}
+
+.section-search__hint-item {
+  display: grid;
+  grid-template-columns: 110px auto;
+  border-bottom: 1px solid #eeeeee;
+  padding: 10px 0;
+
+
+}
+.section-search__hint-item__img{
+  display: flex;
+  justify-content: center;
+}
+.section-search__hint-item__text{
+  display: flex;
+  align-items: center;
+}
+.section-search__hint-item__img img{
+  max-width: 108px;
+}
+.inline-search-hide{
+  display: none!important;
+}
+.search_btn{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 150px;
+  height: 44px;
+  color: #FFCB00 !important;
+  border: 1px solid #FFCB00;
+  margin: 25px 0 25px 25px;
+  font-weight: bold;
+}
+.search_btn:hover{
+  cursor: pointer;
+  background-color: #FFCB00;
+  color: #fff !important;
+}
+
+/*scroll*/
+::-webkit-scrollbar-button {
+  background-image:url('');
+  background-repeat:no-repeat;
+  width:5px;
+  height:5px
+}
+
+::-webkit-scrollbar-track {
+  background-color:#ecedee
+}
+
+::-webkit-scrollbar-thumb {
+  -webkit-border-radius: 10px;
+  border-radius: 10px;
+  background-color:#B3B3B3;
+}
+
+::-webkit-resizer{
+  background-image:url('');
+  background-repeat:no-repeat;
+  width:14px;
+  height:5px
+}
+
+::-webkit-scrollbar{
+  width: 4px;
+  height: 5px;
+}
