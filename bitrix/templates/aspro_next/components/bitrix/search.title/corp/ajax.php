@@ -43,7 +43,8 @@
 		<?foreach($arCategory["ITEMS"] as $i => $arItem):?>
 			<?if($t >= 5){break;}?>
 			<?//=$arCategory["TITLE"]?>
-			<?if($category_id === "all"):?>
+			<?if($category_id === "all"):
+				$t++;?>
 				<div class="bx_item_block all_result">
 					<div class="maxwidth-theme">
 						<div class="bx_item_element">
@@ -100,7 +101,8 @@
 						<div style="clear:both;"></div>
 					</div>
 				</a>
-			<?else:?>
+			<?else:
+				$t++;?>
 				<?if($arItem["MODULE_ID"]):?>
 					<a class="bx_item_block others_result" href="<?=$arItem["URL"]?>">
 						<div class="maxwidth-theme">
