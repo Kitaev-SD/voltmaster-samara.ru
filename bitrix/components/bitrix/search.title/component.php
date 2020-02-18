@@ -44,6 +44,13 @@ if(
 	){
 		$arResult["alt_query"] = 'тэн';
 	}
+
+	if(
+		strpos($query, "MKP")!==false
+		|| strpos($arResult["alt_query"], "ьлз")!==false
+	){
+		$arResult["alt_query"] = 'MKP';
+	}
 	//------------ CUSTOM END ---------------------------------------------
 	
 	$arResult["phrase"] = stemming_split($query, LANGUAGE_ID);

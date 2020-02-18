@@ -243,6 +243,14 @@ if(
 ){
 	$arResult["REQUEST"]["QUERY"] = $arResult["REQUEST"]["~QUERY"] = 'тэн';
 }
+
+if(
+	strpos($q, "mkp")!==false
+	|| strpos($arResult["REQUEST"]["QUERY"], "ьлз")!==false
+	|| strpos($arResult["REQUEST"]["~QUERY"], "ьлз")!==false
+){
+	$arResult["REQUEST"]["QUERY"] = $arResult["REQUEST"]["~QUERY"] = 'mkp';
+}
 //------------ CUSTOM END ---------------------------------------------
 
 if($tags!==false)

@@ -4,13 +4,27 @@
 	<!-- <div class="bx_item_block all_result categ_title"><div class="maxwidth-theme">Категории</div></div> -->
 	<br>
 
-	<?php $uniqeNameArr = array(); ?>
-
 	<?
+	$categ_count = 5;
+	$prod_count = 15;
+	$uniqeNameArr = $relev_prod = $other_prod = array();
+	$name_search_ = $arResult['query'];
+
+	foreach($arResult["CATEGORIES"][0]["ITEMS"] as $arItem) {
+		$name_ = strtolower(strip_tags($arItem['NAME']));
+		if(strpos($name_, $name_search_) == 0) {
+			$relev_prod[] = $arItem;
+		} else {
+			$other_prod[] = $arItem;
+		}
+	}
+	
+	$arResult["CATEGORIES"][0]["ITEMS"] = $relev_prod + $other_prod;
+
 	$k = 0;
 	foreach($arResult["CATEGORIES"] as $arCategory){
 		foreach($arCategory["ITEMS"] as $arItem) {
-			if($k >= 5){break;}
+			if($k >= $categ_count){break;}
 			if (CModule::IncludeModule("iblock")) {
 				$res = CIBlockElement::GetByID($arItem['ITEM_ID']);
 
@@ -41,7 +55,7 @@
 	$t = 0;
 	foreach($arResult["CATEGORIES"] as $category_id => $arCategory):?>
 		<?foreach($arCategory["ITEMS"] as $i => $arItem):?>
-			<?if($t >= 5){break;}?>
+			<?if($t >= $prod_count){break;}?>
 			<?//=$arCategory["TITLE"]?>
 			<?if($category_id === "all"):
 				$t++;?>
