@@ -236,8 +236,11 @@ else
 	$arResult["REQUEST"]["QUERY"] = false;
 }
 //------------ CUSTOM -------------------------------------------------
+$q_lower = strtolower($q);
+
 if(
-	strpos($q, "n'y")!==false
+	strpos($q_lower, "n'y")!==false
+	|| strpos($q_lower, "тэн")!==false
 	|| strpos($arResult["REQUEST"]["QUERY"], "n'y")!==false
 	|| strpos($arResult["REQUEST"]["~QUERY"], "n'y")!==false
 ){
@@ -245,7 +248,7 @@ if(
 }
 
 if(
-	strpos($q, "mkp")!==false
+	strpos($q_lower, "mkp")!==false
 	|| strpos($arResult["REQUEST"]["QUERY"], "ьлз")!==false
 	|| strpos($arResult["REQUEST"]["~QUERY"], "ьлз")!==false
 ){
