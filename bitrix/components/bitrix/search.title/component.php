@@ -38,15 +38,18 @@ if(
 	$arResult["query"] = $query;
 
 	//------------ CUSTOM -------------------------------------------------
+	$q_lower = strtolower($query);
 	if(
-		strpos($query, "n'y")!==false
+		strpos($q_lower, "n'y")!==false
+		|| strpos($q_lower, "тэн")!==false
 		|| strpos($arResult["alt_query"], "n'y")!==false
 	){
 		$arResult["alt_query"] = 'тэн';
 	}
 
 	if(
-		strpos($query, "MKP")!==false
+		strpos($q_lower, "ьлз")!==false
+		|| strpos($q_lower, "mkp")!==false
 		|| strpos($arResult["alt_query"], "ьлз")!==false
 	){
 		$arResult["alt_query"] = 'MKP';

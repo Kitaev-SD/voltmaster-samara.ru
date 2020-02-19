@@ -254,6 +254,8 @@ if(
 ){
 	$arResult["REQUEST"]["QUERY"] = $arResult["REQUEST"]["~QUERY"] = 'mkp';
 }
+
+$GLOBALS['searchArr'] = $arResult["REQUEST"];
 //------------ CUSTOM END ---------------------------------------------
 
 if($tags!==false)

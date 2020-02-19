@@ -539,6 +539,7 @@ if (is_array($arElements) && !empty($arElements))
 					<?
 					$arAvailableSort = array();
 					$arSorts = $arParams["SORT_BUTTONS"];
+					
 					if(in_array("POPULARITY", $arSorts)){
 						$arAvailableSort["SHOWS"] = array("SHOWS", "desc");
 					}
@@ -687,9 +688,9 @@ if (is_array($arElements) && !empty($arElements))
 					"TYPE_SKU" => $arTheme["TYPE_SKU"]["VALUE"],
 					"IBLOCK_TYPE" => $arParams["IBLOCK_TYPE"],
 					"IBLOCK_ID" => $arParams["IBLOCK_ID"],
-					// "ELEMENT_SORT_FIELD" => $sort,
-					// "ELEMENT_SORT_ORDER" => $sort_order,
-					"PAGE_ELEMENT_COUNT" => $arParams["PAGE_ELEMENT_COUNT"],
+					"ELEMENT_SORT_FIELD" => $sort,
+					"ELEMENT_SORT_ORDER" => $sort_order,
+					"PAGE_ELEMENT_COUNT" => 10000,
 					"LINE_ELEMENT_COUNT" => $arParams["LINE_ELEMENT_COUNT"],
 					"HIDE_NOT_AVAILABLE" => $arParams["HIDE_NOT_AVAILABLE"],
 					"PROPERTY_CODE" => $arParams["PROPERTY_CODE"],

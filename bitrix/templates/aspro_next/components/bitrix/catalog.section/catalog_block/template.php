@@ -1,6 +1,9 @@
 <?if(!defined("B_PROLOG_INCLUDED") || B_PROLOG_INCLUDED!==true)die();?>
 <?$this->setFrameMode(true);?>
 <?if( count( $arResult["ITEMS"] ) >= 1 ){
+	#------------- РЕЛЕВАНТНАЯ СОРТИРОВКА ТОВАРОВ ---------------------------------------------------------------
+	require_once($_SERVER['DOCUMENT_ROOT'].'/bitrix/templates/aspro_next/components/bitrix/catalog.section/Relevant_settings.php');
+	#------------- РЕЛЕВАНТНАЯ СОРТИРОВКА ТОВАРОВ END -----------------------------------------------------------
 
 	if(($arParams["AJAX_REQUEST"]=="N") || !isset($arParams["AJAX_REQUEST"])){?>
 		<?if(isset($arParams["TITLE"]) && $arParams["TITLE"]):?>
