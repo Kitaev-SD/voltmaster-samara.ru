@@ -429,7 +429,7 @@ if (is_array($arElements) && !empty($arElements))
 		if($arAllSections)
 		{
 			$arSectionsID = array_keys($arAllSections);
-			$arSections = CNextCache::CIBlockSection_GetList(array('CACHE' => array("MULTI" =>"N", "GROUP" => "ID", "TAG" => CNextCache::GetIBlockCacheTag($catalogIBlockID))), array("ID" => $arSectionsID, "IBLOCK_ID" => $catalogIBlockID), false, array("ID", "IBLOCK_ID", "NAME"));
+			$arSections = CNextCache::CIBlockSection_GetList(array('CACHE' => array("MULTI" =>"N", "GROUP" => "ID", "TAG" => CNextCache::GetIBlockCacheTag($catalogIBlockID))), array("ID" => $arSectionsID, "IBLOCK_ID" => $catalogIBlockID), false, array("ID", "IBLOCK_ID", "NAME", "SECTION_PAGE_URL"));
 		}?>
 		<?$setionIDRequest = (isset($_GET["section_id"]) && $_GET["section_id"] ? $_GET["section_id"] : 0);?>
 
@@ -438,10 +438,16 @@ if (is_array($arElements) && !empty($arElements))
 				<div class="top_block_filter_section">
 					<div class="title"><a class="dark_link" title="<?=GetMessage("FILTER_ALL_SECTON");?>" href="<?=$APPLICATION->GetCurPageParam('', array('section_id'))?>"><?=GetMessage("FILTER_SECTON");?></a></div>
 					<div class="items">
+						<? $k=0; ?>
 						<?foreach($arAllSections as $key => $arTmpSection):?>
-							<div class="item <?=($setionIDRequest ? ($key == $setionIDRequest ? 'current' : '') : '');?>"><a href="<?=$APPLICATION->GetCurPageParam('section_id='.$key, array('section_id'))?>" class="dark_link"><span><?=$arSections[$key]["NAME"];?></span><span><?=$arTmpSection["COUNT"];?></span></a></div>
+							<?
+							$k++; 
+							if($k > 5) {$hide_class="hidden_category";} else {$hide_class="";}
+							?>
+							<div class="item <?=$hide_class?> <?=($setionIDRequest ? ($key == $setionIDRequest ? 'current' : '') : '');?>"><a href="<?=$arSections[$key]['SECTION_PAGE_URL']?>" class="dark_link"><span><?=$arSections[$key]["NAME"];?> (<?=$arTmpSection["COUNT"];?>)</span><span></span></a></div>
 						<?endforeach;?>
 					</div>
+					<a class="show_more_category" href="javascript:void(0);">Показать еще</a>
 				</div>
 			<?endif;?>
 		<?$htmlSections=ob_get_clean();?>

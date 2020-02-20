@@ -248,11 +248,21 @@ if(
 }
 
 if(
-	strpos($q_lower, "mkp")!==false
+	strpos($q_lower, "ьлз")!==false
+	|| strpos($q_lower, "mkp")!==false
 	|| strpos($arResult["REQUEST"]["QUERY"], "ьлз")!==false
 	|| strpos($arResult["REQUEST"]["~QUERY"], "ьлз")!==false
 ){
 	$arResult["REQUEST"]["QUERY"] = $arResult["REQUEST"]["~QUERY"] = 'mkp';
+}
+
+if(
+	strpos($q_lower, "евф7560")!==false
+	|| strpos($q_lower, "tda7560")!==false
+	|| strpos($arResult["REQUEST"]["QUERY"], "евф7560")!==false
+	|| strpos($arResult["REQUEST"]["~QUERY"], "евф7560")!==false
+){
+	$arResult["REQUEST"]["QUERY"] = $arResult["REQUEST"]["~QUERY"] = 'tda756';
 }
 
 $GLOBALS['searchArr'] = $arResult["REQUEST"];

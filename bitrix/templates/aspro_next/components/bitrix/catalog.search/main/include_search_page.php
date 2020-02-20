@@ -39,7 +39,7 @@ $arElements = $APPLICATION->IncludeComponent(
             0 => $arParams['IBLOCK_ID'],
         ),
         "SHOW_WHERE" => "N",
-        "PAGE_RESULT_COUNT" => "1000",
+        "PAGE_RESULT_COUNT" => "100",
         "CACHE_TYPE" => $arParams["CACHE_TYPE"],
         "CACHE_TIME" => $arParams["CACHE_TIME"],
         "TAGS_SORT" => "NAME",
