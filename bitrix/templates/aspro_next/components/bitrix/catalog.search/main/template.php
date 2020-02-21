@@ -447,7 +447,7 @@ if (is_array($arElements) && !empty($arElements))
 							<div class="item <?=$hide_class?> <?=($setionIDRequest ? ($key == $setionIDRequest ? 'current' : '') : '');?>"><a href="<?=$arSections[$key]['SECTION_PAGE_URL']?>" class="dark_link"><span><?=$arSections[$key]["NAME"];?> (<?=$arTmpSection["COUNT"];?>)</span><span></span></a></div>
 						<?endforeach;?>
 					</div>
-					<a class="show_more_category" href="javascript:void(0);">Показать еще</a>
+					<?if($k > 5){?><a class="show_more_category" href="javascript:void(0);">Показать еще</a><?}?>
 				</div>
 			<?endif;?>
 		<?$htmlSections=ob_get_clean();?>
