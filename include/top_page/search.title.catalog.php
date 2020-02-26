@@ -3,7 +3,7 @@
 	"corp", 
 	array(
 		"NUM_CATEGORIES" => "1",
-		"TOP_COUNT" => "100",
+		"TOP_COUNT" => "300",
 		"ORDER" => "rank",				// date or rank
 		"USE_LANGUAGE_GUESS" => "Y",
 		"CHECK_DATES" => "Y",

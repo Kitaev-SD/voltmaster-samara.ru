@@ -5,7 +5,7 @@
 	<br>
 
 	<?
-	$categ_count = 5;
+	$categ_count = 300;
 	$prod_count = 15;
 	$uniqeNameArr = $relev_prod = $other_prod = array();
 	$name_search_ = $arResult['query'];
