@@ -1,30 +1,31 @@
 <?if(!defined("B_PROLOG_INCLUDED") || B_PROLOG_INCLUDED!==true) die();?>
 <?if (empty($arResult["CATEGORIES"])) return;?>
 <div class="bx_searche scrollbar">
-	<!-- <div class="bx_item_block all_result categ_title"><div class="maxwidth-theme">Категории</div></div> -->
 	<br>
 
 	<?
-	$categ_count = 300;
+	$categ_count = 20;
 	$prod_count = 15;
-	$uniqeNameArr = $relev_prod = $other_prod = array();
-	$name_search_ = $arResult['query'];
-
-	foreach($arResult["CATEGORIES"][0]["ITEMS"] as $arItem) {
-		$name_ = strtolower(strip_tags($arItem['NAME']));
-		if(strpos($name_, $name_search_) == 0) {
-			$relev_prod[] = $arItem;
-		} else {
-			$other_prod[] = $arItem;
-		}
-	}
-	
-	$arResult["CATEGORIES"][0]["ITEMS"] = $relev_prod + $other_prod;
+	$uniqeNameArr = $relev_prod = $other_prod = $relev_sect = $other_sect = array();
+	$name_search_ = trim($arResult['query']);
 
 	$k = 0;
+
+	$resTv = CIBlockSection::GetList(Array(), Array("IBLOCK_ID"=>28, "%NAME"=>$name_search_), false, false, Array());
+	while($arItem = $resTv->GetNext()){
+	    if(!in_array($arItem["NAME"], $uniqeNameArr)){
+	    	$uniqeNameArr[] = $arItem["NAME"];
+	    	$name_ = strtolower(strip_tags($arItem['NAME']));
+		    if(strpos($name_, $name_search_) == 0) {
+		    	$relev_sect[] = $arItem;
+		    } else {
+		    	$other_sect[] = $arItem;
+		    }
+		}
+	}
+
 	foreach($arResult["CATEGORIES"] as $arCategory){
 		foreach($arCategory["ITEMS"] as $arItem) {
-			if($k >= $categ_count){break;}
 			if (CModule::IncludeModule("iblock")) {
 				$res = CIBlockElement::GetByID($arItem['ITEM_ID']);
 
@@ -36,22 +37,30 @@
 					$res = CIBlockSection::GetByID($SECTION_ID);
 					if($ar_res = $res->GetNext()){
 						if(!in_array($ar_res["NAME"], $uniqeNameArr)){
-							$k++;
-							$uniqeNameArr[] = $ar_res["NAME"];?>
-							<div class="bx_item_element categ_name">
-								<a class="all_result_title btn btn-default white bold" href="<?=$ar_res['SECTION_PAGE_URL']?>"><?=mb_ucfirst($ar_res["NAME"])?></a>
-							</div>
-						<?}
+							$uniqeNameArr[] = $ar_res["NAME"];
+							$name_ = strtolower(strip_tags($ar_res['NAME']));
+						    if(strpos($name_, $name_search_) === 0) {
+						    	$relev_sect[] = $ar_res;
+						    } else {
+						    	$other_sect[] = $ar_res;
+						    }
+						}
 					}
 				}
 			}
 		}
+	}
 
-	}?>
+	$arSortedSection = $relev_sect + $other_sect;
 
-	<!-- <div class="bx_item_block all_result product_title"><div class="maxwidth-theme">Товары</div></div> -->
-
-	<?
+	foreach ($arSortedSection as $arItem) {
+		if($k >= $categ_count){break;}
+		$k++;?>
+		<div class="bx_item_element categ_name">
+			<a class="all_result_title btn btn-default white bold" href="<?=$arItem['SECTION_PAGE_URL']?>"><?=mb_ucfirst($arItem["NAME"])?></a>
+		</div>
+	<?}
+#-----------------------------------------------------------------------------------------------------------------------------------------------------
 	$t = 0;
 	foreach($arResult["CATEGORIES"] as $category_id => $arCategory):?>
 		<?foreach($arCategory["ITEMS"] as $i => $arItem):?>
