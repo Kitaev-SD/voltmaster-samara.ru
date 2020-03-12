@@ -18,8 +18,7 @@ if(!function_exists("template_content")) {
 								// if(!$arResult[$key]['elmCount'] || $arResult[$key]['elmCount'] == '') {
 								// 	$arResult[$key]['elmCount'] = getCountElement($arItem['IBLOCK_ID'], $arItem["ID"]);
 								// }
-								?>
-								(<?=CIBlockSection::GetSectionElementsCount($arItem["ID"], Array("CNT_ACTIVE" => "Y", "AVAILABLE" => "Y"));?>)
+								// echo "(".CIBlockSection::GetSectionElementsCount($arItem["ID"], Array("CNT_ACTIVE" => "Y", "AVAILABLE" => "Y")).")";?>
 								</span>
 								<div class="toggle_block"></div>
 								<div class="clearfix"></div>
@@ -37,8 +36,7 @@ if(!function_exists("template_content")) {
 											// if(!$arResult[$key][$key2]['elmCount'] || $arResult[$key][$key2]['elmCount'] == '') {
 											// 	$arResult[$key][$key2]['elmCount'] = getCountElement($arItem['IBLOCK_ID'], $arChildItem["ID"]);
 											// }
-											?>
-											(<?//=$arResult[$key][$key2]['elmCount'];?>)
+											// echo "(".CIBlockSection::GetSectionElementsCount($arChildItem["ID"], Array("CNT_ACTIVE" => "Y", "AVAILABLE" => "Y")).")";?>
 											</span></a>
 											<?if($arChildItem["CHILD"]){?>
 												<ul class="dropdown">
@@ -50,8 +48,7 @@ if(!function_exists("template_content")) {
 															// if(!$arResult[$key][$key2][$key3]['elmCount'] || $arResult[$key][$key2][$key3]['elmCount'] == '') {
 															// 	$arResult[$key][$key2][$key3]['elmCount'] = getCountElement($arItem['IBLOCK_ID'], $arChildItem1["ID"]);
 															// }
-															?>
-															(<?//=$arResult[$key][$key2][$key3]['elmCount'];?>)
+															// echo "(".CIBlockSection::GetSectionElementsCount($arChildItem1["ID"], Array("CNT_ACTIVE" => "Y", "AVAILABLE" => "Y")).")";?>
 															</span></a>
 														</li>
 													<?}?>
@@ -89,8 +86,6 @@ if(!function_exists("getCountElement")){
 }
 
 $start = microtime(true);
-
-
 $obCache = new CPHPCache; 
 if ($obCache->InitCache('604800', 'catalog_menu')) {	// время кеширование = одна неделя
    	$vars = $obCache->GetVars(); 
@@ -99,7 +94,6 @@ if ($obCache->InitCache('604800', 'catalog_menu')) {	// время кеширо�
 	$arResult = template_content($arResult);
 	$obCache->EndDataCache($arResult);
 }
-
 $duration = microtime(true) - $start;
-echo $duration;
+
 ?>

@@ -29,7 +29,9 @@
 								</div>
 							<?endif;?>
 							<div class="name">
-								<a href="<?=$arSection['SECTION_PAGE_URL'];?>" class="dark_link"><?=$arSection['NAME'];?> (<?=getCountElement($arSection['IBLOCK_ID'], $arSection['ID'])?>)</a>
+								<a href="<?=$arSection['SECTION_PAGE_URL'];?>" class="dark_link">
+									<?=$arSection['NAME'];?> <? //echo "(".CIBlockSection::GetSectionElementsCount($arSection["ID"], Array("CNT_ACTIVE" => "Y", "AVAILABLE" => "Y")).")";?>
+								</a>
 							</div>
 						</div>
 					</div>
