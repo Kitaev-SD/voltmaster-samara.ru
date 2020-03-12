@@ -29,7 +29,7 @@
 								</div>
 							<?endif;?>
 							<div class="name">
-								<a href="<?=$arSection['SECTION_PAGE_URL'];?>" class="dark_link"><?=$arSection['NAME'];?></a>
+								<a href="<?=$arSection['SECTION_PAGE_URL'];?>" class="dark_link"><?=$arSection['NAME'];?> (<?=getCountElement($arSection['IBLOCK_ID'], $arSection['ID'])?>)</a>
 							</div>
 						</div>
 					</div>
@@ -38,3 +38,21 @@
 		</div>
 	</div>
 <?endif;?>
+
+<?
+function getCountElement($iblock_id, $section_id){
+	global $APPLICATION;
+	if(!CModule::IncludeModule("iblock")){ return; }
+	$ar_result = array();
+	$ar_fltr = array(
+		"IBLOCK_ID"=>$iblock_id,
+		"SECTION_ID"=>$section_id,
+		"CATALOG_AVAILABLE" => "Y",
+		"INCLUDE_SUBSECTIONS" => "Y",
+		"ACTIVE" => "Y"
+	);
+	$arProjElem = CIBlockElement::GetList(array(),$ar_fltr);
+	$count = $arProjElem->SelectedRowsCount();
+	return $count;                       
+}
+?>

@@ -358,7 +358,7 @@ if($this->InitComponentTemplate($templatePage))
 			$obSearch->NavStart($arParams["PAGE_RESULT_COUNT"], false);
 			$ar = $obSearch->GetNext();
 			//Search restart
-			if(!$ar && ($arParams["RESTART"] == "Y") && $obSearch->Query->bStemming)
+			if(($arParams["RESTART"] == "Y") && $obSearch->Query->bStemming)
 			{
 				$exFILTER["STEMMING"] = false;
 				$obSearch = new CSearch();
@@ -410,6 +410,107 @@ if($this->InitComponentTemplate($templatePage))
 			$arResult["NAV_CACHED_DATA"] = $navComponentObject->GetTemplateCachedData();
 			$arResult["NAV_RESULT"] = $obSearch;
 		}
+
+		#____________________________________________________________________________________________________________
+		# -------- ВНИМАНИЕ! Это костыль! ---------------------------------------------------------------------------
+		# Если при смене раскладки поиск не выдал результата, т.е. массив $arReturn пустой, 
+		# то запускается поиск с исходным запросом (без смены раскладки)
+		if(empty($arReturn)){
+			$arResult["REQUEST"]["~QUERY"] = $arResult["REQUEST"]["~ORIGINAL_QUERY"];
+			$arFilter = array(
+				"SITE_ID" => SITE_ID,
+				"QUERY" => $arResult["REQUEST"]["~QUERY"],
+				"TAGS" => $arResult["REQUEST"]["~TAGS"],
+			);
+			$arFilter = array_merge($arFILTERCustom, $arFilter);
+			if(strlen($where)>0)
+			{
+				list($module_id, $part_id) = explode("_",$where,2);
+				$arFilter["MODULE_ID"] = $module_id;
+				if(strlen($part_id)>0) $arFilter["PARAM1"] = $part_id;
+			}
+			if($arParams["CHECK_DATES"])
+				$arFilter["CHECK_DATES"]="Y";
+			if($from)
+				$arFilter[">=DATE_CHANGE"] = $from;
+			if($to)
+				$arFilter["<=DATE_CHANGE"] = $to;
+
+			$obSearch = new CSearch();
+
+			//When restart option is set we will ignore error on query with only stop words
+			$obSearch->SetOptions(array(
+				"ERROR_ON_EMPTY_STEM" => $arParams["RESTART"] != "Y",
+				"NO_WORD_LOGIC" => $arParams["NO_WORD_LOGIC"] == "Y",
+			));
+
+			$obSearch->Search($arFilter, $aSort, $exFILTER);
+
+			$arResult["ERROR_CODE"] = $obSearch->errorno;
+			$arResult["ERROR_TEXT"] = $obSearch->error;
+
+			$arResult["SEARCH"] = array();
+			if($obSearch->errorno==0)
+			{
+				$obSearch->NavStart($arParams["PAGE_RESULT_COUNT"], false);
+				$ar = $obSearch->GetNext();
+				//Search restart
+				if(!$ar && ($arParams["RESTART"] == "Y") && $obSearch->Query->bStemming)
+				{
+					$exFILTER["STEMMING"] = false;
+					$obSearch = new CSearch();
+					$obSearch->Search($arFilter, $aSort, $exFILTER);
+
+					$arResult["ERROR_CODE"] = $obSearch->errorno;
+					$arResult["ERROR_TEXT"] = $obSearch->error;
+
+					if($obSearch->errorno == 0)
+					{
+						$obSearch->NavStart($arParams["PAGE_RESULT_COUNT"], false);
+						$ar = $obSearch->GetNext();
+					}
+				}
+
+				$arReturn = array();
+				while($ar)
+				{
+					$arReturn[$ar["ID"]] = $ar["ITEM_ID"];
+					$ar["CHAIN_PATH"] = $APPLICATION->GetNavChain($ar["URL"], 0, $folderPath."/chain_template.php", true, false);
+					$ar["URL"] = htmlspecialcharsbx($ar["URL"]);
+					$ar["TAGS"] = array();
+					if (!empty($ar["~TAGS_FORMATED"]))
+					{
+						foreach ($ar["~TAGS_FORMATED"] as $name => $tag)
+						{
+							if($arParams["TAGS_INHERIT"] == "Y")
+							{
+								$arTags = $arResult["REQUEST"]["~TAGS_ARRAY"];
+								$arTags[$tag] = $tag;
+								$tags = implode("," , $arTags);
+							}
+							else
+							{
+								$tags = $tag;
+							}
+							$ar["TAGS"][] = array(
+								"URL" => $APPLICATION->GetCurPageParam("tags=".urlencode($tags), array("tags")),
+								"TAG_NAME" => htmlspecialcharsex($name),
+							);
+						}
+					}
+					$arResult["SEARCH"][]=$ar;
+					$ar = $obSearch->GetNext();
+				}
+
+				$navComponentObject = null;
+				$arResult["NAV_STRING"] = $obSearch->GetPageNavStringEx($navComponentObject,  $arParams["PAGER_TITLE"], $arParams["PAGER_TEMPLATE"], $arParams["PAGER_SHOW_ALWAYS"]);
+				$arResult["NAV_CACHED_DATA"] = $navComponentObject->GetTemplateCachedData();
+				$arResult["NAV_RESULT"] = $obSearch;
+			}
+
+		}
+		# -------- ВНИМАНИЕ! Это костыль! END --------------------------------------
+
 
 		$arResult["TAGS_CHAIN"] = array();
 		$url = array();

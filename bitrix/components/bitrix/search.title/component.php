@@ -162,6 +162,57 @@ if(
 					}
 				}
 			}
+			#____________________________________________________________________________________________________________
+			# -------- ВНИМАНИЕ! Это костыль! ---------------------------------------------------------------------------
+			# Если при смене раскладки поиск не выдал результата, т.е. массив $arResult["CATEGORIES"][0]["ITEMS"] пустой, 
+			# то запускается поиск с исходным запросом (без смены раскладки)
+			if(empty($arResult["CATEGORIES"][0]["ITEMS"])) {
+				$arResult["alt_query"] = $query;
+				$obTitle = new CSearchTitle;
+				$obTitle->setMinWordLength($_REQUEST["l"]);
+				if($obTitle->Search(
+					$arResult["alt_query"]? $arResult["alt_query"]: $arResult["query"]
+					,$arParams["TOP_COUNT"]
+					,$exFILTER
+					,false
+					,$arParams["ORDER"]
+				))
+				{
+					while($ar = $obTitle->Fetch())
+					{
+						$j++;
+						if($j > $arParams["TOP_COUNT"])
+						{
+							$params = array("q" => $arResult["alt_query"]? $arResult["alt_query"]: $arResult["query"]);
+
+							$url = CHTTP::urlAddParams(
+									str_replace("#SITE_DIR#", SITE_DIR, $arParams["PAGE"])
+									,$params
+									,array("encode"=>true)
+								).CSearchTitle::MakeFilterUrl("f", $exFILTER);
+
+							$arResult["CATEGORIES"][$i]["ITEMS"][] = array(
+								"NAME" => GetMessage("CC_BST_MORE"),
+								"URL" => htmlspecialcharsex($url),
+								"TYPE" => "all"
+							);
+							break;
+						}
+						else
+						{
+							$arResult["CATEGORIES"][$i]["ITEMS"][] = array(
+								"NAME" => $ar["NAME"],
+								"URL" => htmlspecialcharsbx($ar["URL"]),
+								"MODULE_ID" => $ar["MODULE_ID"],
+								"PARAM1" => $ar["PARAM1"],
+								"PARAM2" => $ar["PARAM2"],
+								"ITEM_ID" => $ar["ITEM_ID"],
+							);
+						}
+					}
+				}
+			}
+			# -------- ВНИМАНИЕ! Это костыль! END --------------------------------------
 
 			if(!$j)
 			{
