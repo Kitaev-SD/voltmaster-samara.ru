@@ -3,10 +3,10 @@
 $iblock_id = 28; 		# ID инфоблока
 $hlbl = 7; 				# ID highloadblock блока
 
-# 0 0 * * 0 /usr/bin/php -f /var/www/voltmaster-samara.ru/SetHighloadBlock.php &>> /var/www/voltmaster-samara.ru/SetHighloadBlock.log &
-# 0 0 * * 0 /usr/bin/php -f /var/www/voltmaster-samara.ru/test2.php &>> /var/www/voltmaster-samara.ru/test2.log &
+# 0 0 * * 0 /usr/bin/php -f /home/bitrix/www/SetHighloadBlock.php &>> /home/bitrix/www/SetHighloadBlock.log &
+
 $startTime = microtime(true);
-$_SERVER["DOCUMENT_ROOT"] = "/var/www/voltmaster-samara.ru";
+$_SERVER["DOCUMENT_ROOT"] = "/home/bitrix/www";
 require($_SERVER["DOCUMENT_ROOT"]."/bitrix/modules/main/include/prolog_before.php");
 use Bitrix\Main\Loader;
 use Bitrix\Main\ModuleManager;
@@ -37,7 +37,9 @@ foreach (getCategoryList($iblock_id) as $section_id) {
 }
 
 $duration = microtime(true) - $startTime;
-echo "<br>\nВремя выполнения скрипта: " . $duration;
+echo "\n_____________________________________________________________";
+echo "\n Время выполнения скрипта: " . date('d-m-Y s:i:G:');
+echo "\n Продолжительность выполнения скрипта: " . $duration;
 #____________________________________ FUNCTIONS ____________________________________________________
 #---------- Делаем выборку из highloadblock блока метод getlist ------------------------------------
 function getListHLB($entity_data_class_){

@@ -32,7 +32,7 @@ $APPLICATION->SetTitle("Новости");
 		"DETAIL_PAGER_TEMPLATE" => "arrows",
 		"DETAIL_PAGER_TITLE" => "Страница",
 		"DETAIL_PROPERTY_CODE" => array(
-			0 => "",
+			0 => "LINK_GOODS",
 			1 => "",
 		),
 		"DETAIL_SET_CANONICAL_URL" => "N",
@@ -80,8 +80,9 @@ $APPLICATION->SetTitle("Новости");
 		"PAGER_TITLE" => "Новости",
 		"PREVIEW_TRUNCATE_LEN" => "",
 		"PRICE_CODE" => array(
+			0 => "Розничная",
 		),
-		"SECTION_ELEMENTS_TYPE_VIEW" => "FROM_MODULE",
+		"SECTION_ELEMENTS_TYPE_VIEW" => "list_elements_2",
 		"SEF_FOLDER" => "/news/",
 		"SEF_MODE" => "Y",
 		"SET_LAST_MODIFIED" => "N",
@@ -98,7 +99,7 @@ $APPLICATION->SetTitle("Новости");
 		"SORT_ORDER1" => "DESC",
 		"SORT_ORDER2" => "ASC",
 		"STORES" => array(
-			0 => "",
+			0 => "1",
 			1 => "",
 		),
 		"STRICT_SECTION_CHECK" => "N",
@@ -120,6 +121,8 @@ $APPLICATION->SetTitle("Новости");
 		"USE_SHARE" => "N",
 		"YANDEX" => "N",
 		"COMPONENT_TEMPLATE" => "news",
+		"COMPOSITE_FRAME_MODE" => "A",
+		"COMPOSITE_FRAME_TYPE" => "AUTO",
 		"SEF_URL_TEMPLATES" => array(
 			"news" => "",
 			"section" => "",
