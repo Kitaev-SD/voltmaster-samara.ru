@@ -1,6 +1,14 @@
 <?if(!defined("B_PROLOG_INCLUDED") || B_PROLOG_INCLUDED!==true)die();?>
-<? $this->setFrameMode( true );?>
-<?if($arResult['SECTIONS']):?>
+<? $this->setFrameMode( true );
+use Bitrix\Highloadblock as HL; 
+use Bitrix\Main\Entity;
+CModule::IncludeModule("highloadblock");
+$hlbl = 7; 	# ID highloadblock блока
+$hlblock = HL\HighloadBlockTable::getById($hlbl)->fetch(); 
+$entity = HL\HighloadBlockTable::compileEntity($hlblock);
+$entity_data_class = $entity->getDataClass();
+
+if($arResult['SECTIONS']):?>
 	<div class="sections_wrapper">
 		<?if($arParams["TITLE_BLOCK"] || $arParams["TITLE_BLOCK_ALL"]):?>
 			<div class="top_block">
@@ -30,7 +38,7 @@
 							<?endif;?>
 							<div class="name">
 								<a href="<?=$arSection['SECTION_PAGE_URL'];?>" class="dark_link">
-									<?=$arSection['NAME'];?> <? //echo "(".CIBlockSection::GetSectionElementsCount($arSection["ID"], Array("CNT_ACTIVE" => "Y", "AVAILABLE" => "Y")).")";?>
+									<?=$arSection['NAME'];?> <? echo "(".getCountFromHLB($entity_data_class, $arSection["ID"]).")";?>
 								</a>
 							</div>
 						</div>
@@ -42,19 +50,19 @@
 <?endif;?>
 
 <?
-function getCountElement($iblock_id, $section_id){
-	global $APPLICATION;
-	if(!CModule::IncludeModule("iblock")){ return; }
-	$ar_result = array();
-	$ar_fltr = array(
-		"IBLOCK_ID"=>$iblock_id,
-		"SECTION_ID"=>$section_id,
-		"CATALOG_AVAILABLE" => "Y",
-		"INCLUDE_SUBSECTIONS" => "Y",
-		"ACTIVE" => "Y"
-	);
-	$arProjElem = CIBlockElement::GetList(array(),$ar_fltr);
-	$count = $arProjElem->SelectedRowsCount();
-	return $count;                       
+function getCountFromHLB($entity_data_class_, $section_id_){
+	$rsData = $entity_data_class_::getList(array(
+	   "select" => array("*"),
+	   "order" => array(),
+	   "filter" => array('UF_SECTION_ID' => $section_id_)
+	));
+
+	$elm_count = '';
+
+	if ($arData = $rsData->fetch()) {
+		$elm_count = $arData['UF_ELEMENT_COUNT'];
+	}
+
+	return $elm_count;
 }
 ?>
