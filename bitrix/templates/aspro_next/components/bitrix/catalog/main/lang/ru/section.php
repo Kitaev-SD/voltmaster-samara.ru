@@ -4,6 +4,7 @@
 	$MESS["SECT_SORT_PRICE"] = "По цене";
 	$MESS["SECT_SORT_QUANTITY"] = "По наличию";
 	$MESS["SECT_SORT_CATALOG_AVAILABLE"] = "По наличию";
+	$MESS["SECT_SORT_SKU"] = "По новизне";
 	$MESS["SECT_DISPLAY_LIST"] = "списком";
 	$MESS["SECT_DISPLAY_TABLE"] = "таблицей";
 	$MESS["SECT_DISPLAY_BLOCK"] = "плиткой";

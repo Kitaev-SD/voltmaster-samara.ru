@@ -590,6 +590,9 @@ if (is_array($arElements) && !empty($arElements))
 					if(in_array("QUANTITY", $arSorts)){
 						$arAvailableSort["CATALOG_AVAILABLE"] = array("QUANTITY", "desc");
 					}
+					if(in_array("SKU", $arSorts)){
+						$arAvailableSort["SKU"] = array("SKU", "desc");
+					}
 					$sort = "SHOWS";
 					if((array_key_exists("sort", $_REQUEST) && array_key_exists(ToUpper($_REQUEST["sort"]), $arAvailableSort)) || (array_key_exists("sort", $_SESSION) && array_key_exists(ToUpper($_SESSION["sort"]), $arAvailableSort)) || $arParams["ELEMENT_SORT_FIELD"]){
 						if($_REQUEST["sort"]){
@@ -630,6 +633,9 @@ if (is_array($arElements) && !empty($arElements))
 					}
 					if($sort == "CATALOG_AVAILABLE"){
 						$sort = "CATALOG_QUANTITY";
+					}
+					if($sort == "SKU"){
+						$sort = "CML2_TRAITS";
 					}
 					?>
 				</div>

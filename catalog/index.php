@@ -193,6 +193,7 @@ $APPLICATION->IncludeComponent(
 			0 => "POPULARITY",
 			1 => "NAME",
 			2 => "PRICE",
+			3 => "SKU"
 		),
 		"SORT_PRICES" => "REGION_PRICE",
 		"DEFAULT_LIST_TEMPLATE" => "block",
