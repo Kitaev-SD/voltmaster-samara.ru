@@ -5,7 +5,7 @@ $iblock_id = 28; 		# ID инфоблока
 
 
 $startTime = microtime(true);
-$_SERVER["DOCUMENT_ROOT"] = "/var/www/voltmaster-samara.ru";
+$_SERVER["DOCUMENT_ROOT"] = "/home/bitrix/www";
 require($_SERVER["DOCUMENT_ROOT"]."/bitrix/modules/main/include/prolog_before.php");
 use Bitrix\Main\Loader;
 use Bitrix\Main\ModuleManager;
