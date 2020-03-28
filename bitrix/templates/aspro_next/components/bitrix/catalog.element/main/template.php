@@ -380,12 +380,7 @@ setViewedProduct(<?=$arResult['ID']?>, <?=CUtil::PhpToJSObject($arViewedData, fa
 						<?}?>
 					</div>
                     <div class="product-code">
-                        <? foreach($arResult["PROPERTIES"]["CML2_TRAITS"]["DESCRIPTION"] as $key => $val  ){
-                            if($val == "Код" ){?>
-                               <span>Код товара</span> <span><? echo $arResult["PROPERTIES"]["CML2_TRAITS"]["VALUE"][$key];?></span>
-                            <?  }
-                        }
-                        ?>
+                        <span>Код товара</span> <span><? print_r($arResult["PROPERTIES"]["CML2_BAR_CODE"]["VALUE"]); ?></span>
                     </div>
 					<?if(strlen($arResult["PREVIEW_TEXT"])):?>
 						<div class="preview_text dotdot"><?=$arResult["PREVIEW_TEXT"]?></div>
