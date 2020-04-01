@@ -2324,7 +2324,8 @@ if($bVarsFromForm && !array_key_exists("PREVIEW_PICTURE", $_REQUEST) && $arEleme
 	$str_PREVIEW_PICTURE = intval($arElement["PREVIEW_PICTURE"]);
 ?>
 	<tr id="tr_PREVIEW_PICTURE" class="adm-detail-file-row">
-		<td width="40%" class="adm-detail-valign-top"><?echo $tabControl->GetCustomLabelHTML()?>:</td>
+		<?if($IBLOCK_ID == 18) { $prev_pict_title = "Картинка для анонса (пропорции картинки строго 250х170)"; } else { $prev_pict_title = $tabControl->GetCustomLabelHTML(); }?>
+		<td width="40%" class="adm-detail-valign-top"><?echo $prev_pict_title;?>:</td>
 		<td width="60%">
 			<?if($historyId > 0):?>
 				<?echo CFileInput::Show("PREVIEW_PICTURE", $str_PREVIEW_PICTURE, array(
