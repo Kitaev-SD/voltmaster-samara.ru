@@ -1,6 +1,6 @@
 <?$APPLICATION->IncludeComponent(
 	"bitrix:news.list",
-	"news-blog2",
+	"news-blog3",
 	Array(
 		"IMAGE_POSITION" => $arParams["IMAGE_POSITION"],
 		"SHOW_CHILD_SECTIONS" => $arParams["SHOW_CHILD_SECTIONS"],
