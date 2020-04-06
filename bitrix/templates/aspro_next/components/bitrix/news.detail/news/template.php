@@ -125,17 +125,6 @@
 	</div>
 <?endif;?>
 
-<?// date active from or dates period active?>
-<?/*if(strlen($arResult['DISPLAY_PROPERTIES']['PERIOD']['VALUE']) || ($arResult['DISPLAY_ACTIVE_FROM'] && in_array('DATE_ACTIVE_FROM', $arParams['FIELD_CODE']))):?>
-	<div class="period">
-		<?if(strlen($arResult['DISPLAY_PROPERTIES']['PERIOD']['VALUE'])):?>
-			<span class="date"><?=$arResult['DISPLAY_PROPERTIES']['PERIOD']['VALUE']?></span>
-		<?else:?>
-			<span class="date"><?=$arResult['DISPLAY_ACTIVE_FROM']?></span>
-		<?endif;?>
-	</div>
-<?endif;*/?>
-
 <?if(strlen($arResult['FIELDS']['DETAIL_TEXT'])):?>
 	<div class="content">
 		<?// element detail text?>

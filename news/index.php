@@ -1,7 +1,7 @@
 <?
 require($_SERVER["DOCUMENT_ROOT"]."/bitrix/header.php");
 $APPLICATION->SetTitle("Новости");
-?><?$APPLICATION->IncludeComponent(
+$APPLICATION->IncludeComponent(
 	"bitrix:news", 
 	"news", 
 	array(
@@ -24,16 +24,25 @@ $APPLICATION->SetTitle("Новости");
 		"DETAIL_DISPLAY_TOP_PAGER" => "N",
 		"DETAIL_FIELD_CODE" => array(
 			0 => "NAME",
-			1 => "DETAIL_TEXT",
-			2 => "DATE_ACTIVE_FROM",
-			3 => "",
+			1 => "PREVIEW_TEXT",
+			2 => "DETAIL_TEXT",
+			3 => "DETAIL_PICTURE",
+			4 => "DATE_ACTIVE_FROM",
+			5 => "",
 		),
 		"DETAIL_PAGER_SHOW_ALL" => "Y",
 		"DETAIL_PAGER_TEMPLATE" => "arrows",
 		"DETAIL_PAGER_TITLE" => "Страница",
 		"DETAIL_PROPERTY_CODE" => array(
 			0 => "LINK_GOODS",
-			1 => "",
+			1 => "FORM_QUESTION",
+			2 => "FORM_ORDER",
+			3 => "PERIOD",
+			4 => "PHOTOPOS",
+			5 => "LINK_SERVICES",
+			6 => "PHOTOS",
+			7 => "DOCUMENTS",
+			8 => "",
 		),
 		"DETAIL_SET_CANONICAL_URL" => "N",
 		"DISPLAY_BOTTOM_PAGER" => "Y",
@@ -56,8 +65,10 @@ $APPLICATION->SetTitle("Новости");
 		"LIST_ACTIVE_DATE_FORMAT" => "d.m.Y",
 		"LIST_FIELD_CODE" => array(
 			0 => "NAME",
-			1 => "DATE_ACTIVE_FROM",
-			2 => "",
+			1 => "PREVIEW_TEXT",
+			2 => "PREVIEW_PICTURE",
+			3 => "DATE_ACTIVE_FROM",
+			4 => "",
 		),
 		"LIST_PROPERTY_CODE" => array(
 			0 => "",

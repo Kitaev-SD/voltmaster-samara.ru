@@ -51,7 +51,7 @@
 
 			<div class="news_item" id="<?=$this->GetEditAreaId($arItem['ID'])?>">
 				<div class="news_item-image">
-					<?if($bDetailLink){?><a href="/company<?=$DETAIL_PAGE_URL?>"><?}?>
+					<?if($bDetailLink){?><a href="<?=$DETAIL_PAGE_URL?>"><?}?>
 						<img src="<?=$PREVIEW_PICTURE?>" alt="<?=$PREVIEW_PICTURE_ALT?>" title="<?=$PREVIEW_PICTURE_TITLE?>">	
 					<?if($bDetailLink){?></a><?}?>
 				</div>
@@ -60,7 +60,7 @@
 						<span><?=$DISPLAY_ACTIVE_FROM?></span>
 					</div>
 					<div class="news_title">
-						<?if($bDetailLink){?><a href="/company<?=$DETAIL_PAGE_URL?>"><?}?>
+						<?if($bDetailLink){?><a href="<?=$DETAIL_PAGE_URL?>"><?}?>
 							<?=$NAME?>
 						<?if($bDetailLink){?></a><?}?>
 					</div>

@@ -27,7 +27,7 @@ $isAjax = (isset($_GET["AJAX_REQUEST"]) && $_GET["AJAX_REQUEST"] == "Y");?>
 
 			<div class="news_item">
 				<div class="news_item-image">
-					<?if($bDetailLink){?><a href="/company<?=$DETAIL_PAGE_URL?>"><?}?>
+					<?if($bDetailLink){?><a href="<?=$DETAIL_PAGE_URL?>"><?}?>
 						<img src="<?=$PREVIEW_PICTURE?>" alt="<?=$PREVIEW_PICTURE_ALT?>" title="<?=$PREVIEW_PICTURE_TITLE?>">	
 					<?if($bDetailLink){?></a><?}?>
 				</div>
@@ -36,7 +36,7 @@ $isAjax = (isset($_GET["AJAX_REQUEST"]) && $_GET["AJAX_REQUEST"] == "Y");?>
 						<span><?=$DISPLAY_ACTIVE_FROM?></span>
 					</div>
 					<div class="news_title">
-						<?if($bDetailLink){?><a href="/company<?=$DETAIL_PAGE_URL?>"><?}?>
+						<?if($bDetailLink){?><a href="<?=$DETAIL_PAGE_URL?>"><?}?>
 							<?=$NAME?>
 						<?if($bDetailLink){?></a><?}?>
 					</div>

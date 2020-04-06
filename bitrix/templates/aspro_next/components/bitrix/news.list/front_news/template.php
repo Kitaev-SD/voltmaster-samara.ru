@@ -6,7 +6,7 @@
 			<?
 			$title_block=($arParams["TITLE_BLOCK"] ? $arParams["TITLE_BLOCK"] : GetMessage('NEWS_TITLE'));
 			$title_block_all=($arParams["TITLE_BLOCK_ALL"] ? $arParams["TITLE_BLOCK_ALL"] : GetMessage('ALL_NEWS'));
-			$url=($arParams["ALL_URL"] ? $arParams["ALL_URL"] : SITE_DIR."company/news/");
+			$url=($arParams["ALL_URL"] ? $arParams["ALL_URL"] : SITE_DIR."news/");
 			?>
 			<div class="title_block"><?=$title_block;?></div>
 			<a href="<?=SITE_DIR.$url;?>"><?=$title_block_all;?></a>
