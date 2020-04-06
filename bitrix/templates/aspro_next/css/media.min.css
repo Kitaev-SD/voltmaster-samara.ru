@@ -3912,7 +3912,7 @@ ul.tabs li.stretch {
 		display: none!important
 	}
 	.slider_navigation.compare .flex-direction-nav {
-		display: none!important
+		/*display: none!important*/
 	}
 	.wrapp_scrollbar .wr_scrollbar {
 		margin-left: 0;
@@ -4405,7 +4405,7 @@ ul.tabs li.stretch {
 
 @media all and (max-width:500px) {
 	.flex-direction-nav {
-		display: none!important
+		/*display: none!important*/
 	}
 	.stores_block_wrap .stores_block .stores_text_wrapp .main_info {
 		max-width: 200px
