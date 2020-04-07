@@ -48,7 +48,7 @@
 <?endif;?>
 
 <?// element name?>
-<?if($arParams['DISPLAY_NAME'] != 'N' && strlen($arResult['NAME'])):?>
+<?if(false && $arParams['DISPLAY_NAME'] != 'N' && strlen($arResult['NAME'])):?>
 	<h2><?=$arResult['NAME']?></h2>
 <?endif;?>
 
