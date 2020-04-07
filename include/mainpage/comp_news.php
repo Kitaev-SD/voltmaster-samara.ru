@@ -1,7 +1,7 @@
 <div class="sections_wrapper">
     <div class="top_block">
         <h3 class="title_block">Новости</h3>
-        <a href="/news/">Все новости</a>
+        <a href="/news/" class="news_blog_title">Все новости</a>
     </div>
     <?$APPLICATION->IncludeComponent(
 	"bitrix:news", 

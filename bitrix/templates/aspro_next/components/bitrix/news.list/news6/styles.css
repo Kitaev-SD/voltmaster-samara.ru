@@ -61,8 +61,12 @@
 	font-size: 1em;
 	font-weight: bold;
 	line-height: 1.5;
-	color: rgb(34, 34, 34);
 	margin: 10px 0;
+	color:#1d2029;
+}
+
+.news_blog .news_item .news_item-info .news_title a {
+	color:rgb(0,73,145);
 }
 
 .news_blog .news_item .news_item-info .news_descr {
