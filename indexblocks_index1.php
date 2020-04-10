@@ -29,7 +29,7 @@ global $isShowSale, $isShowCatalogSections, $isShowCatalogElements, $isShowMiddl
 					7 => "BUTTON2LINK",
 					8 => "",
 				),
-				"CHECK_DATES" => "Y",
+				"CHECK_DATES" => "N",
 				"CACHE_GROUPS" => "N",
 				"CACHE_TYPE" => "N",
 				"CACHE_TIME" => "36000000",
