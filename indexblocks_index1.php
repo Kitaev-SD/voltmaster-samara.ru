@@ -31,7 +31,7 @@ global $isShowSale, $isShowCatalogSections, $isShowCatalogElements, $isShowMiddl
 				),
 				"CHECK_DATES" => "N",
 				"CACHE_GROUPS" => "N",
-				"CACHE_TYPE" => "A",
+				"CACHE_TYPE" => "N",
 				"CACHE_TIME" => "36000000",
 				"BANNER_TYPE_THEME" => "TOP",
 				"BANNER_TYPE_THEME_CHILD" => "TOP_SMALL_BANNER",
