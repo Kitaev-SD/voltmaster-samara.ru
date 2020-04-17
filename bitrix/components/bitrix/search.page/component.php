@@ -244,7 +244,7 @@ if(
 	|| strpos($arResult["REQUEST"]["QUERY"], "n'y")!==false
 	|| strpos($arResult["REQUEST"]["~QUERY"], "n'y")!==false
 ){
-	$arResult["REQUEST"]["QUERY"] = $arResult["REQUEST"]["~QUERY"] = 'тэн';
+	$arResult["REQUEST"]["QUERY"] = $arResult["REQUEST"]["~QUERY"] = str_replace("n'y", 'тэн', $q_lower);
 }
 
 if(
@@ -253,7 +253,7 @@ if(
 	|| strpos($arResult["REQUEST"]["QUERY"], "ьлз")!==false
 	|| strpos($arResult["REQUEST"]["~QUERY"], "ьлз")!==false
 ){
-	$arResult["REQUEST"]["QUERY"] = $arResult["REQUEST"]["~QUERY"] = 'mkp';
+	$arResult["REQUEST"]["QUERY"] = $arResult["REQUEST"]["~QUERY"] = str_replace("ьлз", 'mkp', $q_lower);
 }
 
 if(
@@ -262,7 +262,7 @@ if(
 	|| strpos($arResult["REQUEST"]["QUERY"], "евф7560")!==false
 	|| strpos($arResult["REQUEST"]["~QUERY"], "евф7560")!==false
 ){
-	$arResult["REQUEST"]["QUERY"] = $arResult["REQUEST"]["~QUERY"] = 'tda756';
+	$arResult["REQUEST"]["QUERY"] = $arResult["REQUEST"]["~QUERY"] = str_replace("евф7560", 'tda756', $q_lower);
 }
 
 $GLOBALS['searchArr'] = $arResult["REQUEST"];
