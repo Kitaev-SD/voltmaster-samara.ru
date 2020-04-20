@@ -1,4 +1,5 @@
 <?php
+exit;
 # 0 0 * * 0 /usr/bin/php -f /home/bitrix/www/SetHighloadBlock.php &>> /home/bitrix/www/SetHighloadBlock.log &
 $iblock_id = 28; 		# ID инфоблока
 
@@ -23,9 +24,9 @@ function getProp($iblock_id){
 	$count = $iterator->SelectedRowsCount();
 	$i=0;
 	while ($row = $iterator->Fetch()){
-		// if(!empty($row['290'])) {
+		if(empty($row['287'])) {
 			$i++;
-		// }
+		}
 	}
 
 	echo '----------------------------------------------------<br>';
@@ -36,10 +37,8 @@ function getProp($iblock_id){
 	<table>
 		<thead>
 			<tr>
-				<th>Поле 1</th>
-				<th>Поле 2</th>
-				<th>Поле 3</th>
-				<th>Поле 4</th>
+				<th>Название</th>
+				<th>Значене</th>
 			</tr>
 		</thead>
 		<tbody>
@@ -48,11 +47,8 @@ function getProp($iblock_id){
 		$iterator2 = CIBlockElement::GetPropertyValues($iblock_id, array(), true, array());
 		while ($row2 = $iterator2->Fetch()){?>
 			<tr>
-				<?foreach ($row2['290'] as $value) {?>
-					<td <? echo (strpos($value, 'Товар') !== false)? 'style="color:green;"': 'style="color:red;"'; ?> >
-						<?=$value?>
-					</td>
-				<?}?>
+				<td> <?echo $row2['287'];?> </td>
+				
 			</tr>
 		<?}?>
 

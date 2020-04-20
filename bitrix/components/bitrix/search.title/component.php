@@ -44,7 +44,7 @@ if(
 		|| strpos($q_lower, "тэн")!==false
 		|| strpos($arResult["alt_query"], "n'y")!==false
 	){
-		$arResult["alt_query"] = 'тэн';
+		$arResult["alt_query"] = str_ireplace("n'y", 'тэн', $q_lower);
 	}
 
 	if(
@@ -52,7 +52,7 @@ if(
 		|| strpos($q_lower, "mkp")!==false
 		|| strpos($arResult["alt_query"], "ьлз")!==false
 	){
-		$arResult["alt_query"] = 'MKP';
+		$arResult["alt_query"] = str_ireplace("ьлз", 'MKP', $q_lower);
 	}
 	//------------ CUSTOM END ---------------------------------------------
 	
