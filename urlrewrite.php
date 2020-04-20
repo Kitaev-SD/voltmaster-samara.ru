@@ -72,20 +72,20 @@ $arUrlRewrite=array (
     'PATH' => '/info/brands/index.php',
     'SORT' => 100,
   ),
+  26 => 
+  array (
+    'CONDITION' => '#^/sitemap.xml#',
+    'RULE' => '',
+    'ID' => '',
+    'PATH' => '/sitemap.php',
+    'SORT' => 100,
+  ),
   18 => 
   array (
     'CONDITION' => '#^/landings/#',
     'RULE' => '',
     'ID' => 'bitrix:catalog',
     'PATH' => '/landings/index.php',
-    'SORT' => 100,
-  ),
-  5 => 
-  array (
-    'CONDITION' => '#^/personal/#',
-    'RULE' => '',
-    'ID' => 'bitrix:sale.personal.section',
-    'PATH' => '/personal/index.php',
     'SORT' => 100,
   ),
   13 => 
@@ -102,6 +102,14 @@ $arUrlRewrite=array (
     'RULE' => '',
     'ID' => 'bitrix:news',
     'PATH' => '/services/index.php',
+    'SORT' => 100,
+  ),
+  5 => 
+  array (
+    'CONDITION' => '#^/personal/#',
+    'RULE' => '',
+    'ID' => 'bitrix:sale.personal.section',
+    'PATH' => '/personal/index.php',
     'SORT' => 100,
   ),
   24 => 
