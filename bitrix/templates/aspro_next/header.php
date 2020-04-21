@@ -4,6 +4,7 @@
 	error_reporting(E_ERROR | E_PARSE);
 IncludeTemplateLangFile(__FILE__);
 global $APPLICATION, $arRegion, $arSite, $arTheme;
+$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
 $arSite = CSite::GetByID(SITE_ID)->Fetch();
 $htmlClass = ($_REQUEST && isset($_REQUEST['print']) ? 'print' : false);
 $bIncludedModule = (\Bitrix\Main\Loader::includeModule("aspro.next"));?>
@@ -18,7 +19,9 @@ $bIncludedModule = (\Bitrix\Main\Loader::includeModule("aspro.next"));?>
 	<?$APPLICATION->ShowMeta("SKYPE_TOOLBAR");?>
 	<?$APPLICATION->ShowHead();?>
 	<?$APPLICATION->AddHeadString('<script>BX.message('.CUtil::PhpToJSObject( $MESS, false ).')</script>', true);?>
-
+	<?if(!empty($_GET['PAGEN_1'])){
+		$APPLICATION->AddHeadString('<link rel="canonical" href="'.$APPLICATION->GetCurDir(false).'" />',true);
+	}?>
 	<?if($bIncludedModule)
 		CNext::Start(SITE_ID);
 	?>
