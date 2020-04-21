@@ -53,7 +53,7 @@ if($total_prod_count % $count_per_page != 0) {
 }
 
 $protocol = empty($_SERVER['HTTPS']) ? 'http' : 'https' ;
-$domainName = $protocol.'://'.$_SERVER['HTTP_HOST'];
+$domainName = $protocol.'://'.$_SERVER['SERVER_NAME'];
 
 #------------------------------------------------------------------------------------------------------------
 
@@ -167,7 +167,7 @@ function getProductList($iblock_id_) {
 function getXMLtags($array_, $link_, $page_num_='') {
 	global $count_per_page;
 
-	$max_id = count($array_);
+	$max_id = count($array_)-1;
 	$start_id = $count_per_page*$page_num_ - $count_per_page;
 	$end_id = ($count_per_page*$page_num_ < $max_id) ? ($count_per_page*$page_num_ - 1) : $max_id;
 
