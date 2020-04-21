@@ -20,7 +20,7 @@ $bIncludedModule = (\Bitrix\Main\Loader::includeModule("aspro.next"));?>
 	<?$APPLICATION->ShowHead();?>
 	<?$APPLICATION->AddHeadString('<script>BX.message('.CUtil::PhpToJSObject( $MESS, false ).')</script>', true);?>
 	<?if(!empty($_GET['PAGEN_1'])){
-		$APPLICATION->AddHeadString('<link rel="canonical" href="'.$APPLICATION->GetCurDir(false).'" />',true);
+		$APPLICATION->AddHeadString('<link rel="canonical" href="'.$protocol.$_SERVER["HTTP_HOST"].$APPLICATION->GetCurDir(false).'" />',true);
 	}?>
 	<?if($bIncludedModule)
 		CNext::Start(SITE_ID);
