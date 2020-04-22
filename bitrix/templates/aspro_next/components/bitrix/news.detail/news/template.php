@@ -189,7 +189,7 @@
 			"PAGER_TEMPLATE" => ".default",
 			"DISPLAY_TOP_PAGER" => "N",
 			"DISPLAY_BOTTOM_PAGER" => "Y",
-			"PAGER_TITLE" => "�������",
+			"PAGER_TITLE" => "Íîâîñòè",
 			"PAGER_SHOW_ALWAYS" => "N",
 			"PAGER_DESC_NUMBERING" => "N",
 			"PAGER_DESC_NUMBERING_CACHE_TIME" => "36000",
@@ -301,7 +301,13 @@
 									<ul class="slides items">	
 										<?foreach($arResult["GALLERY"] as $arPhoto):?>
 											<li class="item">
-												<img class="img-responsive inline" border="0" src="<?=$arPhoto["THUMB"]["src"]?>" title="<?=$arPhoto['TITLE']?>" alt="<?=$arPhoto['ALT']?>" />
+												<?if(strpos($arPhoto['DETAIL']['CONTENT_TYPE'], 'video') !== false) {?>
+													<video>
+														<source src="<?=$arPhoto["THUMB"]["src"]?>">
+													</video>
+												<?} else {?>
+													<img class="img-responsive inline" border="0" src="<?=$arPhoto["THUMB"]["src"]?>" title="<?=$arPhoto['TITLE']?>" alt="<?=$arPhoto['ALT']?>" />
+												<?}?>
 											</li>
 										<?endforeach;?>
 									</ul>
@@ -312,10 +318,18 @@
 							<ul class="slides items">
 								<?foreach($arResult['GALLERY'] as $i => $arPhoto):?>
 									<li class="col-md-12 item">
-										<a href="<?=$arPhoto['DETAIL']['SRC']?>" class="fancy" rel="gallery" target="_blank" title="<?=$arPhoto['TITLE']?>">
-											<img src="<?=$arPhoto['PREVIEW']['src']?>" class="img-responsive inline" title="<?=$arPhoto['TITLE']?>" alt="<?=$arPhoto['ALT']?>" />
-											<span class="zoom"></span>
-										</a>
+										<?if(strpos($arPhoto['DETAIL']['CONTENT_TYPE'], 'video') !== false) {?>
+											<video controls width="100%" height="100%">
+												<source src="<?=$arPhoto['DETAIL']['SRC']?>">
+												Элемент video не поддерживается вашим браузером.
+												<a href="<?=$arPhoto['DETAIL']['SRC']?>">Скачайте видео</a>.
+											</video>
+										<?} else {?>
+											<a href="<?=$arPhoto['DETAIL']['SRC']?>" class="fancy" rel="gallery" target="_blank" title="<?=$arPhoto['TITLE']?>">
+												<img src="<?=$arPhoto['PREVIEW']['src']?>" class="img-responsive inline" title="<?=$arPhoto['TITLE']?>" alt="<?=$arPhoto['ALT']?>" />
+												<span class="zoom"></span>
+											</a>
+										<?}?>
 									</li>
 								<?endforeach;?>
 							</ul>

@@ -1,6 +1,7 @@
 *{margin:0;padding:0}
 html{width:100%}
 header,nav,section,article,aside,footer{display:block}
+video{outline:none;}
 div[id^=wait_comp],.bx-core-waitwindow{display:none}
 .right_block ul,.right_block ol{margin:0 0 27px}
 .right_block ul li:before,.right_block ol li:before{padding:0;margin-left:0;width:20px;display:inline-block;vertical-align:top;*display:inline;zoom:1;position:absolute;top:0;left:0}
