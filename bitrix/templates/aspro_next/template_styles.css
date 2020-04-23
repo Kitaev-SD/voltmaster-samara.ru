@@ -98,6 +98,14 @@ form label{font-weight:400}
 #content .right_block.catalog .catalog_list,#content .right_block.catalog .catalog_table{left:0;right:-20px;position:relative;zoom:1}
 #content .right_block.catalog .catalog_block{margin-top:20px}
 #content .right_block.catalog .catalog_section_list{margin-left:11px}
+
+.catalog_block.items.block_list .fast_view_block {text-indent: -9999px;width: 43px;top: 20px;right: 40px;left: unset;}
+.catalog_block.items.block_list .fast_view_block:before {content: "";opacity: .5;position: absolute;left: 12px;top: 50%;margin-top: -8px;width: 17px;height: 16px;background: url(/bitrix/templates/aspro_next/images/next.png) -290px -304px no-repeat;}
+.catalog_table.module_products_list .fast_view_block{background:none;width:35px!important;height:35px!important;left:unset!important;right:5px!important;top:50%!important;transform:translateY(-50%)!important;}
+.catalog_table.module_products_list .fast_view_block:before{top:18px;left:50%;right:unset;bottom:unset;transform:translateX(-50%);}
+.catalog_block.items.block_list .fast_view_block:hover::before, .catalog_table.module_products_list .fast_view_block:hover::before {opacity:1;transition:0.25s;}
+
+
 .clearfix{clear:both}
 .alert-danger{background:#fee;color:#e83333}
 .alert.alert-success{background:#e6f8de;color:#419a19}
@@ -1846,7 +1854,7 @@ body .tabs_slider .catalog_item:hover .inner_wrap{border-color:#fff;box-shadow:0
 .with_fast_view .list_item .fast_view_block{position:relative;margin:0 auto;left:0;top:0;padding:0 14px 0 36px;width:auto}
 .with_fast_view .list_item .fast_view_block:before,.icons.fast_view_block:before{content:"";opacity:.5;position:absolute;left:12px;top:50%;margin-top:-8px;width:17px;height:16px;background:url(images/next.png) -290px -304px no-repeat}
 .icons.fast_view_block{font-size:0;width:50px;height:50px}
-.with_fast_view .module_products_list .icons.fast_view_block{width:40px;height:40px;margin:0;top:5px;left:5px}
+.with_fast_view .module_products_list .icons.fast_view_block{margin:0;background:none;width: 35px !important;height: 35px !important;left: unset !important;right: 5px !important;top: 50% !important;transform: translateY(-50%) !important;}
 .similar_products_wrapp .content_inner.tab{overflow:hidden}
 .wrapper_block .top_block{margin-bottom:30px}
 .recomendation.wrapper_block .top_block{border-top:1px solid #f2f2f2;margin-bottom:10px;padding-top:32px}
@@ -3046,7 +3054,7 @@ body .bx_catalog_item_scu .bx_item_detail_scu ul li.active .cnt1.nf .bg,body .bx
 .catalog_block .view_sale_block{width:178px;margin-left:auto;margin-right:auto}
 .catalog_block .catalog_item_wrapp.item{margin-bottom:-1px}
 .wproduct .item-stock>span{font-size:13px}
-.module_products_list .foto-cell .image_wrapper_block,.module_products_list .foto-cell .image_wrapper_block a{width:50px;min-width:30px;height:50px;line-height:50px;position:relative}
+.module_products_list .foto-cell .image_wrapper_block,.module_products_list .foto-cell .image_wrapper_block a{width:50px;min-width:30px;height:50px;line-height:50px;/*position:relative*/}
 .module_products_list .cost.prices .price.discount{margin:0;vertical-align:text-top;position:relative;top:-1px}
 .module_products_list .counter_wrapp{padding:0;white-space:nowrap}
 .table .module_products_list .counter_wrapp{white-space:normal}
@@ -3215,7 +3223,7 @@ body #reviews_content{margin-top:-12px}
 .logo-row.wproduct>div.product_block .module_products_list .inner_table>tbody>tr>td{padding:15px 0}
 .logo-row.wproduct>div.product_block .module_products_list .zoom{display:none}
 .logo-row.wproduct>div.product_block .module_products_list .foto-cell img{max-height:100%}
-.logo-row.wproduct>div.product_block .module_products_list tr.item{border:none}
+.logo-row.wproduct>div.product_block .module_products_list tr.item{border:none;position:relative;}
 .logo-row.wproduct>div.product_block .module_products_list tr.item:hover{box-shadow:none}
 .logo-row.wproduct>div.product_block .module_products_list tr.item .like_icons span{margin-bottom:0}
 .logo-row.wproduct>div.product_block .like_icons .wish_item.added,.logo-row.wproduct>div.product_block .like_icons .compare_item.added{background:none}

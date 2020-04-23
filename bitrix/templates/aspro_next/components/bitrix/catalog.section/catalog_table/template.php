@@ -6,7 +6,7 @@
 	#------------- РЕЛЕВАНТНАЯ СОРТИРОВКА ТОВАРОВ END -----------------------------------------------------------
 	$arParams["BASKET_ITEMS"]=($arParams["BASKET_ITEMS"] ? $arParams["BASKET_ITEMS"] : array());?>
 	<?if($arParams["AJAX_REQUEST"]=="N"){?>
-	<table class="module_products_list">
+	<table class="module_products_list catalog_table">
 		<tbody>
 	<?}?>
 		<?$currencyList = '';
