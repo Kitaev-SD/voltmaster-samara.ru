@@ -30,9 +30,7 @@ foreach (getCategoryList($iblock_id) as $section_id) {
 	if(!$item) {
 		addItemHLB($entity_data_class, $section_id, $element_count);
 	} else {
-		if(intval($item['ELM_COUNT']) != $element_count) {
-			setItemHLB($entity_data_class, $item['ID'], $section_id, $element_count);
-		}
+		setItemHLB($entity_data_class, $item['ID'], $section_id, $element_count);
 	}
 }
 
