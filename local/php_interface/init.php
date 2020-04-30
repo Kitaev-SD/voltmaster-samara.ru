@@ -49,6 +49,32 @@ function BeforeIndexHandler($arFields) {
 	return $arFields;
 }
 #-----------------------------------------------------------------------
+// AddEventHandler("main", "OnEndBufferContent", "OnEndBufferContentHandler");
+// function OnEndBufferContentHandler($content)
+// {
+//    global $APPLICATION, $USER;
+//    $url = $APPLICATION->GetCurUri();
+//    if(!substr_count($url,"/bitrix/") && substr_count($content,"</body>") && !$USER->IsAdmin()){
+//        $hashUrl = hash('md5',$url);
+//        $sliCont = substr($content,0,strpos($content,"</body>")+7);
+//        $sliCont = substr($sliCont,strpos($sliCont,"<body>"));
+//        $hashContent = hash('md5',$sliCont);
+//        $hashArr = ["time" => time(), "hash" => $hashContent];
+//        if(file_exists($_SERVER["DOCUMENT_ROOT"]."/upload/page_hash/".$hashUrl.".txt")){
+//            $lastArr = json_decode(file_get_contents($_SERVER["DOCUMENT_ROOT"]."/upload/page_hash/".$hashUrl.".txt"),true);
+//            if(is_array($lastArr) && $lastArr["hash"] && $lastArr["hash"]==$hashArr["hash"]){
+//                $lastModified =  gmdate("D, d M Y H:i:s \G\M\T", $lastArr["time"]);
+//                header("Cache-Control: public");
+//                header('Last-Modified: '.$lastModified);
+//                if(isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) && strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) >= $lastArr["time"]){
+//                    header('HTTP/1.1 304 Not Modified'); exit();
+//                }
+//            }
+//        }
+//        if(!$lastModified)file_put_contents($_SERVER["DOCUMENT_ROOT"]."/upload/page_hash/".$hashUrl.".txt", json_encode($hashArr));
+//    }
+// }
+#-----------------------------------------------------------------------
 
 #-----------------------------------------------------------------------
 # AddEventHandler(“sale”, OnBeforeOrderAdd, “OrderAddHandler”);

@@ -14,7 +14,7 @@
 		"BROWSER_TITLE" => "-",
 		"CACHE_FILTER" => "Y",
 		"CACHE_GROUPS" => "N",
-		"CACHE_TIME" => "36000000",
+		"CACHE_TIME" => "3600",
 		"CACHE_TYPE" => "A",
 		"CONVERT_CURRENCY" => "N",
 		"DETAIL_URL" => "",
