@@ -49,6 +49,25 @@ function BeforeIndexHandler($arFields) {
 	return $arFields;
 }
 #-----------------------------------------------------------------------
+# Перед отправкой почтового шаблона (почт шабл # 42 Изменение статуса заказа на "Выполнен") 
+# проверяем способа отгрузки «Самовывоз» или иной способ отгрузки  
+AddEventHandler("main", "OnBeforeEventAdd", "OnBeforeEventAddHandler");
+function OnBeforeEventAddHandler(&$event, &$lid, &$arFields) {
+	if ($event=='SALE_STATUS_CHANGED_F') { 
+		$arOrder = CSaleOrder::GetByID($arFields['ORDER_ID']);
+		$arDelivery = CSaleDelivery::GetByID($arOrder['DELIVERY_ID']);
+
+	    if($arDelivery['ID'] == 3) {	# Самовывоз
+	    	$arFields['ORDER_CONTENT'].= 'Новый статус заказа: Выполнен.<br>';
+	    } else {
+	    	$arFields['ORDER_CONTENT'].= 'Новый статус заказа: Передан на отгрузку.<br>';
+	    	$arFields['ORDER_CONTENT'].= 'Информацию по отслеживанию вы получите в отдельном письме.<br>';
+	    }
+
+	    $arFields['ORDER_CONTENT'].= 'Спасибо что выбрали наш магазин.<br>';
+	}
+}
+#-----------------------------------------------------------------------
 // AddEventHandler("main", "OnEndBufferContent", "OnEndBufferContentHandler");
 // function OnEndBufferContentHandler($content)
 // {
