@@ -2431,9 +2431,9 @@ class CSaleOrderLoader
 								{
 									if($order->isShipped())
 									{
-										if(strlen($this->arParams["FINAL_STATUS_ON_DELIVERY"])>0 &&
-											$order->getField("STATUS_ID") != "F" &&
-											$order->getField("STATUS_ID") != $this->arParams["FINAL_STATUS_ON_DELIVERY"]
+										if(strlen($this->arParams["FINAL_STATUS_ON_DELIVERY"])>0
+											// && $order->getField("STATUS_ID") != "F"
+											// && $order->getField("STATUS_ID") != $this->arParams["FINAL_STATUS_ON_DELIVERY"]
 										)
 										{
 											$order->setField("STATUS_ID", $this->arParams["FINAL_STATUS_ON_DELIVERY"]);
