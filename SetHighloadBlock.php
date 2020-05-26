@@ -81,7 +81,7 @@ function isExistInHighload($arrListHLB_, $section_id_){
 		if($line['SECTION_ID'] == $section_id_){
 			$item = [
 					'ID' => $line['ID'],
-					'ELM_COUNT' => $line['UF_ELEMENT_COUNT']
+					'ELM_COUNT' => $line['ELEMENT_COUNT']
 				];
 			break;
 		}
