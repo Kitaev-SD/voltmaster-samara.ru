@@ -1,6 +1,6 @@
 <?if(!defined("B_PROLOG_INCLUDED") || B_PROLOG_INCLUDED!==true) die();?>
 <?global $USER, $arTheme;?>
-<?$bParent = $arResult && $USER->IsAuthorized();?>
+<?$bParent = $arResult?>
 <?$this->setFrameMode(true);?>
 <!-- noindex -->
 <div class="menu middle">

@@ -397,9 +397,9 @@
 		<td colspan="2" width="100%" bgcolor="#f7f7f7" style="max-width:850px; border:none; padding:10px 0; padding-left:20px;">
 			<p style="max-width:850px; line-height:20px;margin-top:0">
 				<span style="max-width:850px; background-color: #d1d1d1;">Для получения подробной информации по заказу пройдите на сайт&nbsp;</span>
-				<a href="https://<?=$_SERVER['HTTP_HOST']?><?=$arParams['PATH_TO_LIST']?><?=$arResult['ACCOUNT_NUMBER']?>" style="max-width:850px; background-color: #d1d1d1;">
-					https://www.voltmaster-samara.ru<?=$arParams['PATH_TO_LIST']?><?=$arResult['ACCOUNT_NUMBER']?></a>
-
+				<a href="https://www.voltmaster-samara.ru<?=$arParams['PATH_TO_LIST']?><?=$arResult['ACCOUNT_NUMBER']?>" style="max-width:850px; background-color: #d1d1d1;">
+					https://www.voltmaster-samara.ru<?=$arParams['PATH_TO_LIST']?><?=$arResult['ACCOUNT_NUMBER']?>
+				</a>
 				<br>
 				Спасибо за покупку!
 			</p>
