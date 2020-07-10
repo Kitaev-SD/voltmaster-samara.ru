@@ -132,7 +132,7 @@ echo "\n Продолжительность выполнения скрипта:
 #---------- Получение списка заказов --------------------------------------------------------------
 function getOrdersData(){
 	$arOrders = [];
-	$arFilter = Array(">ID" => 2416);
+	$arFilter = Array(">ID" => 3000);
 	$orders = CSaleOrder::GetList(array(),$arFilter,false,false,array(),array());
 
 	foreach ($orders->arResult as $order) {
