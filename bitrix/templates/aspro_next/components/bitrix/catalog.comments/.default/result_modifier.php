@@ -26,5 +26,4 @@ if ($arParams['TEMPLATE_THEME'] !== '')
 }
 if ($arParams['TEMPLATE_THEME'] == '')
 	$arParams['TEMPLATE_THEME'] = 'blue';
-
 ?>

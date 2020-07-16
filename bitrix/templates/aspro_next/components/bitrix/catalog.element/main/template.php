@@ -598,7 +598,7 @@ setViewedProduct(<?=$arResult['ID']?>, <?=CUtil::PhpToJSObject($arViewedData, fa
                                     <?
                                 }
 
-                                //var_dump(  $arResult["CUR_DISCONTS"] );
+                                
 
                                 ?> </div>
 
@@ -707,7 +707,7 @@ setViewedProduct(<?=$arResult['ID']?>, <?=CUtil::PhpToJSObject($arViewedData, fa
 								$('.catalog_detail input[data-sid="PRODUCT_NAME"]').attr('value', $('h1').text());
 							});
 						</script>
-						<div class="counter_wrapp 1111111111111">
+						<div class="counter_wrapp">
 							<?if(($arAddToBasketData["OPTIONS"]["USE_PRODUCT_QUANTITY_DETAIL"] && $arAddToBasketData["ACTION"] == "ADD") && $arAddToBasketData["CAN_BUY"]):?>
 								<div class="counter_block big_basket" data-offers="<?=($arResult["OFFERS"] ? "Y" : "N");?>" data-item="<?=$arResult["ID"];?>" <?=(($arResult["OFFERS"] && $arParams["TYPE_SKU"]=="N") ? "style='display: none;'" : "");?>>
 									<span class="minus" id="<? echo $arItemIDs["ALL_ITEM_IDS"]['QUANTITY_DOWN']; ?>">-</span>
@@ -1842,10 +1842,51 @@ setViewedProduct(<?=$arResult['ID']?>, <?=CUtil::PhpToJSObject($arViewedData, fa
 
 			<?if($arParams["SHOW_ADDITIONAL_TAB"] == "Y"):?>
 				<div class="tab-pane additional_block<?=(!($iTab++) ? ' active' : '')?>" id="dops">
-					<div class="title-tab-heading visible-xs"><?=($arParams["TAB_DOPS_NAME"] ? $arParams["TAB_DOPS_NAME"] : GetMessage("ADDITIONAL_TAB"));?></div>
-					<div>
-					<?$APPLICATION->IncludeFile(SITE_DIR."include/additional_products_description.php", array(), array("MODE" => "html", "NAME" => GetMessage('CT_BCE_CATALOG_ADDITIONAL_DESCRIPTION')));?>
-					</div>
+					
+
+					<?if (true){?>
+						<div class="product-item-detail-tab-content" data-entity="tab-container" data-value="comments">
+							<? $componentCommentsParams = array(
+								'ELEMENT_ID' => $arResult['ID'],
+								'ELEMENT_CODE' => '',
+								'IBLOCK_ID' => $arParams['IBLOCK_ID'],
+								"IBLOCK_TYPE" => "books",
+								'SHOW_DEACTIVATED' => $arParams['SHOW_DEACTIVATED'],
+								'URL_TO_COMMENT' => '',
+								'WIDTH' => '',
+								'COMMENTS_COUNT' => '5',
+								'BLOG_USE' => 'Y',
+								'FB_USE' => 'N',
+								'VK_USE' => 'N',
+								"CACHE_TYPE" => "A",
+								"CACHE_TIME" => "0",
+								'CACHE_GROUPS' => $arParams['CACHE_GROUPS'],
+								'BLOG_TITLE' => 'Задать вопрос',
+								'BLOG_URL' => 'catalog_comments',
+								// 'PATH_TO_SMILE' => '',
+								'EMAIL_NOTIFY' => "Y",
+								'AJAX_POST' => 'Y',
+								'SHOW_SPAM' => 'Y',
+								'SHOW_RATING' => 'Y',
+								'TEMPLATE_THEME' => "blue"
+							);
+							if(isset($arParams["USER_CONSENT"]))
+								$componentCommentsParams["USER_CONSENT"] = $arParams["USER_CONSENT"];
+							if(isset($arParams["USER_CONSENT_ID"]))
+								$componentCommentsParams["USER_CONSENT_ID"] = $arParams["USER_CONSENT_ID"];
+							if(isset($arParams["USER_CONSENT_IS_CHECKED"]))
+								$componentCommentsParams["USER_CONSENT_IS_CHECKED"] = $arParams["USER_CONSENT_IS_CHECKED"];
+							if(isset($arParams["USER_CONSENT_IS_LOADED"]))
+								$componentCommentsParams["USER_CONSENT_IS_LOADED"] = $arParams["USER_CONSENT_IS_LOADED"];
+							$APPLICATION->IncludeComponent(
+								'bitrix:catalog.comments',
+								'',
+								$componentCommentsParams,
+								$component,
+								array('HIDE_ICONS' => 'Y')
+							); ?>
+						</div>
+					<?}?>
 				</div>
 			<?endif;?>
 			<?if($arParams["USE_REVIEW"] == "Y"):?>

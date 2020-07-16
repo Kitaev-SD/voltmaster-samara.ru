@@ -8,16 +8,13 @@ if(CModule::IncludeModule("fileman"))
 	var arImagesId = Array();
 	<?
 	$i = 0;
-	if($arResult["Images"])
+	foreach($arResult["Images"] as $aImg)
 	{
-		foreach($arResult["Images"] as $aImg)
-		{
-			?>
-			arImages['<?=$i?>'] = '<?=CUtil::JSEscape($aImg["SRC"])?>';
-			arImagesId['<?=$i?>'] = '<?=$aImg["ID"]?>';
-			<?
-			$i++;
-		}
+		?>
+		arImages['<?=$i?>'] = '<?=CUtil::JSEscape($aImg["SRC"])?>';
+		arImagesId['<?=$i?>'] = '<?=$aImg["ID"]?>';
+		<?
+		$i++;
 	}
 	?>
 	</script>
@@ -345,7 +342,7 @@ if(CModule::IncludeModule("fileman"))
 		{
 			$arSmiles[] = array(
 				'name' => $arSmile["~LANG_NAME"],
-				'path' => $arSmile["IMAGE"],
+				'path' => "/bitrix/images/blog/smile/".$arSmile["IMAGE"],
 				'code' => str_replace("\\\\","\\",$arSmile["TYPE"]),
 				'codes' => str_replace("\\\\","\\",$arSmile["TYPING"])
 			);

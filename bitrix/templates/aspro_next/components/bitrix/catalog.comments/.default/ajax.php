@@ -6,11 +6,10 @@ define("NOT_CHECK_PERMISSIONS", true);
 
 if (isset($_REQUEST['SITE_ID']) && !empty($_REQUEST['SITE_ID']))
 {
-	$site_id = htmlspecialchars($_REQUEST['SITE_ID'], ENT_COMPAT, (defined("BX_UTF")? "UTF-8" : "ISO-8859-1"));
-	if (!is_string($site_id))
+	if (!is_string($_REQUEST['SITE_ID']))
 		die();
-	if (preg_match('/^[a-z0-9_]{2}$/i', $site_id) === 1)
-		define('SITE_ID', $site_id);
+	if (preg_match('/^[a-z0-9_]{2}$/i', $_REQUEST['SITE_ID']) === 1)
+		define('SITE_ID', $_REQUEST['SITE_ID']);
 }
 else
 {
@@ -41,11 +40,12 @@ if (check_bitrix_sessid())
 	{
 		$APPLICATION->IncludeComponent(
 			'bitrix:catalog.comments',
-			'main',
+			'.default',
 			$commParams,
 			null,
 			array('HIDE_ICONS' => 'Y')
 		);
 	}
 }
+CMain::FinalActions();
 die();

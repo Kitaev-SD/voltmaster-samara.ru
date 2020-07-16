@@ -4,7 +4,7 @@ $MESS["B_B_MS_REPLY"] = "Ответить";
 $MESS["B_B_MS_PARENT"] = "Родитель";
 $MESS["B_B_MS_LINK"] = "Ссылка";
 $MESS["B_B_MS_NAME"] = "Ваше имя";
-$MESS["B_B_MS_CAPTCHA_SYM"] = "Введите код";
+$MESS["B_B_MS_CAPTCHA_SYM"] = "Код подтверждения (символы на картинке)";
 $MESS["B_B_MS_SEND"] = "Отправить";
 $MESS["B_B_MS_SAVE"] = "Сохранить";
 $MESS["B_B_MS_ADD_COMMENT"] = "Добавить комментарий";
@@ -52,8 +52,5 @@ $MESS["BLOG_P_IMAGE_UPLOAD"] = "Загрузка изображения";
 $MESS["BLOG_PHOTO"] = "Фото:";
 $MESS["MPF_IMAGE_TITLE"] = "Вставить изображение в сообщение";
 $MESS["BLOG_ADD_FILES"] = "Добавить файлы";
-$MESS["REFRESH"] = "Поменять картинку";
-
-$MESS["LIKE"] = "Нравится";
-$MESS["DISLIKE"] = "Не нравится";
+$MESS["BPC_ERROR_NO_TEXT"] = "Вы должны ввести текст сообщения";
 ?>
