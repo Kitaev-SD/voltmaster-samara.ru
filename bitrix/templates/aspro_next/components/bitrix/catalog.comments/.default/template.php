@@ -150,7 +150,7 @@ if (!$templateData['BLOG']['BLOG_FROM_AJAX'])
 			{
 				$id = $templateData['TABS_ID'].$tabId;
 				$tabActive = (isset($arTab["ACTIVE"]) && $arTab["ACTIVE"] == "Y");
-				?><li id="<?=$id?>"><span><?=$arTab["NAME"]?></span></li><?
+				?><li id="<?=$id?>"></li><?
 				if($tabActive || $activeTabId == "")
 					$activeTabId = $tabId;
 

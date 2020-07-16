@@ -24,6 +24,15 @@
 	font-size: 14px;
 }
 
+.bx_soc_comments_div .bx-catalog-tab-list {
+	border: none !important;
+	margin:0!important;
+}
+
+.catalog_detail .tabs>.tab-content>.tab-pane {
+	padding: 0!important;
+}
+
 div.blog-comment-form {width: 100% !important;}
 
 div.blog-comment .blog-author {
