@@ -46,7 +46,7 @@ if (isset($templateData['BLOG_USE']) && $templateData['BLOG_USE'] == 'Y')
 		if(isset($arParams["USER_CONSENT_IS_LOADED"]))
 			$arBlogCommentParams["USER_CONSENT_IS_LOADED"] = $arParams["USER_CONSENT_IS_LOADED"];
 		$APPLICATION->IncludeComponent(
-			'bitrix:blog.post.comment',
+			'liderpoiska:blog.post.comment',
 			'adapt',
 			$arBlogCommentParams,
 			$this,
