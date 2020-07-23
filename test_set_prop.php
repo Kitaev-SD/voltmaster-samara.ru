@@ -1,8 +1,8 @@
 <?php
+exit;
 # 0 0 * * 0 /usr/bin/php -f /var/www/voltmaster-samara.ru/test_set_prop.php &>> /var/www/voltmaster-samara.ru/test_set_prop.log &
 $iblock_id = 28; 		# ID инфоблока
-echo 'стоит EXIT';
-exit;
+
 $startTime = microtime(true);
 $_SERVER["DOCUMENT_ROOT"] = "/home/bitrix/www";
 require($_SERVER["DOCUMENT_ROOT"]."/bitrix/modules/main/include/prolog_before.php");
