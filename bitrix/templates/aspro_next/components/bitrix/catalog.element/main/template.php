@@ -1861,7 +1861,7 @@ setViewedProduct(<?=$arResult['ID']?>, <?=CUtil::PhpToJSObject($arViewedData, fa
 								"CACHE_TYPE" => "A",
 								"CACHE_TIME" => "0",
 								'CACHE_GROUPS' => $arParams['CACHE_GROUPS'],
-								'BLOG_TITLE' => 'Задать вопрос',
+								'BLOG_TITLE' => 'Вопросы и ответы',
 								'BLOG_URL' => 'catalog_comments',
 								// 'PATH_TO_SMILE' => '',
 								'EMAIL_NOTIFY' => "Y",

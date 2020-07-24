@@ -54,6 +54,10 @@ div.blog-comment-buttons input {
     padding: 10px 0 0 0;
 }
 
+.tabs .nav-tabs li.active a {
+	color: #222!important;
+}
+
 @media (max-width:540px){
 	.bx_soc_comments_div .bx-catalog-tab-list li a{
 		font-size:11px;
