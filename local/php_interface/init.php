@@ -78,19 +78,27 @@ function onAfterMessageAddHandler ($id, $arFields) {
 	$arFieldsSend['LOGIN'] = $arFields['LOGIN'];
 	$arFieldsSend['EMAIL'] = $arFields['EMAIL'];
 	$arFieldsSend['XML_ID'] = $arFields['XML_ID'];
-	$arFieldsSend['ATTACH_IMG'] = (!empty($arFields['ATTACH_IMG'])) ? CFile::GetPath($arFields['ATTACH_IMG']) : $arFields['ATTACH_IMG'];
+	$arFieldsSend['ATTACH_IMG'] = $arFields['ATTACH_IMG'];
 	$arFieldsSend['PERSONAL_PHOTO'] = $arFields['PERSONAL_PHOTO'];
 	$arFieldsSend['COMMENT_DATE'] = (!empty($arFields['POST_DATE'])) ? $arFields['POST_DATE'] : $arFields['EDIT_DATE'];
 	$arFieldsSend['COMMENT_TEXT'] = (!empty($arFields['POST_MESSAGE_HTML'])) ? $arFields['POST_MESSAGE_HTML'] : $arFields['POST_MESSAGE'];
+	$arFieldsSend['BCC'] = COption::GetOptionString('main','all_bcc');
+
+
+	#------ Debug block --------------------------------------
+	 //    $file = '/home/bitrix/www/test_111.txt';
+	 //    $output = $arFieldsSend['ATTACH_IMG'];
+		// file_put_contents($file, $output, LOCK_EX);
+	#------ Debug block END ----------------------------------
 
 	if(!empty($arFields)) {
-		CEvent::Send(
+		CEvent::Send(	#SendImmediate
 			'NEW_BLOG_COMMENT_WITHOUT_TITLE',	# идентификатор типа почтового события.
 			's1',								# идентификатор  сайта
 			$arFieldsSend,						# массив полей
 			"N",								# копия письма на адрес в настройках главного модуля. По умолчанию "Y"
 			54,									# почтовый шаблон [TRIGGER_EMAIL] Триггерная рассылка
-			$arFieldsSend['ATTACH_IMG'],		# массив id-ков файлов которые используются классом CFile 
+			array($arFieldsSend['ATTACH_IMG']),	# массив id-ков файлов которые используются классом CFile 
 			20									# language_id
 		);
 
@@ -98,6 +106,8 @@ function onAfterMessageAddHandler ($id, $arFields) {
 	} else {
 		return false;
 	}
+
+	
 }
 
 #-----------------------------------------------------------------------
