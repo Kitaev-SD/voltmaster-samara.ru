@@ -1,127 +1,27 @@
-form.comments-form {
-	padding : 0;
-	margin : 0;
-}
-.faq_wrap form.comments-form .feed-add-post-buttons {
-	display : block!important;
-	padding-left: 0;
-	bottom: -37px;
-}
-
-.faq_wrap form.comments-form .feed-add-post-buttons .ui-btn.ui-btn-sm.ui-btn-primary {
-	color: #555;
-	background-color: #fff;
-	border: none; 
-}
-
-.feed-com-block-outer .feed-com-block-menu{
-	display: none;
-}
-.feed-com-block-outer:hover .feed-com-block-menu{
-	display: block!important;
-}
-form.comments-form .feed-add-post-micro {
-	display : none !important;
-}
-div.comments-post-hidden {
-	border: 1px solid red;
-}
-.feed-com-block-outer {
-	position: relative;
-}
-
-.faq_wrap .feed-com-main-content,
-.faq_wrap .feed-com-add-box {
-	border-radius: 4px;
-}
-
-.faq_wrap .feed-com-informers-bottom {
-	margin-top: 3px;
-}
-
-
-.faq_wrap .feed-com-add-box-outer {
-	background-color: #ffcb00;
-	padding-bottom: 3px;
-	box-sizing: border-box;
-}
-
-
-.faq_wrap .feed-com-add-box {
-
-}
-
-.faq_wrap .comments-reply-field.comments-reply-field-author label {
-	font-weight: 400;
-	font: 15px/24px "Open Sans",Arial,sans-serif;
-	color: rgb(85, 85, 85);
-}
-
-.faq_wrap .comments-reply-field.comments-reply-field-author label .comments-required-field {
-	color: red;
-}
-
-.faq_wrap .comments-reply-field.comments-reply-field-author span input {
-	border: none;
-	background-color: #fff;
-}
-
-.faq_wrap .feed-comments-block-editor-shown .feed-com-add-box, .faq_wrap .feed-com-add-box:hover {
-	border: none;
-}
-
-.faq_wrap .feed-add-post-text {
-	background-color: #fff;
-}
-
-.faq_wrap .comments-reply-fields {
-	margin-bottom: 20px;
-}
-
-.faq_wrap .feed-com-add-block {
-	border-radius: 0;
-}
-
-.faq_wrap .feed-com-add-block .feed-add-post-form-but-wrap {
-	background-color: #fff !important;
-}
-
-.faq_wrap .comments-reply-field.comments-reply-field-captcha {
-	margin-top: 10px;
-	display: flex;
-	flex-direction: column;
-}
-
-.faq_wrap .comments-reply-field-captcha-label {
-	display: flex;
-	flex-direction: row;
-}
-
-.faq_wrap .comments-reply-field-captcha-label input {
-	width: 180px;
-	margin-right: 20px;
-	border: none;
-	background-color: #fff;
-}
-
-.faq_wrap .feed-add-error .feed-add-info-text {
-	color: red;
-}
-.faq_wrap .feed-com-add-link {
-	background-color: #fff;
-	border: none;
-	color: #383838;
-}
-
-.faq_wrap .feed-com-add-link:hover {
-	border:none;
-	color: #383838;
-}
-
-.faq_wrap .blog-comment-edit.feed-com-add-block.blog-post-edit.feed-com-add-box {
-	background-color: #ffcb00;
-}
-
-.faq_wrap .feed-com-block-outer .feed-com-informers-bottom .feed-com-reply {
-	margin: 8px 13px 0 0;
-}
+form.comments-form{padding:0;margin:0}
+.faq_wrap form.comments-form .feed-add-post-buttons{display:block!important;padding-left:0;bottom:-37px}
+.faq_wrap form.comments-form .feed-add-post-buttons .ui-btn.ui-btn-sm.ui-btn-primary{color:#555;background-color:#fff;border:none}
+.feed-com-block-outer .feed-com-block-menu{display:none}
+.feed-com-block-outer:hover .feed-com-block-menu{display:block!important}
+form.comments-form .feed-add-post-micro{display:none!important}
+div.comments-post-hidden{border:1px solid red}
+.feed-com-block-outer{position:relative}
+.faq_wrap .feed-com-main-content,.faq_wrap .feed-com-add-box{border-radius:4px}
+.faq_wrap .feed-com-informers-bottom{margin-top:3px}
+.faq_wrap .feed-com-add-box-outer{background-color:#ffcb00;padding-bottom:3px;box-sizing:border-box}
+.faq_wrap .comments-reply-field.comments-reply-field-author label{font-weight:400;font:15px/24px "Open Sans",Arial,sans-serif;color:#555}
+.faq_wrap .comments-reply-field.comments-reply-field-author label .comments-required-field{color:red}
+.faq_wrap .comments-reply-field.comments-reply-field-author span input{border:none;background-color:#fff}
+.faq_wrap .feed-comments-block-editor-shown .feed-com-add-box,.faq_wrap .feed-com-add-box:hover{border:none}
+.faq_wrap .feed-add-post-text{background-color:#fff}
+.faq_wrap .comments-reply-fields{margin-bottom:20px}
+.faq_wrap .feed-com-add-block{border-radius:0}
+.faq_wrap .feed-com-add-block .feed-add-post-form-but-wrap{background-color:#fff!important}
+.faq_wrap .comments-reply-field.comments-reply-field-captcha{margin-top:10px;display:flex;flex-direction:column}
+.faq_wrap .comments-reply-field-captcha-label{display:flex;flex-direction:row}
+.faq_wrap .comments-reply-field-captcha-label input{width:180px;margin-right:20px;border:none;background-color:#fff}
+.faq_wrap .feed-add-error .feed-add-info-text{color:red}
+.faq_wrap .feed-com-add-link{background-color:#fff;border:none;color:#383838}
+.faq_wrap .feed-com-add-link:hover{border:none;color:#383838}
+.faq_wrap .blog-comment-edit.feed-com-add-block.blog-post-edit.feed-com-add-box{background-color:#ffcb00}
+.faq_wrap .feed-com-block-outer .feed-com-informers-bottom .feed-com-reply{margin:8px 13px 0 0}
