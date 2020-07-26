@@ -90,7 +90,7 @@ function onAfterMessageAddHandler ($id, $arFields) {
 			$arFieldsSend,						# массив полей
 			"N",								# копия письма на адрес в настройках главного модуля. По умолчанию "Y"
 			54,									# почтовый шаблон [TRIGGER_EMAIL] Триггерная рассылка
-			$arFieldsSend['ATTACH_IMG']			# массив id-ков файлов которые используются классом CFile 
+			$arFieldsSend['ATTACH_IMG'],		# массив id-ков файлов которые используются классом CFile 
 			20									# language_id
 		);
 
