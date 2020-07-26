@@ -68,6 +68,40 @@ function OnBeforeEventAddHandler(&$event, &$lid, &$arFields) {
 	}
 }
 #-----------------------------------------------------------------------
+# Вопросы и ответы (/info/faq/)
+AddEventHandler("forum", "onAfterMessageAdd", "onAfterMessageAddHandler");
+
+function onAfterMessageAddHandler ($id, $arFields) {
+	$arFieldsSend = [];
+	$arFieldsSend['AUTHOR'] = (!empty($arFields['AUTHOR_NAME'])) ? $arFields['AUTHOR_NAME'] : $arFields['SECOND_NAME'].' '.$arFields['LAST_NAME'];
+	$arFieldsSend['AUTHOR_EMAIL'] = $arFields['AUTHOR_EMAIL'];
+	$arFieldsSend['LOGIN'] = $arFields['LOGIN'];
+	$arFieldsSend['EMAIL'] = $arFields['EMAIL'];
+	$arFieldsSend['XML_ID'] = $arFields['XML_ID'];
+	$arFieldsSend['ATTACH_IMG'] = (!empty($arFields['ATTACH_IMG'])) ? CFile::GetPath($arFields['ATTACH_IMG']) : $arFields['ATTACH_IMG'];
+	$arFieldsSend['PERSONAL_PHOTO'] = $arFields['PERSONAL_PHOTO'];
+	$arFieldsSend['COMMENT_DATE'] = (!empty($arFields['POST_DATE'])) ? $arFields['POST_DATE'] : $arFields['EDIT_DATE'];
+	$arFieldsSend['COMMENT_TEXT'] = (!empty($arFields['POST_MESSAGE_HTML'])) ? $arFields['POST_MESSAGE_HTML'] : $arFields['POST_MESSAGE'];
+
+	if(!empty($arFields)) {
+		CEvent::Send(
+			'NEW_BLOG_COMMENT_WITHOUT_TITLE',	# идентификатор типа почтового события.
+			's1',								# идентификатор  сайта
+			$arFieldsSend,						# массив полей
+			"N",								# копия письма на адрес в настройках главного модуля. По умолчанию "Y"
+			54,									# почтовый шаблон [TRIGGER_EMAIL] Триггерная рассылка
+			$arFieldsSend['ATTACH_IMG']			# массив id-ков файлов которые используются классом CFile 
+			20									# language_id
+		);
+
+		return true;
+	} else {
+		return false;
+	}
+}
+
+#-----------------------------------------------------------------------
+
 // AddEventHandler("main", "OnEndBufferContent", "OnEndBufferContentHandler");
 // function OnEndBufferContentHandler($content)
 // {
