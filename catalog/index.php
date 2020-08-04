@@ -497,7 +497,7 @@ $APPLICATION->IncludeComponent(
 		"TAB_REVIEW_NAME" => "",
 		"TAB_FAQ_NAME" => "",
 		"TAB_STOCK_NAME" => "",
-		"TAB_DOPS_NAME" => "Задать вопрос",
+		"TAB_DOPS_NAME" => "Вопросы и ответы",
 		"BLOCK_SERVICES_NAME" => "",
 		"BLOCK_DOCS_NAME" => "",
 		"CHEAPER_FORM_NAME" => "",
