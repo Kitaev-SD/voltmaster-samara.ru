@@ -1,84 +1,17 @@
-.prices_block {
-    width: 50%;
-    float: left;
-}
-.count_price {
-    margin-bottom: 5px;
-}
-.q_total_price {
-    width: 47%;
-    float: right;
-}
-.q_total_price,
-.q_total_price .basket-coupon-block-total-price-difference,
-.q_total_price .basket-coupon-block-total-price-old{
-    display:none;
-}
-
-.q_total_price .basket-coupon-block-total-price-current {
-    margin-bottom: 7px;
-    color: #2f3435;
-    text-align: right;
-    white-space: nowrap;
-    font: 400 36px/36px "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
-    transition: 180ms text-shadow ease, 180ms color ease;
-}
-
-.q_total_price .basket-coupon-block-total-price-old {
-    font-size: 13px;
-    color: #777;
-    text-decoration: line-through;
-}
-
-.q_total_price .basket-item-price-difference > span,
-.q_total_price .basket-coupon-block-total-price-difference > span {
-    color: #333333;
-    background: #ffd02e;
-    padding: 3px 8px 2px;
-    line-height: 16px;
-    -webkit-border-radius: 3px;
-    -moz-border-radius: 3px;
-    border-radius: 3px;
-    margin: 2px 0 0px 0px;
-    display: flex;
-    width: 50%;
-    justify-content: space-evenly;
-    font-weight: 700;
-}
-.q_total_price .basket-item-price-difference,
-.q_total_price .basket-coupon-block-total-price-difference {
-    text-align: left;
-    background: #fff;
-    font-size: 12px;
-    color: #888888;
-    padding: 8px 0px 10px;
-    justify-content: space-evenly;
-}
-.q_total_price  .basket-checkout-block.basket-checkout-block-total {
-    display: flex;
-    width: 100%;
-    justify-content: space-between;
-}
-.q_total_price  .basket-coupon-block-total-price-old {
-    justify-content: space-evenly;
-}
-.q_total_price  .basket-coupon-block-total-price-current {
-    display: flex;
-    justify-content: space-evenly;
-    margin-top: 15px;
-}
-.price_matrix_wrapper{
-    transition: all .3s;
-
-}
-
-
-@media (max-width: 1023px){
-    .q_total_price,
-    .prices_block {
-        width: 100%;
-        float: none;
-    }
-
-
+.prices_block{width:50%;float:left}
+.count_price{margin-bottom:5px}
+.q_total_price{width:47%;float:right}
+.q_total_price,.q_total_price .basket-coupon-block-total-price-difference,.q_total_price .basket-coupon-block-total-price-old{display:none}
+.q_total_price .basket-coupon-block-total-price-current{margin-bottom:7px;color:#2f3435;text-align:right;white-space:nowrap;font:400 36px/36px "Open Sans","Helvetica Neue",Helvetica,Arial,sans-serif;transition:180ms text-shadow ease,180ms color ease}
+.q_total_price .basket-coupon-block-total-price-old{font-size:13px;color:#777;text-decoration:line-through}
+.q_total_price .basket-item-price-difference > span,.q_total_price .basket-coupon-block-total-price-difference > span{color:#333;background:#ffd02e;padding:3px 8px 2px;line-height:16px;-webkit-border-radius:3px;-moz-border-radius:3px;border-radius:3px;margin:2px 0 0;display:flex;width:50%;justify-content:space-evenly;font-weight:700}
+.q_total_price .basket-item-price-difference,.q_total_price .basket-coupon-block-total-price-difference{text-align:left;background:#fff;font-size:12px;color:#888;padding:8px 0 10px;justify-content:space-evenly}
+.q_total_price .basket-checkout-block.basket-checkout-block-total{display:flex;width:100%;justify-content:space-between}
+.q_total_price .basket-coupon-block-total-price-old{justify-content:space-evenly}
+.q_total_price .basket-coupon-block-total-price-current{display:flex;justify-content:space-evenly;margin-top:15px}
+.price_matrix_wrapper{transition:all .3s}
+#div_captcha{box-sizing:border-box;position:relative;cursor:pointer}
+#div_captcha:after{content:"";width:20px;height:20px;position:absolute;top:2px;right:2px;background-image:url(images/update_captcha.png);background-size:contain;background-position:center;background-repeat:no-repeat;box-sizing:border-box}
+@media (max-width: 1023px) {
+.q_total_price,.prices_block{width:100%;float:none}
 }

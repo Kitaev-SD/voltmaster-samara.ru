@@ -25,7 +25,7 @@ else
 	$editRight = (
 		$arResult["PANELS"]["EDIT"] == "N"
 			? (
-				$arParams["ALLOW_EDIT_OWN_MESSAGE"] === "ALL"
+				$arParams["ALLOW_EDIT_OWN_MESSAGE"] === "N"
 					? "OWN"
 					: ($arParams["ALLOW_EDIT_OWN_MESSAGE"] === "LAST" ? "OWNLAST" : "N")
 			)
@@ -35,7 +35,7 @@ else
 
 $arResult["OUTPUT_LIST"] = $APPLICATION->IncludeComponent(
 	"bitrix:main.post.list",
-	"",
+	"faq",
 	array(
 		"TEMPLATE_ID" => $arParams["tplID"],
 		"RATING_TYPE_ID" => ($arParams["SHOW_RATING"] == "Y" ? "FORUM_POST" : ""),
@@ -89,3 +89,15 @@ if ($arResult["SHOW_POST_FORM"] == "Y")
 ?>
 </div>
 </div>
+
+<script type="text/javascript">
+   $(document).ready(function(){
+      $('.comments-reply-field-captcha-image, .ui-btn.ui-btn-sm.ui-btn-primary').click(function(){
+         $.getJSON('<?=$this->__folder?>/reload_captcha.php', function(data) {
+            $('.comments-reply-field-captcha-image img').attr('src','/bitrix/tools/captcha.php?captcha_sid='+data);
+            $('input[name="captcha_code"]').val(data);
+         });
+         return false;
+      });
+   });
+</script>

@@ -2100,3 +2100,16 @@ if ($arResult['CATALOG'] && $arParams['USE_GIFTS_MAIN_PR_SECTION_LIST'] == 'Y' &
         display: none;
     }
 </style>
+
+<script type="text/javascript">
+   $(document).ready(function(){
+      $('body').on('click', '.blog-comment-field-captcha-image, .blog-comment-buttons#post-button', function(){
+      	console.log(111111);
+         $.getJSON('<?=$this->__folder?>/reload_captcha.php', function(data) {
+            $('#div_captcha img').attr('src','/bitrix/tools/captcha.php?captcha_sid='+data);
+            $('input[name="captcha_code"]').val(data);
+         });
+         return false;
+      });
+   });
+</script>

@@ -5,6 +5,16 @@ $APPLICATION->SetPageProperty("description", "Магазин «Вольтмас�
 $APPLICATION->SetPageProperty("keywords", "Вопросы и ответы");
 $APPLICATION->SetPageProperty("title", "Вопросы и ответы");
 $APPLICATION->SetTitle("Вопросы и ответы");
+
+
+global $USER;
+
+if ($USER->IsAdmin()) {
+	$PERMISSION = 'Y';
+} else {
+	$PERMISSION = 'I';
+}
+
 ?>
 
 <?$APPLICATION->IncludeComponent(
@@ -38,7 +48,7 @@ $APPLICATION->SetTitle("Вопросы и ответы");
 		"MESSAGES_PER_PAGE" => "10",
 		"NAME_TEMPLATE" => "",
 		"PAGE_NAVIGATION_TEMPLATE" => "",
-		// "PERMISSION" => "I",
+		"PERMISSION" => $PERMISSION,
 		"PREORDER" => "N",
 		"SET_LAST_VISIT" => "Y",
 		"SHOW_MINIMIZED" => "Y",
@@ -47,7 +57,7 @@ $APPLICATION->SetTitle("Вопросы и ответы");
 		"URL_TEMPLATES_PROFILE_VIEW" => "",
 		"URL_TEMPLATES_READ" => "",
 		"USER_FIELDS" => array("UF_FORUM_MES_URL_PRV"),
-		"USE_CAPTCHA" => "N",
+		"USE_CAPTCHA" => "Y",
  		"POST_FIRST_MESSAGE" => "Y"
 	)
 	// $component

@@ -25,4 +25,6 @@ div.comments-post-hidden{border:1px solid red}
 .faq_wrap .feed-com-add-link:hover{border:none;color:#383838}
 .faq_wrap .blog-comment-edit.feed-com-add-block.blog-post-edit.feed-com-add-box{background-color:#ffcb00}
 .faq_wrap .feed-com-block-outer .feed-com-informers-bottom .feed-com-reply{margin:8px 13px 0 0}
-.faq_wrap .feed-com-main-content.feed-com-block-read {width: 100%;}
+.faq_wrap .feed-com-main-content {width: 100%;}
+.comments-reply-field-captcha-image{box-sizing:border-box;position:relative;cursor:pointer}
+.comments-reply-field-captcha-image:after{content:"";width:20px;height:20px;position:absolute;top:2px;right:2px;background-image:url(images/update_captcha.png);background-size:contain;background-position:center;background-repeat:no-repeat;box-sizing:border-box}
