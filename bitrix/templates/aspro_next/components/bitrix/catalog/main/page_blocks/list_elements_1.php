@@ -292,6 +292,15 @@ if($isAjaxFilter == "Y")
                     ${$arParams["FILTER_NAME"]}['NAME'] = '%'.$searchQuery.'%';
                 }
 
+                $search_query = !empty($_GET['q']) ? $_GET['q'] : $_GET['search_query'];
+
+                if(!empty($search_query)) {
+                	$GLOBALS['arrFilter1'] = array("NAME" => "%".$DB->ForSql($search_query)."%");
+                } else {
+                	$GLOBALS['arrFilter1'] = $arParams["FILTER_NAME"];
+                }
+
+
                 $APPLICATION->IncludeComponent(
                         "bitrix:catalog.section",
                         $template,
@@ -312,7 +321,7 @@ if($isAjaxFilter == "Y")
                             "SHOW_DISCOUNT_TIME_EACH_SKU" => $arParams["SHOW_DISCOUNT_TIME_EACH_SKU"],
                             "ELEMENT_SORT_FIELD2" => $arParams["ELEMENT_SORT_FIELD2"],
                             "ELEMENT_SORT_ORDER2" => $arParams["ELEMENT_SORT_ORDER2"],
-                            "FILTER_NAME" => $arParams["FILTER_NAME"],
+                            "FILTER_NAME" => "arrFilter1",
                             "INCLUDE_SUBSECTIONS" => $arParams["INCLUDE_SUBSECTIONS"],
                             "PAGE_ELEMENT_COUNT" => $show,
                             "LINE_ELEMENT_COUNT" => $arParams["LINE_ELEMENT_COUNT"],
