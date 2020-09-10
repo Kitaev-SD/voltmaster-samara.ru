@@ -702,7 +702,10 @@ if (!empty($arResult['ITEMS'])){
             foreach ($arItem["PRICES"] as $pkey=>$arPrice){
                 $arItem["PRICES"][$pkey]['UNROUND_DISCOUNT_VALUE']=min($ItemSaleQuantity);
                 $arItem["PRICES"][$pkey]['DISCOUNT_VALUE']=min($ItemSaleQuantity);
-                $arItem["PRICES"][$pkey]['DISCOUNT_DIFF'] = $arItem["PRICES"][$pkey]["VALUE"] - min($ItemSaleQuantity);
+
+                $arItem["PRICES"][$pkey]['DISCOUNT_DIFF'] = round(($arItem["PRICES"][$pkey]["VALUE"] - min($ItemSaleQuantity)), 2);
+
+
                 $arItem["PRICES"][$pkey]['DISCOUNT_DIFF_PERCENT']=min($ItemSaleQuantity)*100/$arItem["PRICES"][$pkey]["VALUE"];
                 $arItem["PRICES"][$pkey]['PRINT_DISCOUNT_VALUE'] ='от '.min($ItemSaleQuantity).' руб.';
                 $arItem["PRICES"][$pkey]['PRINT_DISCOUNT_DIFF'] = 'от '.$arItem["PRICES"][$pkey]['DISCOUNT_DIFF'].' руб.';
