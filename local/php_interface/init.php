@@ -2,18 +2,18 @@
 include_once $_SERVER['DOCUMENT_ROOT'] . '/local/classes/CResaveProduct.php';
 include_once $_SERVER['DOCUMENT_ROOT'] . '/local/php_interface/eventHandlers.php';
 
-AddEventHandler("subscribe", OnBeforeSubscriptionAdd, "GoogleCaptcha");
-AddEventHandler("subscribe", OnBeforeSubscriptionUpdate, "GoogleCaptcha");
-AddEventHandler("main", OnBeforeUserRegister, "GoogleCaptcha");
+// AddEventHandler("subscribe", OnBeforeSubscriptionAdd, "GoogleCaptcha");
+// AddEventHandler("subscribe", OnBeforeSubscriptionUpdate, "GoogleCaptcha");
+// AddEventHandler("main", OnBeforeUserRegister, "GoogleCaptcha");
+
 function GoogleCaptcha($arFields) {
     global $APPLICATION;
-  # действие обработчика распространяется только на форму с ID=2
+	# действие обработчика распространяется только на форму с ID=2
     $date = date('Y');
 	if($_REQUEST['yearcheck'] !== date('Y')) {
 	    $APPLICATION->throwException("Вы не прошли проверку подтверждения личности - указанный год неверен. Сейчас $date");
 	    return false;
 	}
-    ##file_put_contents($_SERVER["DOCUMENT_ROOT"].'/logmail.txt', print_r($_REQUEST,1));
 }
 
 AddEventHandler("main", "OnBeforeUserRegister", "OnBeforeUserUpdateHandler");
