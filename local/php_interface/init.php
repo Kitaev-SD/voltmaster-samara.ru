@@ -87,7 +87,9 @@ function onAfterMessageAddHandler ($id, $arFields) {
 
 	#------ Debug block --------------------------------------
 	 //    $file = '/home/bitrix/www/test_111.txt';
-	 //    $output = $arFieldsSend['ATTACH_IMG'];
+	 //    $output.= "\n________________________________________________________________\n"; 
+	 //    $output.= serialize($arFields);
+	 //    $output.= "\n________________________________________________________________\n"; 
 		// file_put_contents($file, $output, LOCK_EX);
 	#------ Debug block END ----------------------------------
 
@@ -97,9 +99,9 @@ function onAfterMessageAddHandler ($id, $arFields) {
 			's1',								# идентификатор  сайта
 			$arFieldsSend,						# массив полей
 			"N",								# копия письма на адрес в настройках главного модуля. По умолчанию "Y"
-			54,									# почтовый шаблон [TRIGGER_EMAIL] Триггерная рассылка
+			55,									# почтовый шаблон [TRIGGER_EMAIL] Триггерная рассылка
 			array($arFieldsSend['ATTACH_IMG']),	# массив id-ков файлов которые используются классом CFile 
-			20									# language_id
+			225									# language_id
 		);
 
 		return true;
