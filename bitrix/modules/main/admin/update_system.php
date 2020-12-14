@@ -4,7 +4,7 @@
 //**    MODIFICATION OF THIS FILE WILL ENTAIL SITE FAILURE            **/
 //**********************************************************************/
 if (!defined("UPDATE_SYSTEM_VERSION"))
-	define("UPDATE_SYSTEM_VERSION", "20.0.1100");
+	define("UPDATE_SYSTEM_VERSION", "20.200.250");
 
 require_once($_SERVER["DOCUMENT_ROOT"]."/bitrix/modules/main/include/prolog_admin_before.php");
 define("HELP_FILE", "marketplace/sysupdate.php");
@@ -145,6 +145,28 @@ if (function_exists('apache_get_modules') && !in_array('mod_rewrite', apache_get
 	$errorMessage .= "<br>".GetMessage("SUP_WRONG_APACHE_MOD_REWRITE").". ";
 }
 
+if (version_compare(SM_VERSION, "20.0.1500") >= 0)
+{
+	if ((int)ini_get('mbstring.func_overload') > 0)
+	{
+		$strongSystemMessage .= "<br>".GetMessage("SUP_WRONG_MBSTRING_OVERLOAD").". ";
+	}
+
+	$gdOk = true;
+	if (!function_exists("gd_info"))
+	{
+		$gdOk = false;
+	}
+	if ($gdOk)
+	{
+		$arGdInfo = gd_info();
+		$gdOk = preg_match("/(^|[^0-9.])2\./", $arGdInfo['GD Version']);
+	}
+	if (!$gdOk)
+	{
+		$errorMessage .= "<br>".GetMessage("SUP_WRONG_GD").". ";
+	}
+}
 
 // MySQL 5.0.0, PHP 5.3.0
 if ($DB->type === "MYSQL")
@@ -248,10 +270,10 @@ elseif (($DB->type === "MSSQL") || ($DB->type === "ORACLE"))
 
 $curPhpVer = PhpVersion();
 
-$minPhpErrorVersion = "7.1.0";
-$minPhpWarningVersion = "7.2.0";
+$minPhpErrorVersion = "7.2.0";
+$minPhpWarningVersion = ""; //"7.2.0";
 $minPhpWarningVersionBest = "7.4.0";
-$minPhpWarningVersionDate = "2020-08-01";
+$minPhpWarningVersionDate = ""; //"2020-08-01";
 
 if (date("Y-m-d") < "2019-09-01")
 {
@@ -269,7 +291,7 @@ if (version_compare($curPhpVer, $minPhpErrorVersion) < 0)
 			)
 		);
 }
-if (version_compare($curPhpVer, $minPhpWarningVersion) < 0)
+if (($minPhpWarningVersion !== "") && (version_compare($curPhpVer, $minPhpWarningVersion) < 0))
 {
 	$messageTmp = "<br>".GetMessage("SUP_PHP_LWARN_F",
 			array("#VERS#" => $curPhpVer,
@@ -292,7 +314,7 @@ if (array_key_exists("HTTP_BX_MASTER", $_SERVER) && ($_SERVER["HTTP_BX_MASTER"] 
 
 $strError_tmp = "";
 $arClientModules = CUpdateClient::GetCurrentModules($strError_tmp);
-if (StrLen($strError_tmp) > 0)
+if ($strError_tmp <> '')
 	$errorMessage .= $strError_tmp;
 
 if ($arUpdateList)
@@ -327,11 +349,11 @@ if(COption::GetOptionString("main", "update_devsrv", "") == "Y")
 	$systemMessage .= GetMessage("SUP_DEVSRV_MESS");
 }
 
-if (strlen($errorMessage) > 0)
+if ($errorMessage <> '')
 	echo CAdminMessage::ShowMessage(Array("DETAILS" => $errorMessage, "TYPE" => "ERROR", "MESSAGE" => GetMessage("SUP_ERROR"), "HTML" => true));
-if (strlen($strongSystemMessage) > 0)
+if ($strongSystemMessage <> '')
 	echo CAdminMessage::ShowMessage(Array("DETAILS" => $strongSystemMessage, "TYPE" => "ERROR", "MESSAGE" => GetMessage("SUP_ERROR"), "HTML" => true));
-if (strlen($systemMessage) > 0)
+if ($systemMessage <> '')
 	echo CAdminMessage::ShowMessage(Array("DETAILS" => $systemMessage, "TYPE" => "OK", "MESSAGE" => GetMessage("SUP_SYSTEM_MESSAGE"), "HTML" => true));
 
 $events = GetModuleEvents("main", "OnUpdateCheck");
@@ -590,7 +612,7 @@ $tabControl->BeginNextTab();
 					}
 				}
 				$strLicenseKeyTmp = CUpdateClient::GetLicenseKey();
-				$bLicenseNotFound = strlen($strLicenseKeyTmp) <= 0 || strtolower($strLicenseKeyTmp) == "demo" || $bLicenseNotFound;
+				$bLicenseNotFound = $strLicenseKeyTmp == '' || strtolower($strLicenseKeyTmp) == "demo" || $bLicenseNotFound;
 				$bFullVersion = ($arUpdateList !== false && isset($arUpdateList["CLIENT"]) && ($arUpdateList["CLIENT"][0]["@"]["ENC_TYPE"] == "F" || $arUpdateList["CLIENT"][0]["@"]["ENC_TYPE"] == "E" || $arUpdateList["CLIENT"][0]["@"]["ENC_TYPE"] == "T"));
 
 				if ($bLicenseNotFound  || (defined("DEMO") && DEMO == "Y" && !$bFullVersion))
@@ -1915,7 +1937,7 @@ $tabControl->BeginNextTab();
 				<?if (is_array($arUpdateList) && array_key_exists("CLIENT", $arUpdateList)):?>
 					<tr>
 						<td nowrap><?echo GetMessage("SUP_REGISTERED")?>&nbsp;&nbsp;</td>
-						<td><?echo $arUpdateList["CLIENT"][0]["@"]["NAME"]?></td>
+						<td><?echo htmlspecialchars($arUpdateList["CLIENT"][0]["@"]["NAME"])?></td>
 					</tr>
 				<?endif;?>
 				<tr>
@@ -1964,7 +1986,7 @@ $tabControl->BeginNextTab();
 					</tr>
 					<tr>
 						<td nowrap><?echo GetMessage("SUP_ACTIVE")?>&nbsp;&nbsp;</td>
-						<td><?echo GetMessage("SUP_ACTIVE_PERIOD", array("#DATE_TO#"=>((strlen($arUpdateList["CLIENT"][0]["@"]["DATE_TO"]) > 0) ? $arUpdateList["CLIENT"][0]["@"]["DATE_TO"] : "<i>N/A</i>"), "#DATE_FROM#" => ((strlen($arUpdateList["CLIENT"][0]["@"]["DATE_FROM"]) > 0) ? $arUpdateList["CLIENT"][0]["@"]["DATE_FROM"] : "<i>N/A</i>")));?></td>
+						<td><?echo GetMessage("SUP_ACTIVE_PERIOD", array("#DATE_TO#"=>(($arUpdateList["CLIENT"][0]["@"]["DATE_TO"] <> '') ? $arUpdateList["CLIENT"][0]["@"]["DATE_TO"] : "<i>N/A</i>"), "#DATE_FROM#" => (($arUpdateList["CLIENT"][0]["@"]["DATE_FROM"] <> '') ? $arUpdateList["CLIENT"][0]["@"]["DATE_FROM"] : "<i>N/A</i>")));?></td>
 					</tr>
 					<tr>
 						<td nowrap><?echo GetMessage("SUP_SERVER")?>&nbsp;&nbsp;</td>
@@ -2513,13 +2535,13 @@ $tabControl->BeginNextTab();
 											<tr>
 												<td class="icon-new"><div class="icon icon-licence"></div></td>
 												<td>
-													<?if (IntVal($arUpdateList["CLIENT"][0]["@"]["MAX_SITES"]) > 0):?>
+													<?if (intval($arUpdateList["CLIENT"][0]["@"]["MAX_SITES"]) > 0):?>
 														<?= str_replace("#NUM#", $arUpdateList["CLIENT"][0]["@"]["MAX_SITES"], GetMessage("SUP_SUAC_LIMIT")) ?>
 													<?else:?>
 														<?= GetMessage("SUP_CHECK_PROMT_2") ?>
 													<?endif;?>
 													<br><br>
-													<?if (IntVal($arUpdateList["CLIENT"][0]["@"]["MAX_USERS"]) > 0):?>
+													<?if (intval($arUpdateList["CLIENT"][0]["@"]["MAX_USERS"]) > 0):?>
 														<?= str_replace("#NUM#", $arUpdateList["CLIENT"][0]["@"]["MAX_USERS"], GetMessage("SUP_SUAC_LIMIT1")) ?>
 													<?else:?>
 														<?= GetMessage("SUP_CHECK_PROMT_21") ?>
