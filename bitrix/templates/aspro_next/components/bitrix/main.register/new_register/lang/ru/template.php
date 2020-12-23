@@ -12,7 +12,7 @@
 	$MESS["REGISTER_FIELD_EMAIL"] = "E-mail";
 	$MESS["REGISTER_FIELD_PASSWORD"] = "Пароль";
 	$MESS["REGISTER_FIELD_CONFIRM_PASSWORD"] = "Подтверждение пароля";
-	$MESS["REGISTER_FIELD_FIO"] = "Имя и Фамилия";
+	$MESS["REGISTER_FIELD_FIO"] = "Фамилия и Имя";
 	$MESS["REGISTER_FIELD_NAME"] = "Имя";
 	$MESS["REGISTER_FIELD_SECOND_NAME"] = "Отчество";
 	$MESS["REGISTER_FIELD_LAST_NAME"] = "Фамилия";
