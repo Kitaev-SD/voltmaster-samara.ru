@@ -22,7 +22,8 @@ function forumCommentsCommentWeb(
 			"SECOND_NAME" => $comment["~SECOND_NAME"],
 			"LOGIN" => $comment["~LOGIN"],
 			"AVATAR" => ($comment["AVATAR"] && $comment["AVATAR"]["FILE"] ? $comment["AVATAR"]["FILE"]['src'] : ""),
-			"PERSONAL_GENDER" => !empty($comment["~PERSONAL_GENDER"]) ? $comment["~PERSONAL_GENDER"] : ""
+			"PERSONAL_GENDER" => !empty($comment["~PERSONAL_GENDER"]) ? $comment["~PERSONAL_GENDER"] : "",
+			"EXTERNAL_AUTH_ID" => $comment["~EXTERNAL_AUTH_ID"]
 		),
 		"FILES" => $comment["FILES"],
 		"UF" => $comment["PROPS"],
@@ -39,6 +40,7 @@ function forumCommentsCommentWeb(
 		"AFTER_RECORD" => "",
 		"AUX" => (!empty($comment["AUX"]) ? $comment["AUX"] : ''),
 		"AUX_LIVE_PARAMS" => (!empty($comment["AUX_LIVE_PARAMS"]) ? $comment["AUX_LIVE_PARAMS"] : array()),
+		"CAN_DELETE" => (!empty($comment["CAN_DELETE"]) ? $comment["CAN_DELETE"] : "Y"),
 	);
 
 	if (!empty($res["FILES"]))

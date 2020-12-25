@@ -2,6 +2,8 @@
 use Bitrix\Main\Localization\Loc,
 	Bitrix\Main,
 	Bitrix\Iblock,
+	Bitrix\Iblock\Url\AdminPage\BaseBuilder,
+	Bitrix\Iblock\Url\AdminPage\BuilderManager,
 	Bitrix\Catalog;
 
 Loc::loadMessages(__FILE__);
@@ -39,7 +41,12 @@ class CCatalogAdminToolsAll
 		);
 	}
 
-	public static function getIBlockElementMenu($intIBlockID, &$arCatalog, $arParams)
+	public static function getIBlockElementMenu(
+		$intIBlockID,
+		&$arCatalog,
+		$arParams,
+		BaseBuilder $urlBuilder = null
+	)
 	{
 		$arResult = false;
 		$intIBlockID = (int)$intIBlockID;
@@ -54,6 +61,26 @@ class CCatalogAdminToolsAll
 		if (empty($arParams) || !is_array($arParams))
 			return false;
 
+		if ($urlBuilder === null)
+		{
+			$urlBuilder = BuilderManager::getInstance()->getBuilder(BaseBuilder::TYPE_AUTODETECT);
+		}
+		if ($urlBuilder === null)
+		{
+			return false;
+		}
+
+		$urlBuilder->setIblockId($intIBlockID);
+		$urlBuilder->setUrlParams([]);
+
+		$productCardEnabled = false;
+		$builderId = $urlBuilder->getId();
+		$publicShop = ($builderId == 'SHOP' || $builderId == 'CRM');
+		if ($publicShop)
+		{
+			$productCardEnabled = Catalog\Config\State::isProductCardSliderEnabled();
+		}
+
 		$arItems = array();
 		$arSubItems = array();
 
@@ -64,38 +91,43 @@ class CCatalogAdminToolsAll
 				'ICON' => 'btn_new',
 				'TEXT' => Loc::getMessage('BT_CAT_ADM_TOOLS_ADD_PROD'),
 				'TITLE' => Loc::getMessage('BT_CAT_ADM_TOOLS_ADD_PROD_TITLE'),
-				'LINK' => CIBlock::GetAdminElementEditLink($intIBlockID, 0, $arParams),
+				'LINK' => $urlBuilder->getElementDetailUrl(0, $arParams),
+				'PUBLIC' => $productCardEnabled, // TODO: remove this hack after refactoring \CAdminUiList::AddAdminContextMenu
 				'SHOW_TITLE' => true
 			);
-			if (CCatalogSku::TYPE_FULL == $arCatalog['CATALOG_TYPE'])
+
+			if (!$productCardEnabled)
 			{
-				$arParams[self::$strMainPrefix.self::TAB_KEY] = self::TAB_SKU;
-				$arSubItems[] = array(
-					'TEXT' => Loc::getMessage('BT_CAT_ADM_TOOLS_ADD_SKU'),
-					'TITLE' => Loc::getMessage('BT_CAT_ADM_TOOLS_ADD_SKU_TITLE'),
-					'LINK' => CIBlock::GetAdminElementEditLink($intIBlockID, 0, $arParams),
-					'SHOW_TITLE' => true
-				);
-			}
-			if (Catalog\Config\Feature::isProductSetsEnabled())
-			{
-				if (CCatalogSku::TYPE_OFFERS != $arCatalog['CATALOG_TYPE'])
+				if (CCatalogSku::TYPE_FULL == $arCatalog['CATALOG_TYPE'])
 				{
-					$arParams[self::$strMainPrefix.self::TAB_KEY] = self::TAB_SET;
+					$arParams[self::$strMainPrefix.self::TAB_KEY] = self::TAB_SKU;
 					$arSubItems[] = array(
-						'TEXT' => Loc::getMessage('BT_CAT_ADM_TOOLS_ADD_SET'),
-						'TITLE' => Loc::getMessage('BT_CAT_ADM_TOOLS_ADD_SET_TITLE'),
-						'LINK' => CIBlock::GetAdminElementEditLink($intIBlockID, 0, $arParams),
+						'TEXT' => Loc::getMessage('BT_CAT_ADM_TOOLS_ADD_SKU'),
+						'TITLE' => Loc::getMessage('BT_CAT_ADM_TOOLS_ADD_SKU_TITLE'),
+						'LINK' => $urlBuilder->getElementDetailUrl(0, $arParams),
 						'SHOW_TITLE' => true
 					);
 				}
-				$arParams[self::$strMainPrefix.self::TAB_KEY] = self::TAB_GROUP;
-				$arSubItems[] = array(
-					'TEXT' => Loc::getMessage('BT_CAT_ADM_TOOLS_ADD_GROUP'),
-					'TITLE' => Loc::getMessage('BT_CAT_ADM_TOOLS_ADD_GROUP_TITLE'),
-					'LINK' => CIBlock::GetAdminElementEditLink($intIBlockID, 0, $arParams),
-					'SHOW_TITLE' => true
-				);
+				if (Catalog\Config\Feature::isProductSetsEnabled())
+				{
+					if (CCatalogSku::TYPE_OFFERS != $arCatalog['CATALOG_TYPE'])
+					{
+						$arParams[self::$strMainPrefix.self::TAB_KEY] = self::TAB_SET;
+						$arSubItems[] = array(
+							'TEXT' => Loc::getMessage('BT_CAT_ADM_TOOLS_ADD_SET'),
+							'TITLE' => Loc::getMessage('BT_CAT_ADM_TOOLS_ADD_SET_TITLE'),
+							'LINK' => $urlBuilder->getElementDetailUrl(0, $arParams),
+							'SHOW_TITLE' => true
+						);
+					}
+					$arParams[self::$strMainPrefix.self::TAB_KEY] = self::TAB_GROUP;
+					$arSubItems[] = array(
+						'TEXT' => Loc::getMessage('BT_CAT_ADM_TOOLS_ADD_GROUP'),
+						'TITLE' => Loc::getMessage('BT_CAT_ADM_TOOLS_ADD_GROUP_TITLE'),
+						'LINK' => $urlBuilder->getElementDetailUrl(0, $arParams),
+						'SHOW_TITLE' => true
+					);
+				}
 			}
 		}
 		else
@@ -105,7 +137,7 @@ class CCatalogAdminToolsAll
 				'ICON' => 'btn_new',
 				'TEXT' => Loc::getMessage('BT_CAT_ADM_TOOLS_ADD_SKU'),
 				'TITLE' => Loc::getMessage('BT_CAT_ADM_TOOLS_ADD_SKU_TITLE'),
-				'LINK' => CIBlock::GetAdminElementEditLink($intIBlockID, 0, $arParams),
+				'LINK' => $urlBuilder->getElementDetailUrl(0, $arParams),
 				'SHOW_TITLE' => true
 			);
 		}
@@ -117,6 +149,29 @@ class CCatalogAdminToolsAll
 				'MENU' => $arSubItems
 			);
 		}
+
+		if (
+			$publicShop
+			&& $arCatalog['CATALOG'] === 'Y'
+			&& (
+				CCatalogSku::TYPE_FULL == $arCatalog['CATALOG_TYPE']
+				|| CCatalogSku::TYPE_CATALOG == $arCatalog['CATALOG_TYPE']
+			)
+			&& \Bitrix\Main\Loader::includeModule('crm')
+		)
+		{
+			if (\Bitrix\Crm\Order\Import\Instagram::isAvailable())
+			{
+				$arItems[] = [
+					'TEXT' => Loc::getMessage('BT_CAT_ADM_TOOLS_ADD_INSTAGRAM_IMPORT'),
+					'TITLE' => Loc::getMessage('BT_CAT_ADM_TOOLS_ADD_INSTAGRAM_IMPORT_TITLE'),
+					'LINK' => \Bitrix\Main\Config\Option::get('crm', 'path_to_order_import_instagram'),
+					'PUBLIC' => true,
+					'SHOW_TITLE' => true,
+				];
+			}
+		}
+
 		if (!empty($arItems))
 			$arResult = $arItems;
 
@@ -644,6 +699,11 @@ class CCatalogAdminToolsAll
 			unset($_POST[self::$strMainPrefix.self::TAB_KEY]);
 	}
 
+	/**
+	 * @param int $iblockId
+	 * @param bool $withDescr
+	 * @return array|mixed
+	 */
 	public static function getIblockProductTypeList($iblockId, $withDescr = false)
 	{
 		$result = array();
@@ -661,11 +721,13 @@ class CCatalogAdminToolsAll
 				Catalog\ProductTable::TYPE_PRODUCT
 			),
 			CCatalogSku::TYPE_PRODUCT => array(
-				Catalog\ProductTable::TYPE_SKU
+				Catalog\ProductTable::TYPE_SKU,
+				Catalog\ProductTable::TYPE_EMPTY_SKU
 			),
 			CCatalogSku::TYPE_FULL => array(
 				Catalog\ProductTable::TYPE_PRODUCT,
-				Catalog\ProductTable::TYPE_SKU
+				Catalog\ProductTable::TYPE_SKU,
+				Catalog\ProductTable::TYPE_EMPTY_SKU
 			),
 			CCatalogSku::TYPE_OFFERS => array(
 				Catalog\ProductTable::TYPE_OFFER,
@@ -681,6 +743,38 @@ class CCatalogAdminToolsAll
 			return $result;
 
 		$result = $data[$iblockData['CATALOG_TYPE']];
+		if ($withDescr)
+		{
+			$productList = Catalog\ProductTable::getProductTypes(true);
+			$extResult = array();
+			foreach ($result as $type)
+				$extResult[$type] = $productList[$type];
+			unset($type);
+			$result = $extResult;
+			unset($extResult, $productList);
+		}
+
+		return $result;
+	}
+
+	/**
+	 * @param bool $withDescr
+	 * @return array
+	 */
+	public static function getProductTypeList($withDescr = false)
+	{
+		$withDescr = ($withDescr === true);
+
+		$result = array(
+			Catalog\ProductTable::TYPE_PRODUCT,
+		);
+		$result[] = Catalog\ProductTable::TYPE_SKU;
+		$result[] = Catalog\ProductTable::TYPE_EMPTY_SKU;
+		if (Catalog\Config\Feature::isProductSetsEnabled())
+			$result[] = Catalog\ProductTable::TYPE_SET;
+		$result[] = Catalog\ProductTable::TYPE_OFFER;
+		$result[] = Catalog\ProductTable::TYPE_FREE_OFFER;
+
 		if ($withDescr)
 		{
 			$productList = Catalog\ProductTable::getProductTypes(true);
@@ -1087,7 +1181,8 @@ class CCatalogAdminProductSetEdit
 				'PROP_COUNT_ID' => $strIDPrefix.'_ITEMS_CNT',
 				'BTN_ID' => $strIDPrefix.'_ITEMS_ADD',
 				'CELLS' => $arCellInfo['CELLS'],
-				'CELL_PARAMS' => $arCellInfo['CELL_PARAMS']
+				'CELL_PARAMS' => $arCellInfo['CELL_PARAMS'],
+				'SEARCH_PAGE' => (defined('SELF_FOLDER_URL') ? SELF_FOLDER_URL : '/bitrix/admin/').'cat_product_search_dialog.php'
 			);
 			?>
 <script type="text/javascript">

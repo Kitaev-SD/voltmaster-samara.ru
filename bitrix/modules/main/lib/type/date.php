@@ -3,7 +3,6 @@ namespace Bitrix\Main\Type;
 
 use Bitrix\Main;
 use Bitrix\Main\Context;
-use Bitrix\Main\DB;
 
 class Date
 {
@@ -126,7 +125,7 @@ class Date
 
 	private function tryToCreateIntervalByDesignators($interval)
 	{
-		if (!is_string($interval) || strpos($interval, ' ') !== false)
+		if (!is_string($interval) || mb_strpos($interval, ' ') !== false)
 		{
 			return null;
 		}
@@ -134,14 +133,14 @@ class Date
 		$i = null;
 		try
 		{
-			$intervalTmp = strtoupper($interval);
+			$intervalTmp = mb_strtoupper($interval);
 			$isNegative = false;
-			$firstChar = substr($intervalTmp, 0, 1);
+			$firstChar = mb_substr($intervalTmp, 0, 1);
 			if ($firstChar === "-")
 			{
 				$isNegative = true;
-				$intervalTmp = substr($intervalTmp, 1);
-				$firstChar = substr($intervalTmp, 0, 1);
+				$intervalTmp = mb_substr($intervalTmp, 1);
+				$firstChar = mb_substr($intervalTmp, 0, 1);
 			}
 
 			if ($firstChar !== "P")
@@ -169,6 +168,17 @@ class Date
 	public function getTimestamp()
 	{
 		return $this->value->getTimestamp();
+	}
+
+	/**
+	 * Returns difference between dates.
+	 *
+	 * @param DateTime $time
+	 * @return \DateInterval
+	 */
+	public function getDiff(DateTime $time)
+	{
+		return $this->value->diff($time->value);
 	}
 
 	/**
@@ -210,7 +220,10 @@ class Date
 			if($defaultCulture === null)
 			{
 				$context = Context::getCurrent();
-				$defaultCulture = $context->getCulture();
+				if($context)
+				{
+					$defaultCulture = $context->getCulture();
+				}
 			}
 			$culture = $defaultCulture;
 		}
@@ -227,9 +240,13 @@ class Date
 	 *
 	 * @return string
 	 */
-	protected static function getCultureFormat(Context\Culture $culture)
+	protected static function getCultureFormat(Context\Culture $culture = null)
 	{
-		return $culture->getDateFormat();
+		if($culture)
+		{
+			return $culture->getDateFormat();
+		}
+		return "DD.MM.YYYY";
 	}
 
 	/**
@@ -321,7 +338,7 @@ class Date
 	{
 		/** @var Date $d */
 		$d = new static();
-		$d->value = $datetime;
+		$d->value = clone $datetime;
 		$d->value->setTime(0, 0, 0);
 		return $d;
 	}
@@ -351,7 +368,7 @@ class Date
 	 */
 	public static function createFromText($text)
 	{
-		$result = \Bitrix\Main\Text\DateConverter::decode($text);
+		$result = Main\Text\DateConverter::decode($text);
 		if (empty($result))
 		{
 			return null;

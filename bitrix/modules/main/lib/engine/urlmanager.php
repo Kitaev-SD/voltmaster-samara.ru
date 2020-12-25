@@ -73,12 +73,12 @@ final class UrlManager
 	 */
 	public function createByController(Controller $controller, $action, $params = array(), $absolute = false)
 	{
-		$name = strtolower(Resolver::getNameByController($controller));
+		$name = mb_strtolower(Resolver::getNameByController($controller));
 
 		list($vendor) = $this->getVendorAndModule($controller->getModuleId());
 		if ($vendor === 'bitrix')
 		{
-			$name = substr($name, strlen('bitrix:'));
+			$name = mb_substr($name, mb_strlen('bitrix:'));
 		}
 
 		return $this->create(
@@ -122,7 +122,11 @@ final class UrlManager
 	{
 		$reflector = new \ReflectionClass($controller);
 		$path = dirname($reflector->getFileName());
-		$pathWithoutLocal = substr($path, strpos($path, '/components/') + strlen('/components/'));
+		if (DIRECTORY_SEPARATOR === '\\')
+		{
+			$path = str_replace('\\', '/', $path);
+		}
+		$pathWithoutLocal = mb_substr($path, mb_strpos($path, '/components/') + mb_strlen('/components/'));
 		list($vendor, $componentName) = explode('/', $pathWithoutLocal);
 
 		if (!$componentName)
@@ -199,9 +203,10 @@ final class UrlManager
 	 */
 	public function getHostUrl()
 	{
-		$context = Context::getCurrent();
-		$server = $context->getServer();
-		$protocol = $context->getRequest()->isHttps() ? 'https' : 'http';
+		$request = Context::getCurrent()->getRequest();
+
+		$protocol = ($request->isHttps() ? 'https' : 'http');
+		$port = $request->getServerPort();
 
 		if (defined("SITE_SERVER_NAME") && SITE_SERVER_NAME)
 		{
@@ -209,23 +214,11 @@ final class UrlManager
 		}
 		else
 		{
-			$host = Option::get('main', 'server_name', $server->getHttpHost()) ? : $server->getHttpHost();
+			$host = (Option::get('main', 'server_name', $request->getHttpHost())? : $request->getHttpHost());
 		}
 
-		$port = $server->getServerPort();
-		if ($port <> 80 && $port <> 443 && $port > 0 && strpos($host, ':') === false)
-		{
-			$host .= ':'.$port;
-		}
-		elseif ($protocol == 'http' && $port == 80)
-		{
-			$host = str_replace(':80', '', $host);
-		}
-		elseif ($protocol == 'https' && $port == 443)
-		{
-			$host = str_replace(':443', '', $host);
-		}
+		$parsedUri = new Uri($protocol.'://'.$host.":".$port);
 
-		return $protocol . '://' . $host;
+		return rtrim($parsedUri->getLocator(), "/");
 	}
 }

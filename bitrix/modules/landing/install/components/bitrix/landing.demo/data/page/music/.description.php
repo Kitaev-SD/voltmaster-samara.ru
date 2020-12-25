@@ -13,6 +13,8 @@ return array(
 	'description' => Loc::getMessage('LANDING_DEMO_DESCRIPTION'),
 	'fields' => array(
 		'ADDITIONAL_FIELDS' => array(
+			'THEME_CODE' => 'music',
+
 			'METAOG_IMAGE' => 'https://cdn.bitrix24.site/bitrix/images/demo/page/music/preview.jpg',
 			'METAOG_TITLE' => Loc::getMessage('LANDING_DEMO_TITLE'),
 			'METAOG_DESCRIPTION' => Loc::getMessage('LANDING_DEMO_DESCRIPTION'),
@@ -27,7 +29,7 @@ return array(
 				'SORT' => '-100',
 				'CONTENT' => '
 
-<header class="landing-block landing-block-menu g-bg-gray-dark-v1 u-header u-header--floating u-header--floating-relative">
+<header class="landing-block landing-block-menu g-bg-gray-dark-v1 u-header u-header--sticky u-header--relative">
 	<div class="u-header__section g-transition-0_3 g-py-16 g-py-10--md"
 		 data-header-fix-moment-classes="u-shadow-v27">
 		<nav class="navbar navbar-expand-lg p-0 g-px-15">
@@ -93,10 +95,10 @@ return array(
 				'CODE' => '46.4.cover_with_slider_bgimg_right_buttons',
 				'SORT' => '500',
 				'CONTENT' => '<section class="landing-block">
-	<div class="js-carousel" data-arrows-classes="u-arrow-v1 g-pos-abs g-absolute-centered--y--md g-top-20x g-top-50x--md g-left-0 g-left-auto--md g-right-0--md g-width-40 g-width-60--md g-height-40 g-height-60--md g-font-size-default g-color-white g-bg-primary g-opacity-0_8--hover g-transition-0_2 g-transition--ease-in" data-arrow-left-classes="fa fa-chevron-left g-mr-63--md" data-arrow-right-classes="fa fa-chevron-right g-ml-43 g-ml-0--md">
-		<div class="landing-block-node-card landing-block-node-card-bgimg js-slide d-flex align-items-center u-bg-overlay g-height-100vh g-min-height-600 g-bg-img-hero g-bg-black-opacity-0_5--after" style="background-image: url(https://cdn.bitrix24.site/bitrix/images/landing/business/1400x891/img1.jpg);">
+	<div class="js-carousel" data-arrows-classes="u-arrow-v1 g-pos-abs g-absolute-centered--y--md g-top-20x g-top-50x--md g-left-0 g-left-auto--md g-right-0--md g-width-40 g-width-60--md g-height-40 g-height-60--md g-color-white g-bg-primary g-opacity-0_8--hover g-transition-0_2 g-transition--ease-in" data-arrow-left-classes="fa fa-chevron-left g-mr-63--md" data-arrow-right-classes="fa fa-chevron-right g-ml-43 g-ml-0--md">
+		<div class="landing-block-node-card landing-block-node-card-bgimg js-slide d-flex align-items-center u-bg-overlay g-min-height-100vh g-bg-img-hero g-bg-black-opacity-0_5--after" style="background-image: url(https://cdn.bitrix24.site/bitrix/images/landing/business/1400x891/img1.jpg);">
 			<div class="u-bg-overlay__inner">
-				<div class="landing-block-node-card-text-container u-heading-v4-1 g-max-width-645 g-brd-7 g-brd-primary py-0 g-pl-30 js-animation fadeInLeft">
+				<div class="landing-block-node-card-text-container u-heading-v4-1 g-max-width-645 g-brd-7 g-brd-primary g-pl-30 js-animation fadeInLeft">
 					<h3 class="landing-block-node-card-subtitle text-uppercase g-line-height-1 g-font-weight-600 g-font-size-20 g-color-white g-mb-15 g-mb-25--md">
 						Company24 new album</h3>
 					<h2 class="landing-block-node-card-title u-heading-v4__title text-uppercase g-line-height-1 g-font-weight-700 g-font-size-65 g-color-white g-mb-15">
@@ -111,9 +113,9 @@ return array(
 			</div>
 		</div>
 
-		<div class="landing-block-node-card landing-block-node-card-bgimg js-slide d-flex align-items-center u-bg-overlay g-height-100vh g-min-height-600 g-bg-img-hero g-bg-black-opacity-0_5--after" style="background-image: url(https://cdn.bitrix24.site/bitrix/images/landing/business/1400x891/img2.jpg);">
+		<div class="landing-block-node-card landing-block-node-card-bgimg js-slide d-flex align-items-center u-bg-overlay g-min-height-100vh g-bg-img-hero g-bg-black-opacity-0_5--after" style="background-image: url(https://cdn.bitrix24.site/bitrix/images/landing/business/1400x891/img2.jpg);">
 			<div class="u-bg-overlay__inner">
-				<div class="landing-block-node-card-text-container u-heading-v4-1 g-max-width-645 g-brd-7 g-brd-primary py-0 g-pl-30 js-animation fadeInLeft">
+				<div class="landing-block-node-card-text-container u-heading-v4-1 g-max-width-645 g-brd-7 g-brd-primary g-pl-30 js-animation fadeInLeft">
 					<h3 class="landing-block-node-card-subtitle text-uppercase g-line-height-1 g-font-weight-600 g-font-size-20 g-color-white g-mb-15 g-mb-25--md">
 						Company24 new album</h3>
 					<h2 class="landing-block-node-card-title u-heading-v4__title text-uppercase g-line-height-1 g-font-weight-700 g-font-size-65 g-color-white g-mb-15">
@@ -152,12 +154,12 @@ return array(
 			array (
 				'CODE' => '30.2.three_cols_fix_img_and_links',
 				'SORT' => '1500',
-				'CONTENT' => '<section class="landing-block g-bg-gray-light-v5">
+				'CONTENT' => '<section class="landing-block g-bg-gray-light-v5 g-pt-30 g-pb-20">
 
-        <div class="container g-pt-30 g-pb-20">
-            <div class="row">
+        <div class="container">
+            <div class="row landing-block-inner">
 
-                <div class="landing-block-card col-sm-6 col-md-4 g-mb-20 js-animation fadeIn">
+                <div class="landing-block-card col-sm-6 col-md-4 js-animation fadeIn">
                     <article class="u-shadow-v28 g-bg-white">
                         <img class="landing-block-node-img img-fluid w-100" src="https://cdn.bitrix24.site/bitrix/images/landing/business/370x233/img1.jpg" alt="" data-fileid="-1" data-filehash="9eef207add73028ae50f74a9033c20cb" />
 
@@ -185,7 +187,7 @@ return array(
                     </article>
                 </div>
 
-                <div class="landing-block-card col-sm-6 col-md-4 g-mb-30 js-animation fadeIn">
+                <div class="landing-block-card col-sm-6 col-md-4 js-animation fadeIn">
                     <article class="u-shadow-v28 g-bg-white">
                         <img class="landing-block-node-img img-fluid w-100" src="https://cdn.bitrix24.site/bitrix/images/landing/business/370x233/img2.jpg" alt="" data-fileid="-1" data-filehash="9eef207add73028ae50f74a9033c20cb" />
 
@@ -214,7 +216,7 @@ return array(
                 </div>
 
 
-				<div class="landing-block-card col-sm-6 col-md-4 g-mb-30 js-animation fadeIn">
+				<div class="landing-block-card col-sm-6 col-md-4 js-animation fadeIn">
 					<article class="u-shadow-v28 g-bg-white">
 						<img class="landing-block-node-img img-fluid w-100" src="https://cdn.bitrix24.site/bitrix/images/landing/business/370x233/img3.jpg" alt="" data-fileid="-1" data-filehash="9eef207add73028ae50f74a9033c20cb" />
 
@@ -319,25 +321,25 @@ return array(
 			array (
 				'CODE' => '36.2.concertes_dates_with_button',
 				'SORT' => '3000',
-				'CONTENT' => '<section class="landing-block g-pb-100 g-bg-gray-light-v5 g-pt-20">
-	<div class="container g-bg-gray-light-v5 g-font-size-13">
+				'CONTENT' => '<section class="landing-block g-bg-gray-light-v5 g-pt-100 g-pb-100">
+	<div class="container g-font-size-13">
 		<!-- Article -->
-		<article class="landing-block-node-card js-animation d-md-table text-md-left text-center w-100 g-bg-white g-mb-1 fadeInUp">
+		<article class="landing-block-node-card js-animation fadeInUp d-flex align-items-center text-md-left text-center w-100 g-bg-white g-mb-1 flex-column flex-md-row">
 			<!-- Date -->
-			<div class="text-center d-md-table-cell g-valign-middle g-width-125--md g-py-10 g-px-20">
+			<div class="text-center g-valign-middle g-width-125--md g-py-10 g-px-20 flex-shrink-0">
 				<div class="landing-block-node-card-date-value g-font-weight-700 g-font-size-40 g-line-height-1 g-color-black">27</div>
 				<div class="landing-block-node-card-date-text">Jun, 2015</div>
 			</div>
 			<!-- End Date -->
 
 			<!-- Article Image -->
-			<a href="#" class="d-md-table-cell g-valign-middle g-width-130">
-				<img class="landing-block-node-card-img d-block info-v5-2__image g-ml-minus-1" src="https://cdn.bitrix24.site/bitrix/images/landing/business/600x600/img13.jpg" alt="" />
-			</a>
+			
+				<img class="landing-block-node-card-img g-valign-middle g-width-130 info-v5-2__image g-ml-minus-1 flex-shrink-0" src="https://cdn.bitrix24.site/bitrix/images/landing/business/600x600/img13.jpg"
+					 alt="">
 			<!-- End Article Image -->
 
 			<!-- Article Content -->
-			<div class="d-md-table-cell g-valign-middle g-py-15 g-px-20">
+			<div class="g-valign-middle g-py-15 g-px-20 g-max-width-570">
 				<h4 class="landing-block-node-card-title g-color-gray-dark-v2 h6 text-uppercase g-font-weight-700">
 					Nam Enim Eros Rhoncus
 				</h4>
@@ -346,7 +348,7 @@ return array(
 			<!-- End Article Content -->
 
 			<!-- Price -->
-			<div class="d-md-table-cell g-valign-middle g-py-5 g-px-20">
+			<div class="g-valign-middle g-py-5 g-px-20 ml-auto ml-md-auto">
 				<div class="landing-block-node-card-price g-font-weight-700 g-color-gray-dark-v2">$15</div>
 
 				<div class="landing-block-node-card-price-text text-uppercase g-font-size-11">Per Ticket</div>
@@ -354,9 +356,10 @@ return array(
 			<!-- End Price -->
 
 			<!-- Actions -->
-			<div class="d-md-table-cell text-md-right g-valign-middle g-pa-20">
+			<div class="text-md-right g-valign-middle g-pa-20 flex-shrink-0">
 				<div class="g-mt-minus-10 g-mx-minus-5">
-					<a class="landing-block-node-card-button btn btn-xl u-btn-primary rounded-0 text-uppercase g-font-weight-700 g-font-size-12 g-mx-5 g-mt-10" href="#">Buy Ticket</a>
+					<a class="landing-block-node-card-button btn g-btn-type-solid g-btn-size-sm g-btn-px-m g-btn-primary rounded-0 text-uppercase g-mt-10"
+					   href="#">Buy Ticket</a>
 				</div>
 			</div>
 			<!-- End Actions -->
@@ -364,22 +367,22 @@ return array(
 		<!-- End Article -->
 
 		<!-- Article -->
-		<article class="landing-block-node-card js-animation d-md-table text-md-left text-center w-100 g-bg-white g-mb-1 fadeInUp">
+		<article class="landing-block-node-card js-animation fadeInUp d-flex align-items-center text-md-left text-center w-100 g-bg-white g-mb-1 flex-column flex-md-row">
 			<!-- Date -->
-			<div class="text-center d-md-table-cell g-valign-middle g-width-125--md g-py-10 g-px-20">
+			<div class="text-center g-valign-middle g-width-125--md g-py-10 g-px-20 flex-shrink-0">
 				<div class="landing-block-node-card-date-value g-font-weight-700 g-font-size-40 g-line-height-1 g-color-black">01</div>
 				<div class="landing-block-node-card-date-text">Aug, 2015</div>
 			</div>
 			<!-- End Date -->
 
 			<!-- Article Image -->
-			<a href="#" class="d-md-table-cell g-valign-middle g-width-130">
-				<img class="landing-block-node-card-img d-block info-v5-2__image g-ml-minus-1" src="https://cdn.bitrix24.site/bitrix/images/landing/business/600x600/img14.jpg" alt="" />
-			</a>
+			
+				<img class="landing-block-node-card-img g-valign-middle g-width-130 info-v5-2__image g-ml-minus-1 flex-shrink-0" src="https://cdn.bitrix24.site/bitrix/images/landing/business/600x600/img14.jpg"
+					 alt="">
 			<!-- End Article Image -->
 
 			<!-- Article Content -->
-			<div class="d-md-table-cell g-valign-middle g-py-15 g-px-20">
+			<div class="g-valign-middle g-py-15 g-px-20 g-max-width-570">
 				<h4 class="landing-block-node-card-title g-color-gray-dark-v2 h6 text-uppercase g-font-weight-700">
 					Nulla lobortis arcu ex
 				</h4>
@@ -388,7 +391,7 @@ return array(
 			<!-- End Article Content -->
 
 			<!-- Price -->
-			<div class="d-md-table-cell g-valign-middle g-py-5 g-px-20">
+			<div class="g-valign-middle g-py-5 g-px-20 ml-auto ml-md-auto">
 				<div class="landing-block-node-card-price g-font-weight-700 g-color-gray-dark-v2">$15</div>
 
 				<div class="landing-block-node-card-price-text text-uppercase g-font-size-11">Per Ticket</div>
@@ -396,9 +399,10 @@ return array(
 			<!-- End Price -->
 
 			<!-- Actions -->
-			<div class="d-md-table-cell text-md-right g-valign-middle g-pa-20">
+			<div class="d-md-table-cell text-md-right g-valign-middle g-pa-20 flex-shrink-0">
 				<div class="g-mt-minus-10 g-mx-minus-5">
-					<a class="landing-block-node-card-button btn btn-xl u-btn-primary rounded-0 text-uppercase g-font-weight-700 g-font-size-12 g-mx-5 g-mt-10" href="#">Buy Ticket</a>
+					<a class="landing-block-node-card-button btn g-btn-type-solid g-btn-size-sm g-btn-px-m g-btn-primary rounded-0 text-uppercase g-mt-10"
+					   href="#">Buy Ticket</a>
 				</div>
 			</div>
 			<!-- End Actions -->
@@ -406,22 +410,22 @@ return array(
 		<!-- End Article -->
 
 		<!-- Article -->
-		<article class="landing-block-node-card js-animation d-md-table text-md-left text-center w-100 g-bg-white g-mb-1 fadeInUp">
+		<article class="landing-block-node-card js-animation fadeInUp d-flex align-items-center text-md-left text-center w-100 g-bg-white g-mb-1 flex-column flex-md-row">
 			<!-- Date -->
-			<div class="text-center d-md-table-cell g-valign-middle g-width-125--md g-py-10 g-px-20">
+			<div class="text-center g-valign-middle g-width-125--md g-py-10 g-px-20 flex-shrink-0">
 				<div class="landing-block-node-card-date-value g-font-weight-700 g-font-size-40 g-line-height-1 g-color-black">05</div>
 				<div class="landing-block-node-card-date-text">Oct, 2015</div>
 			</div>
 			<!-- End Date -->
 
 			<!-- Article Image -->
-			<a href="#" class="d-md-table-cell g-valign-middle g-width-130">
-				<img class="landing-block-node-card-img d-block info-v5-2__image g-ml-minus-1" src="https://cdn.bitrix24.site/bitrix/images/landing/business/600x600/img15.jpg" alt="" />
-			</a>
+			
+				<img class="landing-block-node-card-img g-valign-middle g-width-130 info-v5-2__image g-ml-minus-1 flex-shrink-0" src="https://cdn.bitrix24.site/bitrix/images/landing/business/600x600/img15.jpg"
+					 alt="">
 			<!-- End Article Image -->
 
 			<!-- Article Content -->
-			<div class="d-md-table-cell g-valign-middle g-py-15 g-px-20">
+			<div class="g-valign-middle g-py-15 g-px-20 g-max-width-570">
 				<h4 class="landing-block-node-card-title g-color-gray-dark-v2 h6 text-uppercase g-font-weight-700">
 					Etiam varius sit amet est a varius
 				</h4>
@@ -430,7 +434,7 @@ return array(
 			<!-- End Article Content -->
 
 			<!-- Price -->
-			<div class="d-md-table-cell g-valign-middle g-py-5 g-px-20">
+			<div class="g-valign-middle g-py-5 g-px-20 ml-auto ml-md-auto">
 				<div class="landing-block-node-card-price g-font-weight-700 g-color-gray-dark-v2">$20</div>
 
 				<div class="landing-block-node-card-price-text text-uppercase g-font-size-11">Per Ticket</div>
@@ -438,9 +442,10 @@ return array(
 			<!-- End Price -->
 
 			<!-- Actions -->
-			<div class="d-md-table-cell text-md-right g-valign-middle g-pa-20">
+			<div class="d-md-table-cell text-md-right g-valign-middle g-pa-20 flex-shrink-0">
 				<div class="g-mt-minus-10 g-mx-minus-5">
-					<a class="landing-block-node-card-button btn btn-xl u-btn-primary rounded-0 text-uppercase g-font-weight-700 g-font-size-12 g-mx-5 g-mt-10" href="#">Buy Ticket</a>
+					<a class="landing-block-node-card-button btn g-btn-type-solid g-btn-size-sm g-btn-px-m g-btn-primary rounded-0 text-uppercase g-mt-10"
+					   href="#">Buy Ticket</a>
 				</div>
 			</div>
 			<!-- End Actions -->
@@ -448,22 +453,22 @@ return array(
 		<!-- End Article -->
 
 		<!-- Article -->
-		<article class="landing-block-node-card js-animation d-md-table text-md-left text-center w-100 g-bg-white g-mb-1 fadeInUp">
+		<article class="landing-block-node-card js-animation fadeInUp d-flex align-items-center text-md-left text-center w-100 g-bg-white g-mb-1 flex-column flex-md-row">
 			<!-- Date -->
-			<div class="text-center d-md-table-cell g-valign-middle g-width-125--md g-py-10 g-px-20">
+			<div class="text-center g-valign-middle g-width-125--md g-py-10 g-px-20 flex-shrink-0">
 				<div class="landing-block-node-card-date-value g-font-weight-700 g-font-size-40 g-line-height-1 g-color-black">22</div>
 				<div class="landing-block-node-card-date-text">Nov, 2015</div>
 			</div>
 			<!-- End Date -->
 
 			<!-- Article Image -->
-			<a href="#" class="d-md-table-cell g-valign-middle g-width-130">
-				<img class="landing-block-node-card-img d-block info-v5-2__image g-ml-minus-1" src="https://cdn.bitrix24.site/bitrix/images/landing/business/600x600/img16.jpg" alt="" />
-			</a>
+			
+				<img class="landing-block-node-card-img g-valign-middle g-width-130 info-v5-2__image g-ml-minus-1 flex-shrink-0" src="https://cdn.bitrix24.site/bitrix/images/landing/business/600x600/img16.jpg"
+					 alt="">
 			<!-- End Article Image -->
 
 			<!-- Article Content -->
-			<div class="d-md-table-cell g-valign-middle g-py-15 g-px-20">
+			<div class="g-valign-middle g-py-15 g-px-20 g-max-width-570">
 				<h4 class="landing-block-node-card-title g-color-gray-dark-v2 h6 text-uppercase g-font-weight-700">
 					Aliquam dignissim non nisi in tristique
 				</h4>
@@ -472,7 +477,7 @@ return array(
 			<!-- End Article Content -->
 
 			<!-- Price -->
-			<div class="d-md-table-cell g-valign-middle g-py-5 g-px-20">
+			<div class="g-valign-middle g-py-5 g-px-20 ml-auto ml-md-auto">
 				<div class="landing-block-node-card-price g-font-weight-700 g-color-gray-dark-v2">$15</div>
 
 				<div class="landing-block-node-card-price-text text-uppercase g-font-size-11">Per Ticket</div>
@@ -480,16 +485,18 @@ return array(
 			<!-- End Price -->
 
 			<!-- Actions -->
-			<div class="d-md-table-cell text-md-right g-valign-middle g-pa-20">
+			<div class="d-md-table-cell text-md-right g-valign-middle g-pa-20 flex-shrink-0">
 				<div class="g-mt-minus-10 g-mx-minus-5">
-					<a class="landing-block-node-card-button btn btn-xl u-btn-primary rounded-0 text-uppercase g-font-weight-700 g-font-size-12 g-mx-5 g-mt-10" href="#">Buy Ticket</a>
+					<a class="landing-block-node-card-button btn g-btn-type-solid g-btn-size-sm g-btn-px-m g-btn-primary rounded-0 text-uppercase g-mt-10"
+					   href="#">Buy Ticket</a>
 				</div>
 			</div>
 			<!-- End Actions -->
 		</article>
 		<!-- End Article -->
 	</div>
-</section>',
+</section>
+',
 			),
 		'48.slider_with_video_on_bgimg' =>
 			array (
@@ -775,7 +782,7 @@ return array(
 							<div class="landing-block-node-card-label-left g-color-primary">April 27, 2018</div>
 						</div>
 
-						<a class="btn landing-block-node-card-button g-valign-middle btn-block text-uppercase g-font-weight-700 g-font-size-11 rounded-0 g-py-10 g-py-20--md g-px-15 g-px-25--md g-brd-primary u-btn-primary g-color-white js-animation fadeInLeft mt-auto" href="#" target="_self">read more</a>
+						<a class="btn landing-block-node-card-button landing-semantic-link-medium-white js-animation fadeInLeft g-valign-middle text-uppercase g-btn-primary g-color-white rounded-0 g-py-10 g-py-20--md mt-auto g-btn-type-solid g-btn-size-sm g-btn-px-m rounded-0" href="#" target="_self">read more</a>
 					</div>
 					<!-- End Article Content -->
 				</article>
@@ -795,7 +802,7 @@ return array(
 							<div class="landing-block-node-card-label-left g-color-primary">APRIL 27, 2018</div>
 						</div>
 
-						<a class="btn landing-block-node-card-button g-valign-middle btn-block text-uppercase g-font-weight-700 g-font-size-11 rounded-0 g-py-10 g-py-20--md g-px-15 g-px-25--md g-brd-primary u-btn-primary g-color-white js-animation fadeInLeft mt-auto" href="#" target="_self">read more</a>
+						<a class="btn landing-block-node-card-button landing-semantic-link-medium-white js-animation fadeInLeft g-valign-middle text-uppercase g-btn-primary g-color-white rounded-0 g-py-10 g-py-20--md mt-auto g-btn-type-solid g-btn-size-sm g-btn-px-m rounded-0" href="#" target="_self">read more</a>
 					</div>
 					<!-- End Article Content -->
 				</article>
@@ -815,7 +822,7 @@ return array(
 							<div class="landing-block-node-card-label-left g-color-primary">APRIL 27, 2018</div>
 						</div>
 
-						<a class="btn landing-block-node-card-button g-valign-middle btn-block text-uppercase g-font-weight-700 g-font-size-11 rounded-0 g-py-10 g-py-20--md g-px-15 g-px-25--md g-brd-primary u-btn-primary g-color-white js-animation fadeInLeft mt-auto" href="#" target="_self">read more</a>
+						<a class="btn landing-block-node-card-button landing-semantic-link-medium-white js-animation fadeInLeft g-valign-middle text-uppercase g-btn-primary g-color-white rounded-0 g-py-10 g-py-20--md mt-auto g-btn-type-solid g-btn-size-sm g-btn-px-m rounded-0" href="#" target="_self">read more</a>
 					</div>
 					<!-- End Article Content -->
 				</article>
@@ -880,13 +887,13 @@ return array(
 			<div class="col-sm-12 col-md-6 col-lg-6 g-mb-25 g-mb-0--lg">
 				<h2 class="landing-block-node-title text-uppercase g-color-white g-font-weight-700 g-font-size-16 g-mb-20">
 					Contact us</h2>
-				<div class="landing-block-node-text g-font-size-default g-color-gray-light-v1 g-mb-20"><p>Lorem ipsum
+				<div class="landing-block-node-text g-color-gray-light-v1 g-mb-20"><p>Lorem ipsum
 						dolor sit amet, consectetur
 						adipiscing</p></div>
 
 				<address class="g-mb-20">
-					<div class="landing-block-card-contact g-pos-rel g-pl-20 g-mb-7" data-card-preset="text">
-						<div class="landing-block-node-card-contact-icon-container g-color-gray-light-v1 g-absolute-centered--y g-left-0">
+					<div class="landing-block-card-contact d-flex g-pos-rel g-mb-7" data-card-preset="text">
+						<div class="landing-block-node-card-contact-icon-container g-color-gray-light-v1 text-left g-width-20">
 							<i class="landing-block-node-card-contact-icon fa fa-home"></i>
 						</div>
 						<div class="landing-block-node-card-contact-text g-color-gray-light-v1">
@@ -894,8 +901,8 @@ return array(
 						</div>
 					</div>
 
-					<div class="landing-block-card-contact g-pos-rel g-pl-20 g-mb-7" data-card-preset="text">
-						<div class="landing-block-node-card-contact-icon-container g-color-gray-light-v1 g-absolute-centered--y g-left-0">
+					<div class="landing-block-card-contact d-flex g-pos-rel g-mb-7" data-card-preset="text">
+						<div class="landing-block-node-card-contact-icon-container g-color-gray-light-v1 text-left g-width-20">
 							<i class="landing-block-node-card-contact-icon fa fa-phone"></i>
 						</div>
 						<div class="landing-block-node-card-contact-text g-color-gray-light-v1">
@@ -904,8 +911,8 @@ return array(
 						</div>
 					</div>
 
-					<div class="landing-block-card-contact g-pos-rel g-pl-20 g-mb-7" data-card-preset="link">
-						<div class="landing-block-node-card-contact-icon-container g-color-gray-light-v1 g-absolute-centered--y g-left-0">
+					<div class="landing-block-card-contact d-flex g-pos-rel g-mb-7" data-card-preset="link">
+						<div class="landing-block-node-card-contact-icon-container g-color-gray-light-v1 text-left g-width-20">
 							<i class="landing-block-node-card-contact-icon fa fa-envelope"></i>
 						</div>
 						<div>
@@ -992,6 +999,38 @@ return array(
 			</div>
 
 			<div class="col-md-6">
+			
+				<ul class="list-inline float-md-right mb-0">
+					<li class="landing-block-card-social list-inline-item g-mr-10"
+						data-card-preset="facebook">
+						<a class="landing-block-card-social-icon-link u-icon-v2 g-width-35 g-height-35 g-font-size-16 g-color-gray-light-v1 g-color-white--hover g-bg-primary--hover g-brd-gray-dark-v5 g-brd-primary--hover g-rounded-50x"
+						   href="https://facebook.com">
+							<i class="landing-block-card-social-icon fa fa-facebook"></i>
+						</a>
+					</li>
+
+					<li class="landing-block-card-social list-inline-item g-mr-10"
+						data-card-preset="instagram">
+						<a class="landing-block-card-social-icon-link u-icon-v2 g-width-35 g-height-35 g-font-size-16 g-color-gray-light-v1 g-color-white--hover g-bg-primary--hover g-brd-gray-dark-v5 g-brd-primary--hover g-rounded-50x"
+						   href="https://instagram.com">
+							<i class="landing-block-card-social-icon fa fa-instagram"></i>
+						</a>
+					</li>
+					<li class="landing-block-card-social list-inline-item g-mr-10"
+						data-card-preset="twitter">
+						<a class="landing-block-card-social-icon-link u-icon-v2 g-width-35 g-height-35 g-font-size-16 g-color-gray-light-v1 g-color-white--hover g-bg-primary--hover g-brd-gray-dark-v5 g-brd-primary--hover g-rounded-50x"
+						   href="https://twitter.com">
+							<i class="landing-block-card-social-icon fa fa-twitter"></i>
+						</a>
+					</li>
+					<li class="landing-block-card-social list-inline-item g-mr-10"
+						data-card-preset="youtube">
+						<a class="landing-block-card-social-icon-link u-icon-v2 g-width-35 g-height-35 g-font-size-16 g-color-gray-light-v1 g-color-white--hover g-bg-primary--hover g-brd-gray-dark-v5 g-brd-primary--hover g-rounded-50x"
+						   href="https://youtube.com">
+							<i class="landing-block-card-social-icon fa fa-youtube"></i>
+						</a>
+					</li>
+				</ul>
 			</div>
 		</div>
 	</div>

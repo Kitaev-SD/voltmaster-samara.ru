@@ -14,6 +14,51 @@ if(!defined("B_PROLOG_INCLUDED") || B_PROLOG_INCLUDED !== true)
  * @global CUser $USER
  */
 
+$request = \Bitrix\Main\Context::getCurrent()->getRequest();
+
+if($arParams["APP_VIEW"])
+{
+	$appInfo = \Bitrix\Rest\AppTable::getByClientId($arParams["APP_VIEW"]);
+	if(
+		$appInfo
+		&& $appInfo['ACTIVE'] === \Bitrix\Rest\AppTable::ACTIVE
+		&& $appInfo['INSTALLED'] === \Bitrix\Rest\AppTable::INSTALLED
+	)
+	{
+		$appId =  $appInfo['ID'];
+		$res = \Bitrix\Rest\PlacementTable::getList(
+			[
+				'filter' => [
+					'PLACEMENT' => \CRestUtil::PLACEMENT_APP_URI,
+					'APP_ID' => $appInfo['ID']
+				],
+			]
+		);
+		if($placement = $res->fetch())
+		{
+			$arParams['ID'] = $placement['APP_ID'];
+			$arParams['PLACEMENT'] = $placement['PLACEMENT'];
+			$arParams['PLACEMENT_ID'] = $placement['ID'];
+			if($params = $request->getQuery("params"))
+			{
+				$arParams['PLACEMENT_OPTIONS'] = $params;
+				$arParams['~PLACEMENT_OPTIONS'] = $params;
+			}
+
+		}
+	}
+}
+
+if ($arParams["IFRAME"] === true && ($componentParams = $this->request->getPost('PARAMS')) && isset($componentParams['params']))
+{
+	$arParams = array_merge($arParams, $componentParams['params']);
+	if(isset($arParams['PLACEMENT_OPTIONS']) && !isset($arParams['~PLACEMENT_OPTIONS']))
+	{
+		$arParams['~PLACEMENT_OPTIONS'] = $arParams['PLACEMENT_OPTIONS'];
+	}
+	$arParams["LAZYLOAD"] = true;
+}
+
 $arParams['ID'] = isset($arParams['ID']) ? intval($arParams['ID']) : 0;
 $appCode = '';
 if($arParams['ID'] <= 0)
@@ -83,13 +128,14 @@ else
 	$arParams['CODE'] = intval($arParams['ID']);
 }
 
-$request = \Bitrix\Main\Context::getCurrent()->getRequest();
-
 $arParams['POPUP'] = isset($arParams['POPUP']) ? $arParams['POPUP'] : false;
+$arParams["IS_SLIDER"] =  isset($arParams['IS_SLIDER']) && $arParams['IS_SLIDER'] == 'Y';
 
 if(strlen($arParams['CODE']) <= 0)
 {
-	ShowError(GetMessage('REST_AL_ERROR_APP_NOT_FOUND'));
+	$componentPage = 'error';
+	$arResult['ERROR_MESSAGE'] = GetMessage('REST_AL_ERROR_APP_NOT_FOUND');
+	$this->IncludeComponentTemplate($componentPage);
 	return;
 }
 
@@ -109,7 +155,13 @@ if($arParams['PLACEMENT'] === \Bitrix\Rest\PlacementTable::PLACEMENT_DEFAULT && 
 	$requestOptions = $_GET;
 	if($arParams['POPUP'])
 	{
-		$requestOptions = array_merge($requestOptions, $_REQUEST['param']);
+		if (
+			isset($_REQUEST['param'])
+			&& is_array($_REQUEST['param'])
+		)
+		{
+			$requestOptions = array_merge($requestOptions, $_REQUEST['param']);
+		}
 		$arParams['PARENT_SID'] = $_REQUEST['parentsid'];
 	}
 
@@ -160,7 +212,9 @@ if(
 		$placementHandlerInfo = $dbRes->fetch();
 		if(!$placementHandlerInfo)
 		{
-			ShowError(GetMessage('REST_AL_ERROR_APP_PLACEMENT_NOT_INSTALLED'));
+			$componentPage = 'error';
+			$arResult['ERROR_MESSAGE'] = GetMessage('REST_AL_ERROR_APP_PLACEMENT_NOT_INSTALLED');
+			$this->IncludeComponentTemplate($componentPage);
 			return;
 		}
 
@@ -173,7 +227,7 @@ if(
 			$arResult['APP_NAME'] = $arApp['APP_NAME'];
 		}
 	}
-	elseif(isset($arParams['LAZYLOAD']) && strlen($arResult['APP_NAME']) <= 0)
+	elseif(isset($arParams['LAZYLOAD']) || strlen($arResult['APP_NAME']) <= 0)
 	{
 		$arResult['APP_NAME'] = $arApp['APP_NAME'];
 	}
@@ -255,7 +309,9 @@ if(
 				{
 					if($arResult['AUTH']['error'] !== "PAYMENT_REQUIRED")
 					{
-						ShowError($arResult['AUTH']['error'].($arResult['AUTH']['error_description'] ? ': '.$arResult['AUTH']['error_description'] : ''));
+						$componentPage = 'error';
+						$arResult['ERROR_MESSAGE'] = $arResult['AUTH']['error'].($arResult['AUTH']['error_description'] ? ': '.$arResult['AUTH']['error_description'] : '');
+						$this->IncludeComponentTemplate($componentPage);
 						return;
 					}
 					else
@@ -297,6 +353,12 @@ if(
 		$arResult['DETAIL_URL'] = str_replace("#code#", $arApp['CODE'], $arParams['DETAIL_URL']);
 
 		$arResult['APP_STATUS'] = \Bitrix\Rest\AppTable::getAppStatusInfo($arApp, $arResult['DETAIL_URL']);
+
+		$arResult["IS_SUBSCRIBE_PAID"] = COption::GetOptionString("bitrix24", "~mp24_paid", "N") == "Y";
+		if ($arResult["IS_SUBSCRIBE_PAID"])
+		{
+			$arResult["SUBSCRIBE_PAID_DATE"] = COption::GetOptionString("bitrix24", "~mp24_paid_date");
+		}
 
 		$arResult['APP_NEED_REINSTALL'] = $arApp['STATUS'] == \Bitrix\Rest\AppTable::STATUS_PAID && !isset($arApp['SHARED_KEY']);
 
@@ -390,7 +452,9 @@ if(
 			}
 			else
 			{
-				ShowError(GetMessage('REST_AL_ERROR_APP_NOT_INSTALLED'));
+				$componentPage = 'error';
+				$arResult['ERROR_MESSAGE'] = GetMessage('REST_AL_ERROR_APP_INSTALL_NOT_FINISH');
+				$this->IncludeComponentTemplate($componentPage);
 				return;
 			}
 		}
@@ -452,12 +516,28 @@ if(
 		}
 		elseif($arParams['SET_TITLE'] !== 'N')
 		{
-			$APPLICATION->SetTitle($arResult['APP_NAME']);
+			$APPLICATION->SetTitle(htmlspecialcharsbx($arResult['APP_NAME']));
 		}
 
 		CJSCore::Init(array('applayout'));
 
-		$this->IncludeComponentTemplate();
+		if($arResult['APP_STATUS']['PAYMENT_ALLOW'] === 'Y')
+		{
+			\Bitrix\Rest\UsageStatTable::logPlacement($arResult['APP_ID'], $arParams['PLACEMENT']);
+			\Bitrix\Rest\UsageStatTable::finalize();
+		}
+
+		$componentPage = '';
+		if(
+			$arResult['APP_STATUS']['PAYMENT_EXPIRED'] == 'Y'
+			|| $arResult['APP_STATUS']['STATUS'] == \Bitrix\Rest\AppTable::STATUS_SUBSCRIPTION
+			&& !$arResult["IS_SUBSCRIBE_PAID"]
+		)
+		{
+			$componentPage = 'payment';
+		}
+
+		$this->IncludeComponentTemplate($componentPage);
 
 		if($arParams['POPUP'])
 		{
@@ -469,7 +549,16 @@ if(
 	}
 	else
 	{
-		ShowError(GetMessage('REST_AL_ERROR_APP_NOT_FOUND'));
+		if(!$bHasAccess)
+		{
+			$arResult['ERROR_MESSAGE'] = GetMessage('REST_AL_ERROR_APP_NOT_ACCESSIBLE');
+		}
+		else
+		{
+			$arResult['ERROR_MESSAGE'] = GetMessage('REST_AL_ERROR_APP_NOT_FOUND_MARKETPLACE');
+		}
+		$componentPage = 'error';
+		$this->IncludeComponentTemplate($componentPage);
 	}
 }
 elseif(strlen($appCode) > 0)
@@ -482,7 +571,9 @@ elseif(strlen($appCode) > 0)
 }
 else
 {
-	ShowError(GetMessage('REST_AL_ERROR_APP_NOT_FOUND'));
+	$componentPage = 'error';
+	$arResult['ERROR_MESSAGE'] = GetMessage('REST_AL_ERROR_APP_NOT_FOUND_MARKETPLACE');
+	$this->IncludeComponentTemplate($componentPage);
 }
 
 ?>

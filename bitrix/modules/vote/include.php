@@ -41,7 +41,7 @@ CModule::AddAutoloadClasses("vote", array(
 	"bitrix\\vote\\attachment\\controller" => "lib/attachment/controller.php",
 	"bitrix\\vote\\attachment\\defaultconnector" => "lib/attachment/defaultconnector.php",
 	"bitrix\\vote\\attachment\\forummessageconnector" => "lib/attachment/forummessageconnector.php",
-	"bitrix\\vote\\attachment\\storable" => "lib/attachment/storage.php",
+	"bitrix\\vote\\attachment\\storable" => "lib/attachment/storable.php",
 	"bitrix\\vote\\base\\baseobject" => "lib/base/baseobject.php",
 	"bitrix\\vote\\base\\controller" => "lib/base/controller.php",
 	"bitrix\\vote\\base\\diag" => "lib/base/diag.php",
@@ -60,9 +60,6 @@ CModule::AddAutoloadClasses("vote", array(
 	"bitrix\\vote\\uf\\manager" => "lib/uf/manager.php",
 	"bitrix\\vote\\uf\\voteusertype" => "lib/uf/voteusertype.php",
 	"bitrix\\vote\\usertable" => "lib/user.php",
-	"bitrix\\vote\\voteeventquestiontable" => "lib/user.php",
-	"bitrix\\vote\\voteeventanswertable" => "lib/user.php",
-	"bitrix\\vote\\voteeventanswer" => "lib/user.php",
 	"bitrix\\vote\\user" => "lib/user.php",
 	"bitrix\\vote\\votetable" => "lib/vote.php",
 	"bitrix\\vote\\vote" => "lib/vote.php"
@@ -187,7 +184,7 @@ function VoteVoteEditFromArray($CHANNEL_ID, $VOTE_ID = false, $arFields = array(
 					"id" => "QUESTION_".$key,
 					"text" => (empty($arQuestion["QUESTION"]) ?
 						GetMessage("VOTE_QUESTION_EMPTY", array("#NUMBER#" => $key)) :
-						GetMessage("VOTE_ANSWERS_EMPTY", array("#QUESTION#" => $arQuestion["QUESTION"]))));
+						GetMessage("VOTE_ANSWERS_EMPTY", array("#QUESTION#" => htmlspecialcharsbx($arQuestion["QUESTION"])))));
 			}
 			continue;
 		}

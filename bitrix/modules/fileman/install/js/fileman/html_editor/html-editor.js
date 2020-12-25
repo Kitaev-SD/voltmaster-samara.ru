@@ -383,6 +383,7 @@
 				BX.addCustomEvent(this, "OnInsertHtml", BX.proxy(this.AutoResizeSceleton, this));
 				BX.addCustomEvent(this, "OnIframeSetValue", BX.proxy(this.AutoResizeSceleton, this));
 				BX.addCustomEvent(this, "OnFocus", BX.proxy(this.AutoResizeSceleton, this));
+				BX.addCustomEvent(this, "OnSetViewAfter", BX.proxy(this.AutoResizeSceleton, this));
 			}
 
 			BX.addCustomEvent(this, "OnIframeKeyup", BX.proxy(this.CheckBodyHeight, this));
@@ -1566,7 +1567,7 @@
 			this.util.IsBlockElement = function (node)
 			{
 				var styleDisplay = BX.style(node, 'display');
-				return styleDisplay && styleDisplay.toLowerCase() === "block";
+				return styleDisplay && BX.type.isString(styleDisplay) && styleDisplay.toLowerCase() === "block";
 			};
 
 			this.util.IsBlockNode = function (node)
@@ -2694,7 +2695,7 @@
 				form = this.dom.form;
 
 			try{
-				BX.addCustomEvent(this, 'OnSubmit', function(){form.BXAUTOSAVE.Init();});
+//				BX.addCustomEvent(this, 'OnSubmit', function(){form.BXAUTOSAVE.Init();}); // to prevent save ticker after form submit, OnContentChanged is enough
 				BX.addCustomEvent(this, 'OnContentChanged', function(){form.BXAUTOSAVE.Init();});
 
 				BX.addCustomEvent(form, 'onAutoSave', function (ob, data)
@@ -2809,11 +2810,21 @@
 			BX.bind(this.iframeView.element, 'paste', function (e)
 			{
 				var
+					chromeVerion = 0,
 					imageHandled = false,
 					clipboard = e.clipboardData;
 
-				// For firefox works wrong (see mantis:88928)
-				if (clipboard && clipboard.items && !BX.browser.IsFirefox())
+					if (BX.browser.IsChrome() || BX.browser.IsSafari())
+					{
+						var ua = navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./);
+						chromeVerion = ua ? parseInt(ua[2], 10) : Infinity;
+					}
+
+				// For firefox works wrong (see mantis:88928, mantis:122421)
+				if (clipboard && clipboard.items
+					&& !BX.browser.IsFirefox()
+					&& (!chromeVerion || chromeVerion < 83)
+				)
 				{
 					var item = clipboard.items[0];
 					if (item && item.type.indexOf('image/') > -1)
@@ -2841,17 +2852,13 @@
 
 				if (!imageHandled)
 				{
-					var
-						doc = _this.GetIframeDoc(),
-						images = doc.body.getElementsByTagName('IMG');
-
 					_this.pasteCheckItteration = 0;
-					checkImages(images);
+					checkImages(_this.GetIframeDoc().body.getElementsByTagName('IMG'));
 				}
 			});
 
+			BX.removeCustomEvent(this, 'OnImageDataUriCaughtUploaded', BX.proxy(this.HandleImageDataUriCaughtUploadedCallback, this));
 			BX.addCustomEvent(this, 'OnImageDataUriCaughtUploaded', BX.proxy(this.HandleImageDataUriCaughtUploadedCallback, this));
-			//BX.addCustomEvent(this, 'OnImageDataUriCaughtFailed', BX.proxy(this.HandleImageDataUriCaughtFailedCallback, this));
 		},
 
 		GetBase64Image: function(base64source)
@@ -5073,6 +5080,7 @@
 			"video": {},
 			"source": {},
 			"audio": {},
+			"nofollow": {},
 
 			// tags to remove
 			"title": {remove: 1},

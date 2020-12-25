@@ -27,7 +27,8 @@ include_once($_SERVER["DOCUMENT_ROOT"]."/bitrix/modules/fileman/properties.php")
 
 CJSCore::RegisterExt('file_input', array(
 	'js' => '/bitrix/js/fileman/core_file_input.js',
-	'lang' => '/bitrix/modules/fileman/lang/'.LANGUAGE_ID.'/classes/general/file_input.php'
+	'lang' => '/bitrix/modules/fileman/lang/'.LANGUAGE_ID.'/classes/general/file_input.php',
+	'rel' => array('window') //BX.COpener
 ));
 
 CJSCore::RegisterExt('map_google', array(

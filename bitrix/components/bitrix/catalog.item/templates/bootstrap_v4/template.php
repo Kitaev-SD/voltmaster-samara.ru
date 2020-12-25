@@ -106,7 +106,7 @@ if (isset($arResult['ITEM']))
 		id="<?=$areaId?>" data-entity="item">
 		<?
 		$documentRoot = Main\Application::getDocumentRoot();
-		$templatePath = strtolower($arResult['TYPE']).'/template.php';
+		$templatePath = mb_strtolower($arResult['TYPE']).'/template.php';
 		$file = new Main\IO\File($documentRoot.$templateFolder.'/'.$templatePath);
 		if ($file->isExists())
 		{
@@ -116,7 +116,7 @@ if (isset($arResult['ITEM']))
 		if (!$haveOffers)
 		{
 			$jsParams = array(
-				'PRODUCT_TYPE' => $item['CATALOG_TYPE'],
+				'PRODUCT_TYPE' => $item['PRODUCT']['TYPE'],
 				'SHOW_QUANTITY' => $arParams['USE_PRODUCT_QUANTITY'],
 				'SHOW_ADD_BASKET_BTN' => false,
 				'SHOW_BUY_BTN' => true,
@@ -181,7 +181,7 @@ if (isset($arResult['ITEM']))
 		else
 		{
 			$jsParams = array(
-				'PRODUCT_TYPE' => $item['CATALOG_TYPE'],
+				'PRODUCT_TYPE' => $item['PRODUCT']['TYPE'],
 				'SHOW_QUANTITY' => false,
 				'SHOW_ADD_BASKET_BTN' => false,
 				'SHOW_BUY_BTN' => true,

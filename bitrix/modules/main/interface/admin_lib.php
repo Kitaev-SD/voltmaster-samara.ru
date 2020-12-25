@@ -18,6 +18,8 @@ class CAdminPage
 	var $bInit = false;
 	var $publicMode = false;
 
+	private $isHideTitle = false;
+
 	public function __construct()
 	{
 		if (defined("PUBLIC_MODE") && PUBLIC_MODE == 1)
@@ -53,6 +55,16 @@ class CAdminPage
 	{
 		global $APPLICATION;
 		return htmlspecialcharsex($APPLICATION->GetTitle(false, true));
+	}
+
+	public function isHideTitle()
+	{
+		return $this->isHideTitle;
+	}
+
+	public function hideTitle()
+	{
+		$this->isHideTitle = true;
 	}
 
 	function GetJsTitle()
@@ -428,7 +440,7 @@ class CAdminAjaxHelper
 	{
 		$this->context = Application::getInstance()->getContext();
 		$this->request = $this->context->getRequest();
-		$this->httpResponse = new HttpResponse($this->context);
+		$this->httpResponse = new HttpResponse();
 	}
 
 	/**
@@ -545,7 +557,7 @@ class CAdminSidePanelHelper extends CAdminAjaxHelper
 		{
 			if ($this->isPublicSidePanel())
 			{
-				if (strpos("publicSidePanel", $dataToForm["reloadUrl"]) === false)
+				if (mb_strpos("publicSidePanel",$dataToForm["reloadUrl"]) === false)
 				{
 					$dataToForm["reloadUrl"] = CHTTP::urlAddParams(
 						$dataToForm["reloadUrl"], array("publicSidePanel" => "Y"));
@@ -996,28 +1008,28 @@ class CAdminMenu
 				if(empty($all_links[$j]))
 					continue;
 
-				if(strpos($all_links[$j], "/bitrix/admin/") !== 0)
+				if(mb_strpos($all_links[$j],"/bitrix/admin/") !== 0)
 					$tested_link = "/bitrix/admin/".$all_links[$j];
 				else
 					$tested_link = $all_links[$j];
 
-				if(strlen($tested_link) > 0 && strpos($cur_page, $tested_link) === 0)
+				if($tested_link <> '' && mb_strpos($cur_page,$tested_link) === 0)
 				{
 					$bSelected = true;
 					break;
 				}
 
-				if(($pos = strpos($tested_link, "?"))!==false)
+				if(($pos = mb_strpos($tested_link,"?"))!==false)
 				{
-					if(substr($tested_link, 0, $pos)==$cur_page)
+					if(mb_substr($tested_link,0,$pos)==$cur_page)
 					{
-						$right = substr($tested_link, $pos+1);
+						$right = mb_substr($tested_link,$pos+1);
 						$params = explode("&", $right);
 						$bOK = true;
 
 						foreach ($params as $paramKeyAndValue)
 						{
-							$eqpos = strpos($paramKeyAndValue, "=");
+							$eqpos = mb_strpos($paramKeyAndValue,"=");
 							$varvalue = "";
 							if($eqpos === false)
 							{
@@ -1029,8 +1041,8 @@ class CAdminMenu
 							}
 							else
 							{
-								$varname = substr($paramKeyAndValue, 0, $eqpos);
-								$varvalue = urldecode(substr($paramKeyAndValue, $eqpos+1));
+								$varname = mb_substr($paramKeyAndValue,0,$eqpos);
+								$varvalue = urldecode(mb_substr($paramKeyAndValue,$eqpos+1));
 							}
 
 							$globvarvalue = isset($_REQUEST[$varname]) ? $_REQUEST[$varname] : "";
@@ -1472,7 +1484,7 @@ window.'.$this->name.' = new PopupMenu("'.$this->id.'"'.
 						(isset($action["MENU_PRELOAD"]) && $action["MENU_PRELOAD"] == true? "'MENU_PRELOAD':true,":"").
 						(isset($action["CLOSE_ON_CLICK"]) && $action["CLOSE_ON_CLICK"] == false? "'CLOSE_ON_CLICK':false,":"");
 					if($sItem <> "")
-						$sItem = substr($sItem, 0, -1); //delete last comma
+						$sItem = mb_substr($sItem,0,-1); //delete last comma
 					$sMenuUrl .= "{".$sItem."}";
 				}
 				$i++;
@@ -1666,7 +1678,7 @@ class CAdminContextMenu
 
 		foreach(GetModuleEvents("main", "OnAdminContextMenuShow", true) as $arEvent)
 		{
-			ExecuteModuleEventEx($arEvent, array(&$this->items));
+			ExecuteModuleEventEx($arEvent, array(&$this->items, &$this->additional_items));
 		}
 
 		if(empty($this->items) && empty($this->additional_items))
@@ -1700,7 +1712,7 @@ class CAdminContextMenu
 			$bFirst = false;
 		}
 
-		if (count($this->additional_items) > 0)
+		if (!empty($this->additional_items))
 		{
 			if($bFirst)
 			{
@@ -1840,7 +1852,7 @@ class CAdminContextMenuList extends CAdminContextMenu
 
 	function GetClassByID($icon_id)
 	{
-		if (substr($icon_id, 0, 7) == 'btn_new')
+		if (mb_substr($icon_id,0,7) == 'btn_new')
 			return 'adm-btn-save adm-btn-add';
 		else
 			return parent::GetClassByID($icon_id);
@@ -1848,7 +1860,7 @@ class CAdminContextMenuList extends CAdminContextMenu
 
 	function GetActiveClassByID($icon_id)
 	{
-		if (substr($icon_id, 0, 7) == 'btn_new')
+		if (mb_substr($icon_id,0,7) == 'btn_new')
 			return 'adm-btn-save-active';
 		else
 			return parent::GetActiveClassByID($icon_id);
@@ -1878,74 +1890,65 @@ class CAdminSorting
 	protected $field;
 	protected $order;
 
+	/**
+	 * @param string $table_id
+	 * @param string|false $by_initial
+	 * @param string|false $order_initial
+	 * @param string $by_name
+	 * @param string $ord_name
+	 */
 	public function __construct($table_id, $by_initial=false, $order_initial=false, $by_name="by", $ord_name="order")
 	{
-		/** @global CMain $APPLICATION */
-		global $APPLICATION;
-
 		$this->by_name = $by_name;
 		$this->ord_name = $ord_name;
 		$this->table_id = $table_id;
 		$this->by_initial = $by_initial;
 		$this->order_initial = $order_initial;
 
-		$uniq = md5($APPLICATION->GetCurPage());
-
-		$aOptSort = array();
+		$needUserByField = false;
+		$needUserOrder = false;
 		if(isset($GLOBALS[$this->by_name]))
 		{
-			$_SESSION["SESS_SORT_BY"][$uniq] = $GLOBALS[$this->by_name];
+			$_SESSION["SESS_SORT_BY"][$this->table_id] = $GLOBALS[$this->by_name];
 		}
-		elseif(isset($_SESSION["SESS_SORT_BY"][$uniq]))
+		elseif(isset($_SESSION["SESS_SORT_BY"][$this->table_id]))
 		{
-			$GLOBALS[$this->by_name] = $_SESSION["SESS_SORT_BY"][$uniq];
+			$GLOBALS[$this->by_name] = $_SESSION["SESS_SORT_BY"][$this->table_id];
 		}
 		else
 		{
-			if (defined("PUBLIC_MODE") && PUBLIC_MODE == 1)
-			{
-				$gridOptions = new Bitrix\Main\Grid\Options($this->table_id);
-				$sorting = $gridOptions->getSorting();
-				$GLOBALS[$this->by_name] = key($sorting["sort"]);
-				if (empty($GLOBALS[$this->by_name]) && $by_initial !== false)
-					$GLOBALS[$this->by_name] = $by_initial;
-			}
-			else
-			{
-				$aOptSort = CUserOptions::GetOption("list", $this->table_id, array("by"=>$by_initial, "order"=>$order_initial));
-				if(!empty($aOptSort["by"]))
-					$GLOBALS[$this->by_name] = $aOptSort["by"];
-				elseif($by_initial !== false)
-					$GLOBALS[$this->by_name] = $by_initial;
-			}
+			$needUserByField = true;
 		}
 
 		if(isset($GLOBALS[$this->ord_name]))
 		{
-			$_SESSION["SESS_SORT_ORDER"][$uniq] = $GLOBALS[$this->ord_name];
+			$_SESSION["SESS_SORT_ORDER"][$this->table_id] = $GLOBALS[$this->ord_name];
 		}
-		elseif(isset($_SESSION["SESS_SORT_ORDER"][$uniq]))
+		elseif(isset($_SESSION["SESS_SORT_ORDER"][$this->table_id]))
 		{
-			$GLOBALS[$this->ord_name] = $_SESSION["SESS_SORT_ORDER"][$uniq];
+			$GLOBALS[$this->ord_name] = $_SESSION["SESS_SORT_ORDER"][$this->table_id];
 		}
 		else
 		{
-			if (defined("PUBLIC_MODE") && PUBLIC_MODE == 1)
+			$needUserOrder = true;
+		}
+
+		if ($needUserByField || $needUserOrder)
+		{
+			$userSorting = $this->getUserSorting();
+			if ($needUserByField)
 			{
-				$gridOptions = new Bitrix\Main\Grid\Options($this->table_id);
-				$sorting = $gridOptions->getSorting();
-				$GLOBALS[$this->ord_name] = strtoupper(current($sorting["sort"])) === "ASC" ? "ASC" : "DESC";
-				if (empty($GLOBALS[$this->ord_name]) && $order_initial !== false)
-					$GLOBALS[$this->ord_name] = $order_initial;
+				if (!empty($userSorting["by"]))
+					$GLOBALS[$this->by_name] = $userSorting["by"];
+				elseif ($this->by_initial !== false)
+					$GLOBALS[$this->by_name] = $this->by_initial;
 			}
-			else
+			if ($needUserOrder)
 			{
-				if(empty($aOptSort["order"]))
-					$aOptSort = CUserOptions::GetOption("list", $this->table_id, array("order"=>$order_initial));
-				if(!empty($aOptSort["order"]))
-					$GLOBALS[$this->ord_name] = $aOptSort["order"];
-				elseif($order_initial !== false)
-					$GLOBALS[$this->ord_name] = $order_initial;
+				if(!empty($userSorting["order"]))
+					$GLOBALS[$this->ord_name] = $userSorting["order"];
+				elseif($this->order_initial !== false)
+					$GLOBALS[$this->ord_name] = $this->order_initial;
 			}
 		}
 
@@ -1953,15 +1956,22 @@ class CAdminSorting
 		$this->order = $GLOBALS[$this->ord_name];
 	}
 
-	function Show($text, $sort_by, $alt_title = false, $baseCssClass = "")
+	/**
+	 * @param string $text
+	 * @param string $sort_by
+	 * @param string|false $alt_title
+	 * @param string $baseCssClass
+	 * @return string
+	 */
+	public function Show($text, $sort_by, $alt_title = false, $baseCssClass = "")
 	{
 		$ord = "asc";
 		$class = "";
 		$title = GetMessage("admin_lib_sort_title")." ".($alt_title?$alt_title:$text);
 
-		if(strtolower($this->field) == strtolower($sort_by))
+		if(mb_strtolower($this->field) == mb_strtolower($sort_by))
 		{
-			if(strtolower($this->order) == "desc")
+			if(mb_strtolower($this->order) == "desc")
 			{
 				$class = "-down";
 				$title .= " ".GetMessage("admin_lib_sort_down");
@@ -1985,7 +1995,7 @@ class CAdminSorting
 			$path = preg_replace("/([?&])action=[^&]*[&]*/i", "\\1", $path);
 			$sep = "&";
 		}
-		if(($last = substr($path, -1, 1)) == "?" || $last == "&")
+		if(($last = mb_substr($path,-1,1)) == "?" || $last == "&")
 			$sep = "";
 
 		$url = $path.$sep.$this->by_name."=".$sort_by."&".$this->ord_name."=".($class <> ""? $ord:"");
@@ -1993,14 +2003,36 @@ class CAdminSorting
 		return 'class="'.$baseCssClass.' adm-list-table-cell-sort'.$class.'" onclick="'.$this->table_id.'.Sort(\''.htmlspecialcharsbx(CUtil::addslashes($url)).'\', '.($class <> ""? "false" : "true").', arguments);" title="'.$title.'"';
 	}
 
+	/**
+	 * @return string
+	 */
 	public function getField()
 	{
 		return $this->field;
 	}
 
+	/**
+	 * @return string
+	 */
 	public function getOrder()
 	{
 		return $this->order;
+	}
+
+	/**
+	 * @return array
+	 */
+	protected function getUserSorting()
+	{
+		$userSorting = CUserOptions::GetOption(
+			"list",
+			$this->table_id,
+			array("by" => $this->by_initial, "order" => $this->order_initial)
+		);
+		return array(
+			"by" => (!empty($userSorting["by"]) ? $userSorting["by"] : null),
+			"order" => (!empty($userSorting["order"]) ? $userSorting["order"] : null)
+		);
 	}
 }
 
@@ -2016,13 +2048,22 @@ class CAdminResult extends CDBResult
 	var $nInitialSize;
 	var $table_id;
 
+	/**
+	* CAdminResult constructor.
+	* @param mixed $res
+	* @param string $table_id
+	*/
 	public function __construct($res, $table_id)
 	{
 		parent::__construct($res);
 		$this->table_id = $table_id;
 	}
 
-	/** @deprecated */
+	/**
+	* @deprecated
+ 	* @param mixed $res
+	* @param string $table_id
+	*/
 	public function CAdminResult($res, $table_id)
 	{
 		self::__construct($res, $table_id);
@@ -2119,7 +2160,11 @@ class CAdminMessage
 		$this->exception = $exception;
 	}
 
-	/** @deprecated */
+	/**
+	* @deprecated
+	 * @param string|array $message
+	 * @param CAdminException|bool $exception
+	*/
 	public function CAdminMessage($message, $exception=false)
 	{
 		self::__construct($message, $exception);
@@ -2130,14 +2175,18 @@ class CAdminMessage
 		$publicMode = false;
 		if (defined('BX_PUBLIC_MODE') && BX_PUBLIC_MODE == 1 && $this->message["TYPE"] != "PROGRESS" && (!isset($this->message['SKIP_PUBLIC_MODE']) || $this->message['SKIP_PUBLIC_MODE'] !== true))
 		{
+			$alertMessage = ($this->message['DETAILS'] <> ''? $this->message['DETAILS'] : $this->message['MESSAGE']);
+			$alertMessage = htmlspecialcharsback($alertMessage); //we don't need html entities in an alert() box, see BX.CWindow.prototype.ShowError
+			$alertMessage = str_replace(array('<br>', '<br />', '<BR>', '<BR />'), "\r\n", $alertMessage);
+
 			ob_end_clean();
-			echo '<script>
+			echo "<script>
 			var currentWindow = top.window;
 			if (top.BX.SidePanel.Instance && top.BX.SidePanel.Instance.getTopSlider())
 			{
 				currentWindow = top.BX.SidePanel.Instance.getTopSlider().getWindow();
 			}
-			currentWindow.BX.WindowManager.Get().ShowError(\''.CUtil::JSEscape(str_replace(array('<br>', '<br />', '<BR>', '<BR />'), "\r\n", htmlspecialcharsback($this->message['DETAILS']? $this->message['DETAILS'] : $this->message['MESSAGE']))).'\');</script>';
+			currentWindow.BX.WindowManager.Get().ShowError('".CUtil::JSEscape($alertMessage)."');</script>";
 			die();
 		}
 

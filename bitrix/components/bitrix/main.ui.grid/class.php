@@ -365,6 +365,11 @@ class CMainUIGrid extends CBitrixComponent
 			false
 		);
 
+		$this->arParams["ADVANCED_EDIT_MODE"] = Grid\Params::prepareBoolean(
+			array($this->arParams["ADVANCED_EDIT_MODE"]),
+			false
+		);
+
 		return $this->arParams;
 	}
 
@@ -420,6 +425,10 @@ class CMainUIGrid extends CBitrixComponent
 		$this->arResult["MESSAGES"] = $this->prepareMessages($this->arParams["MESSAGES"]);
 		$this->arResult["LAZY_LOAD"] = $this->arParams["LAZY_LOAD"];
 		$this->arResult["HAS_STICKED_COLUMNS"] = !empty($this->getGridOptions()->getStickedColumns());
+		$this->arResult["HANDLE_RESPONSE_ERRORS"] = (
+			isset($this->arParams["HANDLE_RESPONSE_ERRORS"])
+			&& $this->arParams["HANDLE_RESPONSE_ERRORS"] === true
+		);
 
 		return $this;
 	}
@@ -1040,7 +1049,13 @@ class CMainUIGrid extends CBitrixComponent
 
 			foreach ($this->prepareRows() as $key => $item)
 			{
-				$this->arResult["ALLOW_INLINE_EDIT"] = ($item["editable"] !== false);
+				if (
+					$item['id'] !== 'template_0'
+					&& $this->arResult["ALLOW_INLINE_EDIT"] === $this->allowInlineEdit
+				)
+				{
+					$this->arResult["ALLOW_INLINE_EDIT"] = ($item["editable"] !== false);
+				}
 			}
 		}
 
@@ -1286,6 +1301,11 @@ class CMainUIGrid extends CBitrixComponent
 				}
 			}
 			$this->arParams["ROWS"][$key] = $actualRow;
+
+			if (!isset($this->arParams["ROWS"][$key]["editableColumns"]))
+			{
+				$this->arParams["ROWS"][$key]["editableColumns"] = [];
+			}
 		}
 
 		return $this->arParams["ROWS"];
@@ -1759,7 +1779,21 @@ class CMainUIGrid extends CBitrixComponent
 				{
 					$typeName = Grid\Editor\Types::DROPDOWN;
 				}
+				elseif($columnTypeName === "money")
+				{
+					$typeName = Grid\Editor\Types::MONEY;
+				}
 				$result["TYPE"] = $typeName;
+			}
+
+			if($result["TYPE"] === Grid\Editor\Types::MONEY	&& is_array($result["CURRENCY_LIST"]))
+			{
+				$currencyList = is_array($result["CURRENCY_LIST"]) ? $result["CURRENCY_LIST"] : [];
+				$result["CURRENCY_LIST"] = [];
+				foreach($currencyList as $k => $v)
+				{
+					$result["CURRENCY_LIST"][] = array("VALUE" => $k, "NAME" => $v);
+				}
 			}
 
 			if($result["TYPE"] === Grid\Editor\Types::DROPDOWN
@@ -2038,7 +2072,7 @@ class CMainUIGrid extends CBitrixComponent
 				{
 					$ext = getFileExtension($file);
 
-					if ($ext === 'js' && !(strpos($file, 'map.js') !== false || strpos($file, 'min.js') !== false))
+					if ($ext === 'js' && !(mb_strpos($file, 'map.js') !== false || mb_strpos($file, 'min.js') !== false))
 					{
 						$tmpl->addExternalJs($relPath.$file);
 					}
@@ -2161,6 +2195,16 @@ class CMainUIGrid extends CBitrixComponent
 	{
 		if ($this->checkRequiredParams())
 		{
+			$templateRow = [
+				'id' => 'template_0',
+				'not_count' => true,
+				'attrs' => [
+					'hidden' => 'true',
+				],
+			];
+
+			$this->arParams['ROWS'][] = $templateRow;
+
 			$this->prepareParams();
 			$this->prepareResult();
 			$this->prepareDefaultOptions();
@@ -2178,8 +2222,13 @@ class CMainUIGrid extends CBitrixComponent
 			}
 
 			$this->includeComponentTemplate();
-			$this->includeComponentScripts();
-			$this->includeComponentBlocks();
+
+			$templateName = $this->getTemplateName();
+			if ($templateName !== '.default' && $templateName !== '')
+			{
+				$this->includeComponentScripts();
+				$this->includeComponentBlocks();
+			}
 		}
 	}
 }

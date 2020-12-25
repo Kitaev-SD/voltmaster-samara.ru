@@ -52,7 +52,7 @@ class Helper
 		$menu["items"][] = array(
 			"text" => Loc::getMessage("B24C_HLP_CHAT"),
 			"url" => "/bitrix/admin/b24connector_chat.php?lang=".LANGUAGE_ID,
-			"icon" => "b24connector_menu_icon_chat",			
+			"icon" => "b24connector_menu_icon_chat",
 			"more_url" => array(
 				"b24connector_chat.php"
 			)
@@ -134,20 +134,20 @@ class Helper
 
 			while($row = $dbRes->fetch())
 			{
-				if(strlen($row['SCRIPT']) > 0)
+				if($row['SCRIPT'] <> '')
 					$result .= $row['SCRIPT']."\n";
 			}
 
-			if(strlen($result) > 0)
+			if($result <> '')
 			{
-				\Bitrix\Main\Page\Asset::getInstance()->addString($result);
+				\Bitrix\Main\Page\Asset::getInstance()->addString($result, false, \Bitrix\Main\Page\AssetLocation::BODY_END);
 
 				ob_start();
 				$APPLICATION->IncludeComponent("bitrix:b24connector.openline.info", "", Array("COMPOSITE_FRAME_TYPE" => "STATIC"));
 				$saoRes = ob_get_contents();
 				ob_end_clean();
 
-				\Bitrix\Main\Page\Asset::getInstance()->addString($saoRes);
+				\Bitrix\Main\Page\Asset::getInstance()->addString($saoRes, false, \Bitrix\Main\Page\AssetLocation::BODY_END);
 			}
 		}
 	}

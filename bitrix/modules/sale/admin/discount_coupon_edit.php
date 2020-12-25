@@ -64,7 +64,7 @@ if (!$subWindow)
 	if ($rawReturnUrl != '')
 	{
 		$currentUrl = $APPLICATION->GetCurPage();
-		if (strtolower(substr($rawReturnUrl, strlen($currentUrl))) != strtolower($currentUrl))
+		if (mb_strtolower(mb_substr($rawReturnUrl, mb_strlen($currentUrl))) != mb_strtolower($currentUrl))
 			$returnUrl = $rawReturnUrl;
 	}
 	unset($rawReturnUrl);
@@ -624,7 +624,7 @@ else
 		$control->AddViewField(
 			$prefix.'TYPE',
 			Loc::getMessage('BX_SALE_DISCOUNT_COUPON_FIELD_TYPE'),
-			$couponTypes[$coupon['TYPE']],
+			$couponTypes[$coupon['TYPE']].'<input type="hidden" name="'.htmlspecialcharsbx($prefix.'TYPE').'" value="'.htmlspecialcharsbx($coupon['TYPE']).'">',
 			true
 		);
 	}

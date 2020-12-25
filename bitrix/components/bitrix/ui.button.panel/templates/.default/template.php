@@ -17,20 +17,37 @@ if ($arResult['HAS_HINTS'])
 	Extension::load("ui.hint");
 }
 
+switch ($arParams['ALIGN'])
+{
+	case 'left':
+		$alignClass = 'ui-button-panel-align-left';
+		break;
+	case 'right':
+		$alignClass = 'ui-button-panel-align-right';
+		break;
+	case 'center':
+		$alignClass = 'ui-button-panel-align-center';
+		break;
+	default:
+		$alignClass = '';
+}
+
+$containerId = $arParams['ID'];
 ?>
-<script type="text/javascript">
-	BX.ready(function () {
-		BX.UI.ButtonPanel.init(<?=Json::encode([
-			'containerId' => 'ui-button-panel',
-			'isFrame' => $arParams['FRAME'],
-			'hasHints' => $arResult['HAS_HINTS'],
-			'buttons' => $arResult['LIST']
-		])?>);
-	});
+<script>
+BX.ready(function () {
+
+	BX.UI.ButtonPanel.init(<?=Json::encode([
+		'containerId' => $containerId,
+		'isFrame' => $arParams['FRAME'],
+		'hasHints' => $arResult['HAS_HINTS'],
+		'buttons' => $arResult['LIST']
+	])?>);
+});
 </script>
 
-<div id="ui-button-panel" class="ui-button-panel-wrapper ui-pinner ui-pinner-bottom <?=($arParams['FRAME'] ? 'ui-pinner-full-width' : '')?>">
-	<div class="ui-button-panel">
+<div id="<?=htmlspecialcharsbx($containerId)?>" class="ui-button-panel-wrapper ui-pinner ui-pinner-bottom<?=($arParams['FRAME'] ? ' ui-pinner-full-width' : '')?><?=($arParams['HIDE'] ? ' ui-button-panel-wrapper-hide' : '')?>">
+	<div class="ui-button-panel <?=htmlspecialcharsbx($alignClass)?> <?=$arParams['CLASS_NAME']?>">
 		<?foreach ($arResult['LIST'] as $item)
 		{
 			$item['CLASS_NAME'] = '';
@@ -84,23 +101,47 @@ if ($arResult['HAS_HINTS'])
 					<?
 					break;
 
+				case UiButtonPanel::TYPE_REMOVE:
 				case UiButtonPanel::TYPE_CHECKBOX:
 					?>
-					<div class="ui-button-panel-checkbox">
-						<label class="ui-button-panel-checkbox-label">
-							<input
-								id="<?=htmlspecialcharsbx($item['ID'])?>"
-								type="checkbox"
-								name="<?=htmlspecialcharsbx($item['NAME'])?>"
-								value="Y"
-								<?if(!empty($item['ONCLICK'])):?>onclick="<?=htmlspecialcharsbx($item['ONCLICK'])?>"<?endif?>
-								<?=($item['CHECKED'] ? 'checked' : '')?>
-							>
-							<?=htmlspecialcharsbx($item['CAPTION'])?>
-						</label>
-						<?if(!empty($item['HINT'])):?>
-							<span data-hint="<?=htmlspecialcharsbx($item['HINT'])?>"></span>
-						<?endif;?>
+					<div class="ui-button-panel-block-right">
+					<?
+					if ($item['TYPE'] == UiButtonPanel::TYPE_REMOVE)
+					{
+						?>
+						<button class="ui-btn ui-btn-light ui-btn-icon-remove"
+							id="<?= htmlspecialcharsbx($item['ID']) ?>"
+							name="<?= htmlspecialcharsbx($item['NAME']) ?>"
+							value="Y"
+							<?if (!empty($item['ONCLICK'])): ?>onclick="<?= htmlspecialcharsbx($item['ONCLICK']) ?>"<?endif ?>
+						><?= htmlspecialcharsbx($item['CAPTION']) ?></button>
+						<?
+					}
+					else
+					{
+						?>
+						<div class="ui-button-panel-checkbox">
+							<label class="ui-button-panel-checkbox-label">
+								<input
+									id="<?= htmlspecialcharsbx($item['ID']) ?>"
+									type="checkbox"
+									name="<?= htmlspecialcharsbx($item['NAME']) ?>"
+									value="Y"
+									<?
+									if (!empty($item['ONCLICK'])): ?>onclick="<?= htmlspecialcharsbx($item['ONCLICK']) ?>"<?
+								endif ?>
+									<?= ($item['CHECKED'] ? 'checked' : '') ?>
+								>
+								<?= htmlspecialcharsbx($item['CAPTION']) ?>
+							</label>
+							<?
+							if (!empty($item['HINT'])):?>
+								<span data-hint="<?= htmlspecialcharsbx($item['HINT']) ?>"></span>
+							<?endif; ?>
+						</div>
+						<?
+					}
+					?>
 					</div>
 					<?
 					break;

@@ -1,9 +1,14 @@
 <?
+define("BX_SKIP_USER_LIMIT_CHECK", true);
 define("NOT_CHECK_PERMISSIONS", true);
 define("STOP_STATISTICS", true);
 define("BX_SENDPULL_COUNTER_QUEUE_DISABLE", true);
 
-if(!isset($_REQUEST['sessid']))
+if(
+	!isset($_REQUEST['sessid'])
+	&& !isset($_REQUEST['livechat_auth_id'])
+	&& !isset($_REQUEST['call_auth_id'])
+)
 {
 	define('BX_SECURITY_SESSION_VIRTUAL', true);
 }

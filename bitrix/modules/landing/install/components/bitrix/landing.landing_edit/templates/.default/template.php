@@ -9,8 +9,10 @@ if (!defined('B_PROLOG_INCLUDED') || B_PROLOG_INCLUDED !== true)
 /** @var array $arResult */
 /** @var array $arParams */
 /** @var \CMain $APPLICATION */
+/** @var \LandingEditComponent $component */
 
 use \Bitrix\Landing\Manager;
+use \Bitrix\Landing\Restriction;
 use \Bitrix\Main\Page\Asset;
 use \Bitrix\Main\Localization\Loc;
 use \Bitrix\Main\ModuleManager;
@@ -20,7 +22,7 @@ Loc::loadMessages(__FILE__);
 $context = \Bitrix\Main\Application::getInstance()->getContext();
 $request = $context->getRequest();
 
-\Bitrix\Main\UI\Extension::load("ui.buttons");
+\Bitrix\Main\UI\Extension::load('ui.buttons');
 
 if ($arResult['ERRORS'])
 {
@@ -40,7 +42,7 @@ if ($arResult['FATAL'])
 // vars
 $isIndex = false;
 $domainId = 0;
-$domainName = '';
+$domainName = \Bitrix\Landing\Domain::getHostUrl();
 $domainProtocol = '';
 $row = $arResult['LANDING'];
 $meta = $arResult['META'];
@@ -49,16 +51,20 @@ $hooksSite = $arResult['HOOKS_SITE'];
 $domains = $arResult['DOMAINS'];
 $tplRefs = $arResult['TEMPLATES_REF'];
 $sites = $arResult['SITES'];
+$isIntranet = $arResult['IS_INTRANET'];
+$siteCurrent = isset($sites[$row['SITE_ID']['CURRENT']])
+				? $sites[$row['SITE_ID']['CURRENT']]
+				: null;
 
 // correct some vars
 if (!$row['SITE_ID']['CURRENT'])
 {
 	$row['SITE_ID']['CURRENT'] = $arParams['SITE_ID'];
 }
-if (isset($sites[$row['SITE_ID']['CURRENT']]))
+if ($siteCurrent)
 {
-	$domainId = $sites[$row['SITE_ID']['CURRENT']]['DOMAIN_ID'];
-	$isIndex = $row['ID']['CURRENT'] == $sites[$row['SITE_ID']['CURRENT']]['LANDING_ID_INDEX'];
+	$domainId = $siteCurrent['DOMAIN_ID'];
+	$isIndex = $row['ID']['CURRENT'] == $siteCurrent['LANDING_ID_INDEX'];
 }
 if (isset($domains[$domainId]))
 {
@@ -90,7 +96,7 @@ Asset::getInstance()->addJS('/bitrix/components/bitrix/landing.site_edit/templat
 $this->getComponent()->initAPIKeys();
 
 // view-functions
-include \Bitrix\Landing\Manager::getDocRoot() . '/bitrix/components/bitrix/landing.site_edit/templates/.default/template_class.php';
+include Manager::getDocRoot() . '/bitrix/components/bitrix/landing.site_edit/templates/.default/template_class.php';
 $template = new Template($arResult);
 
 // some url
@@ -107,15 +113,23 @@ $uriSave->addParams(array(
 		top.window['landingSettingsSaved'] = false;
 		<?if ($arParams['SUCCESS_SAVE']):?>
 		top.window['landingSettingsSaved'] = true;
-		top.BX.onCustomEvent("BX.Main.Filter:apply");
+		top.BX.onCustomEvent('BX.Landing.Filter:apply');
 		editComponent.actionClose();
+		top.BX.Landing.UI.Tool.ActionDialog.getInstance().close();
 		<?endif;?>
+		BX.Landing.Env.createInstance({
+			params: {type: '<?= $arParams['TYPE'];?>'}
+		});
 	});
 </script>
 
 <?
 if ($arParams['SUCCESS_SAVE'])
 {
+	if ($request->get('IFRAME') != 'Y')
+	{
+		$this->getComponent()->refresh([], ['action']);
+	}
 	return;
 }
 ?>
@@ -143,9 +157,30 @@ if ($arParams['SUCCESS_SAVE'])
 							<span class="landing-form-site-name-label">
 								<?
 								echo $domainName;
-								if (Manager::isB24())
+								if ($isIntranet)
 								{
-									echo '/';
+									if ($siteCurrent)
+									{
+										echo Manager::getPublicationPath(trim($siteCurrent['CODE'], '/'));
+									}
+									else
+									{
+										echo '/';
+									}
+								}
+								else if (Manager::isB24())
+								{
+									if ($siteCurrent && $siteCurrent['TYPE'] == 'SMN')
+									{
+										echo Manager::getPublicationPath(
+											null,
+											$siteCurrent['SMN_SITE_ID']
+										);
+									}
+									else
+									{
+										echo '/';
+									}
 								}
 								else
 								{
@@ -162,6 +197,14 @@ if ($arParams['SUCCESS_SAVE'])
 							</span>
 							<input type="<?= $isIndex ? 'hidden' : 'text';?>" name="fields[CODE]" value="<?= \htmlspecialcharsbx($row['CODE']['CURRENT'])?>" class="ui-input" />
 							<?= $isIndex ? '' : '<span class="landing-form-site-name-label">/</span>';?>
+							<?if ($isIndex):?>
+								<div class="ui-form-field-description">
+									<?= $component->getMessageType('LANDING_TPL_CODE_SETTINGS', [
+										'#LINK1#' => $arParams['PAGE_URL_SITE_EDIT'] ? '<a href="' . $arParams['PAGE_URL_SITE_EDIT'] . '">' : '',
+										'#LINK2#' => $arParams['PAGE_URL_SITE_EDIT'] ? '</a>' : ''
+									]);?>
+								</div>
+							<?endif;?>
 						</div>
 					</td>
 				</tr>
@@ -169,7 +212,9 @@ if ($arParams['SUCCESS_SAVE'])
 					$pageFields = $hooks['METAOG']->getPageFields();
 					?>
 				<tr>
-					<td class="ui-form-label ui-form-label-align-top"><?= $hooks['METAOG']->getTitle();?></td>
+					<td class="ui-form-label ui-form-label-align-top">
+						<?= $component->getMessageType('LANDING_FIELD_TITLE_METAOG_NAME');?>
+					</td>
 					<td class="ui-form-right-cell">
 						<div class="landing-form-social-view">
 							<?
@@ -221,7 +266,7 @@ if ($arParams['SUCCESS_SAVE'])
 								<script type="text/javascript">
 									BX.ready(function()
 									{
-										new BX.Landing.EditTitleForm(BX('ui-editable-page-title'));
+										new BX.Landing.EditTitleForm(BX('ui-editable-page-title'), 0, true, true);
 									});
 								</script>
 								<div class="landing-form-social-text-title">
@@ -249,7 +294,7 @@ if ($arParams['SUCCESS_SAVE'])
 								<script type="text/javascript">
 									BX.ready(function()
 									{
-										new BX.Landing.EditTitleForm(BX('ui-editable-page-text'));
+										new BX.Landing.EditTitleForm(BX('ui-editable-page-text'), 0, true);
 									});
 								</script>
 								<div class="landing-form-social-text">
@@ -267,7 +312,9 @@ if ($arParams['SUCCESS_SAVE'])
 									</span>
 								</div>
 							<?endif;?>
-								<div class="landing-form-social-site-name"><?= $domainName?></div>
+							<?if (!$isIntranet):?>
+								<div class="landing-form-social-site-name"><?= $domainName;?></div>
+							<?endif;?>
 							</div>
 						</div>
 					</td>
@@ -288,18 +335,18 @@ if ($arParams['SUCCESS_SAVE'])
 									$selectParams['value'] = $pageFields['THEME_CODE']->getValue();
 									
 									// set color and border for DEFAULT
-									$selectParams['options'][""]['class'] = 'select-color-popup-menu-item--underline';
+									$selectParams['options']['']['class'] = 'select-color-popup-menu-item--underline';
 									$siteFields = $hooksSite['THEME']->getPageFields();
-									if($value = $siteFields['THEME_CODE']->getValue())
+									if ($value = $siteFields['THEME_CODE']->getValue())
 									{
 										// set color from site
-										$selectParams['options'][""]['color'] = $selectParams['options'][$value]['color'];
+										$selectParams['options']['']['color'] = $selectParams['options'][$value]['color'];
 									}
 									else
 									{
 										// set last color
 										$lastOption = end($selectParams['options']);
-										$selectParams['options'][""]['color'] = $lastOption['color'];
+										$selectParams['options']['']['color'] = $lastOption['color'];
 									}
 									?>
 										
@@ -311,11 +358,13 @@ if ($arParams['SUCCESS_SAVE'])
 									/>
 									
 									<div class="ui-select select-color-wrap"
-										 id="<?=$selectParams['id']?>_select_color_wrap">
+										 id="<?= $selectParams['id'];?>_select_color_wrap">
 									</div>
 
 									<script>
-										var sc = new BX.Landing.SelectColor(<?=\CUtil::PhpToJSObject($selectParams)?>);
+										var sc = new BX.Landing.SelectColor(
+											<?=\CUtil::PhpToJSObject($selectParams);?>
+										);
 										sc.show();
 									</script>
 								</div>
@@ -323,21 +372,50 @@ if ($arParams['SUCCESS_SAVE'])
 						</tr>
 					<? endif; ?>
 				<? endif;?>
+
+				<?php if (isset($hooks['THEMEFONTS'])):?>
+					<tr>
+						<td class="ui-form-label ui-form-label-align-top"><?=Loc::getMessage('LANDING_TPL_FONTS_PAGE')?></td>
+						<td class="ui-form-right-cell ui-form-right-cell-fonts">
+							<?$template->showMultiply('THEMEFONTS');?>
+						</td>
+					</tr>
+				<?php endif;?>
 				
 				<tr>
 					<td class="ui-form-right-cell ui-form-collapse" colspan="2">
 						<div class="ui-form-collapse-block landing-form-collapse-block-js">
 							<span class="ui-form-collapse-label"><?= Loc::getMessage('LANDING_TPL_ADDITIONAL');?></span>
 							<span class="landing-additional-alt-promo-wrap">
-								<span class="landing-additional-alt-promo-text"><?= Loc::getMessage('LANDING_TPL_ADDITIONAL_TAGS');?></span>
-								<span class="landing-additional-alt-promo-text"><?= Loc::getMessage('LANDING_TPL_ADDITIONAL_BG');?></span>
-								<span class="landing-additional-alt-promo-text"><?= Loc::getMessage('LANDING_TPL_ADDITIONAL_VIEW');?></span>
-								<span class="landing-additional-alt-promo-text"><?= Loc::getMessage('LANDING_TPL_ADDITIONAL_LAYOUT');?></span>
-								<span class="landing-additional-alt-promo-text"><?= Loc::getMessage('LANDING_TPL_ADDITIONAL_METRIKA');?></span>
-								<span class="landing-additional-alt-promo-text"><?= Loc::getMessage('LANDING_TPL_ADDITIONAL_INDEX');?></span>
-								<span class="landing-additional-alt-promo-text"><?= Loc::getMessage('LANDING_TPL_ADDITIONAL_HTMLCSS');?></span>
-								<?if (ModuleManager::isModuleInstalled('bitrix24')):?>
-								<span class="landing-additional-alt-promo-text"><?= Loc::getMessage('LANDING_TPL_ADDITIONAL_SITEMAP');?></span>
+								<?if (isset($hooks['METAMAIN'])):?>
+									<span class="landing-additional-alt-promo-text" data-landing-additional-option="meta"><?= Loc::getMessage('LANDING_TPL_ADDITIONAL_TAGS');?></span>
+								<?endif;?>
+								<?if (isset($hooks['BACKGROUND'])):?>
+									<span class="landing-additional-alt-promo-text" data-landing-additional-option="background"><?= Loc::getMessage('LANDING_TPL_ADDITIONAL_BG');?></span>
+								<?endif;?>
+								<?if (isset($hooks['VIEW'])):?>
+									<span class="landing-additional-alt-promo-text" data-landing-additional-option="view"><?= Loc::getMessage('LANDING_TPL_ADDITIONAL_VIEW');?></span>
+								<?endif;?>
+								<?if ($arResult['TEMPLATES']):?>
+									<span class="landing-additional-alt-promo-text" data-landing-additional-option="layout"><?= Loc::getMessage('LANDING_TPL_ADDITIONAL_LAYOUT');?></span>
+								<?endif;?>
+								<?if (isset($hooks['YACOUNTER']) || isset($hooks['GACOUNTER']) || isset($hooks['GTM'])):?>
+									<span class="landing-additional-alt-promo-text" data-landing-additional-option="metrika"><?= Loc::getMessage('LANDING_TPL_ADDITIONAL_METRIKA');?></span>
+								<?endif;?>
+								<?if (isset($hooks['PIXELFB']) || isset($hooks['PIXELVK'])):?>
+									<span class="landing-additional-alt-promo-text" data-landing-additional-option="pixel"><?= Loc::getMessage('LANDING_TPL_HOOK_PIXEL');?></span>
+								<?endif;?>
+								<?if (isset($hooks['METAROBOTS'])):?>
+									<span class="landing-additional-alt-promo-text" data-landing-additional-option="index"><?= Loc::getMessage('LANDING_TPL_ADDITIONAL_INDEX');?></span>
+								<?endif;?>
+								<?if (isset($hooks['HEADBLOCK'])):?>
+									<span class="landing-additional-alt-promo-text" data-landing-additional-option="html"><?= Loc::getMessage('LANDING_TPL_ADDITIONAL_HTML');?></span>
+								<?endif;?>
+								<?if (isset($hooks['CSSBLOCK'])):?>
+									<span class="landing-additional-alt-promo-text" data-landing-additional-option="css"><?= Loc::getMessage('LANDING_TPL_ADDITIONAL_CSS');?></span>
+								<?endif;?>
+								<?if (!$isIntranet && ModuleManager::isModuleInstalled('bitrix24')):?>
+								<span class="landing-additional-alt-promo-text" data-landing-additional-option="sitemap"><?= Loc::getMessage('LANDING_TPL_ADDITIONAL_SITEMAP');?></span>
 								<?endif;?>
 							</span>
 						</div>
@@ -346,7 +424,7 @@ if ($arParams['SUCCESS_SAVE'])
 				<?if (isset($hooks['METAMAIN'])):
 					$pageFields = $hooks['METAMAIN']->getPageFields();
 					?>
-				<tr class="landing-form-hidden-row">
+				<tr class="landing-form-hidden-row" data-landing-additional-detail="meta">
 					<td class="ui-form-label ui-form-label-align-top"><?= $hooks['METAMAIN']->getTitle();?></td>
 					<td class="ui-form-right-cell">
 						<div class="ui-checkbox-hidden-input landing-form-meta-block">
@@ -443,7 +521,7 @@ if ($arParams['SUCCESS_SAVE'])
 				<?if (isset($hooks['BACKGROUND'])):
 					$pageFields = $hooks['BACKGROUND']->getPageFields();
 					?>
-				<tr class="landing-form-hidden-row">
+				<tr class="landing-form-hidden-row" data-landing-additional-detail="background">
 					<td class="ui-form-label ui-form-label-align-top"><?= $hooks['BACKGROUND']->getTitle();?></td>
 					<td class="ui-form-right-cell">
 						<div class="ui-checkbox-hidden-input landing-form-page-background">
@@ -540,7 +618,7 @@ if ($arParams['SUCCESS_SAVE'])
 				<?if (isset($hooks['VIEW'])):
 					$pageFields = $hooks['VIEW']->getPageFields();
 					?>
-					<tr class="landing-form-hidden-row">
+					<tr class="landing-form-hidden-row" data-landing-additional-detail="view">
 						<td class="ui-form-label ui-form-label-align-top"><?= $hooks['VIEW']->getTitle();?></td>
 						<td class="ui-form-right-cell">
 							<div class="ui-checkbox-hidden-input landing-form-type-page-block">
@@ -591,7 +669,7 @@ if ($arParams['SUCCESS_SAVE'])
 					</tr>
 				<?endif;?>
 				<?if ($arResult['TEMPLATES']):?>
-					<tr class="landing-form-hidden-row">
+					<tr class="landing-form-hidden-row" data-landing-additional-detail="layout">
 						<td class="ui-form-label ui-form-label-align-top"><?= Loc::getMessage('LANDING_TPL_LAYOUT');?></td>
 						<td class="ui-form-right-cell">
 							<div class="ui-checkbox-hidden-input ui-checkbox-hidden-input-layout">
@@ -656,13 +734,21 @@ if ($arParams['SUCCESS_SAVE'])
 					</tr>
 				<?endif;?>
 				<?if (isset($hooks['YACOUNTER']) || isset($hooks['GACOUNTER']) || isset($hooks['GTM'])):?>
-				<tr class="landing-form-hidden-row">
+				<tr class="landing-form-hidden-row" data-landing-additional-detail="metrika">
 					<td class="ui-form-label ui-form-label-align-top"><?= Loc::getMessage('LANDING_TPL_HOOK_METRIKA');?></td>
 					<td class="ui-form-right-cell ui-form-right-cell-metrika">
-						<?$template->showSimple('GACOUNTER');?>
-						<?$template->showSimple('GTM');?>
 						<?
-						if (in_array(Manager::getZone(), array('ru', 'by', 'kz')))
+						if (isset($hooks['GACOUNTER']))
+						{
+							$pageFields = $hooks['GACOUNTER']->getPageFields();
+							if (!$pageFields['GACOUNTER_CLICK_TYPE']->getValue())
+							{
+								$pageFields['GACOUNTER_CLICK_TYPE']->setValue('text');
+							}
+						}
+						$template->showSimple('GACOUNTER');
+						$template->showSimple('GTM');
+						if (Manager::availableOnlyForZone('ru'))
 						{
 							$template->showSimple('YACOUNTER');
 						}
@@ -676,10 +762,24 @@ if ($arParams['SUCCESS_SAVE'])
 					</script>
 				</tr>
 				<?endif;?>
+				<?if (isset($hooks['PIXELFB']) || isset($hooks['PIXELVK'])):?>
+					<tr class="landing-form-hidden-row" data-landing-additional-detail="pixel">
+						<td class="ui-form-label ui-form-label-align-top"><?= Loc::getMessage('LANDING_TPL_HOOK_PIXEL');?></td>
+						<td class="ui-form-right-cell ui-form-right-cell-pixel">
+							<?$template->showSimple('PIXELFB');?>
+							<?
+							if (Manager::availableOnlyForZone('ru'))
+							{
+								$template->showSimple('PIXELVK');
+							}
+							?>
+						</td>
+					</tr>
+				<?endif;?>
 				<?if (isset($hooks['METAROBOTS'])):
 					$pageFields = $hooks['METAROBOTS']->getPageFields();
 					?>
-				<tr class="landing-form-hidden-row">
+				<tr class="landing-form-hidden-row" data-landing-additional-detail="index">
 					<td class="ui-form-label"><?= $hooks['METAROBOTS']->getTitle();?></td>
 					<td class="ui-form-right-cell ui-form-field-wrap-align-m">
 						<span class="ui-checkbox-block">
@@ -709,10 +809,10 @@ if ($arParams['SUCCESS_SAVE'])
 				<?if (isset($hooks['HEADBLOCK'])):
 					$pageFields = $hooks['HEADBLOCK']->getPageFields();
 					?>
-				<tr class="landing-form-hidden-row">
+				<tr class="landing-form-hidden-row" data-landing-additional-detail="html">
 					<td class="ui-form-label ui-form-label-align-top"><?= $hooks['HEADBLOCK']->getTitle();?></td>
 					<td class="ui-form-right-cell">
-						<div class="ui-checkbox-hidden-input landing-form-custom-fields">
+						<div class="ui-checkbox-hidden-input landing-form-custom-html">
 							<?
 							if (isset($pageFields['HEADBLOCK_USE']))
 							{
@@ -725,9 +825,18 @@ if ($arParams['SUCCESS_SAVE'])
 							?>
 							<div class="ui-checkbox-hidden-input-inner">
 								<?if (isset($pageFields['HEADBLOCK_USE'])):?>
-								<label class="ui-checkbox-label" for="checkbox-headblock-use">
-									<?= $pageFields['HEADBLOCK_USE']->getLabel();?>
-								</label>
+									<label class="ui-checkbox-label" for="checkbox-headblock-use">
+										<?= $pageFields['HEADBLOCK_USE']->getLabel();?>
+									</label>
+									<?
+									if ($hooks['HEADBLOCK']->isLocked())
+									{
+										echo Restriction\Manager::getLockIcon(
+											Restriction\Hook::getRestrictionCodeByHookCode('HEADBLOCK'),
+											['checkbox-headblock-use']
+										);
+									}
+									?>
 								<?endif;?>
 								<?if (isset($pageFields['HEADBLOCK_CODE'])):?>
 								<div class="ui-control-wrap">
@@ -737,20 +846,7 @@ if ($arParams['SUCCESS_SAVE'])
 									</div>
 									<?
 									$pageFields['HEADBLOCK_CODE']->viewForm(array(
-										'class' => 'ui-textarea',
-										'name_format' => 'fields[ADDITIONAL_FIELDS][#field_code#]'
-									));
-									?>
-								</div>
-								<?endif;?>
-								<?if (isset($pageFields['HEADBLOCK_CSS_CODE'])):?>
-								<div class="ui-control-wrap">
-									<div class="ui-form-control-label">
-										<div class="ui-form-control-label-title"><?= $pageFields['HEADBLOCK_CSS_CODE']->getLabel();?></div>
-										<div><?= $pageFields['HEADBLOCK_CSS_CODE']->getHelpValue();?></div>
-									</div>
-									<?
-									$pageFields['HEADBLOCK_CSS_CODE']->viewForm(array(
+										'id' => 'textarea-headblock-code',
 										'class' => 'ui-textarea',
 										'name_format' => 'fields[ADDITIONAL_FIELDS][#field_code#]'
 									));
@@ -762,8 +858,50 @@ if ($arParams['SUCCESS_SAVE'])
 					</td>
 				</tr>
 				<?endif;?>
-				<?if (ModuleManager::isModuleInstalled('bitrix24')):?>
-				<tr class="landing-form-hidden-row">
+				<?if (isset($hooks['CSSBLOCK'])):
+					$pageFields = $hooks['CSSBLOCK']->getPageFields();
+					?>
+					<tr class="landing-form-hidden-row" data-landing-additional-detail="css">
+						<td class="ui-form-label ui-form-label-align-top"><?= $hooks['CSSBLOCK']->getTitle();?></td>
+						<td class="ui-form-right-cell">
+							<div class="ui-checkbox-hidden-input landing-form-custom-css">
+								<?
+								if (isset($pageFields['CSSBLOCK_USE']))
+								{
+									$pageFields['CSSBLOCK_USE']->viewForm(array(
+										'class' => 'ui-checkbox',
+										'id' => 'checkbox-headblock-css',
+										'name_format' => 'fields[ADDITIONAL_FIELDS][#field_code#]'
+									));
+								}
+								?>
+								<div class="ui-checkbox-hidden-input-inner">
+									<?if (isset($pageFields['CSSBLOCK_USE'])):?>
+										<label class="ui-checkbox-label" for="checkbox-headblock-css">
+											<?= $pageFields['CSSBLOCK_USE']->getLabel();?>
+										</label>
+									<?endif;?>
+									<?if (isset($pageFields['CSSBLOCK_CODE'])):?>
+										<div class="ui-control-wrap">
+											<div class="ui-form-control-label">
+												<div class="ui-form-control-label-title"><?= $pageFields['CSSBLOCK_CODE']->getLabel();?></div>
+												<div><?= $pageFields['CSSBLOCK_CODE']->getHelpValue();?></div>
+											</div>
+											<?
+											$pageFields['CSSBLOCK_CODE']->viewForm(array(
+												'class' => 'ui-textarea',
+												'name_format' => 'fields[ADDITIONAL_FIELDS][#field_code#]'
+											));
+											?>
+										</div>
+									<?endif;?>
+								</div>
+							</div>
+						</td>
+					</tr>
+				<?endif;?>
+				<?if (!$isIntranet && ModuleManager::isModuleInstalled('bitrix24')):?>
+				<tr class="landing-form-hidden-row" data-landing-additional-detail="sitemap">
 					<td class="ui-form-label"><?= $row['SITEMAP']['TITLE']?></td>
 					<td class="ui-form-right-cell ui-form-field-wrap-align-m">
 						<span class="ui-checkbox-block">
@@ -780,7 +918,7 @@ if ($arParams['SUCCESS_SAVE'])
 		</div>
 	</div>
 
-	<div class="<?if ($request->get('IFRAME') == 'Y'){?>landing-edit-footer-fixed <?}?>pinable-block">
+	<div class="<?if (false && $request->get('IFRAME') == 'Y'){?>landing-edit-footer-fixed <?}?>pinable-block">
 		<div class="landing-form-footer-container">
 			<button id="landing-save-btn" type="submit" class="ui-btn ui-btn-success"  name="submit"  value="<?= Loc::getMessage('LANDING_TPL_BUTTON_' . ($arParams['SITE_ID'] ? 'SAVE' : 'ADD'));?>">
 				<?= Loc::getMessage('LANDING_TPL_BUTTON_' . ($arParams['LANDING_ID'] ? 'SAVE' : 'ADD'))?>
@@ -799,7 +937,7 @@ if ($arParams['SUCCESS_SAVE'])
 		new BX.Landing.Layout({
 			siteId: '<?= $row['SITE_ID']['CURRENT'];?>',
 			landingId: '<?= $row['ID']['CURRENT'];?>',
-			type: '<?= isset($sites[$row['SITE_ID']['CURRENT']]) ? $sites[$row['SITE_ID']['CURRENT']]['TYPE'] : 'PAGE';?>',
+			type: '<?= $siteCurrent ? $siteCurrent['TYPE'] : 'PAGE';?>',
 			messages: {
 				area: '<?= \CUtil::jsEscape(Loc::getMessage('LANDING_TPL_LAYOUT_AREA'));?>'
 			}
@@ -812,7 +950,7 @@ if ($arParams['SUCCESS_SAVE'])
 			<?endif;?>
 		});
 		<?endif;?>
-		new BX.Landing.EditTitleForm(BX('ui-editable-title'), 600);
+		new BX.Landing.EditTitleForm(BX('ui-editable-title'), 600, true);
 		new BX.Landing.ToggleFormFields(BX('landing-page-set-form'));
 		new BX.Landing.SaveBtn(BX('landing-save-btn'));
 	});

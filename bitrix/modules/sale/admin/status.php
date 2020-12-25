@@ -1,13 +1,11 @@
 <?
-##############################################
-# Bitrix: SiteManager                        #
-# Copyright (c) 2002-2006 Bitrix             #
-# http://www.bitrixsoft.com                  #
-# mailto:admin@bitrixsoft.com                #
-##############################################
+
+use Bitrix\Main\Localization\Loc;
+use Bitrix\Sale;
 
 require_once($_SERVER["DOCUMENT_ROOT"]."/bitrix/modules/main/include/prolog_admin_before.php");
-require_once($_SERVER["DOCUMENT_ROOT"]."/bitrix/modules/sale/include.php");
+
+\Bitrix\Main\Loader::includeModule('sale');
 
 $publicMode = $adminPage->publicMode;
 
@@ -20,7 +18,7 @@ require_once($_SERVER["DOCUMENT_ROOT"]."/bitrix/modules/sale/prolog.php");
 
 $sTableID = "tbl_sale_status";
 
-$oSort = new CAdminSorting($sTableID, "ID", "asc");
+$oSort = new CAdminUiSorting($sTableID, "ID", "asc");
 $lAdmin = new CAdminUiList($sTableID, $oSort);
 
 $arFilter = array();
@@ -30,53 +28,106 @@ if (($arID = $lAdmin->GroupAction()) && $saleModulePermissions >= "W")
 {
 	if ($_REQUEST['action_target']=='selected')
 	{
-		$arID = Array();
-		$dbResultList = CSaleStatus::GetList(
-				array($by => $order),
-				$arFilter,
-				false,
-				false,
-				array("ID", $by)
-			);
-		while ($arResult = $dbResultList->Fetch())
+		$arID = [];
+
+		$query = \Bitrix\Sale\Internals\StatusTable::query();
+		$query->addSelect('ID');
+		$query->where(
+			\Bitrix\Main\ORM\Query\Query::filter()
+				->logic('OR')
+				->where('STATUS_LANG.LID', '=', LANGUAGE_ID)
+				->where('STATUS_LANG.LID', NULL)
+		);
+		$query->addOrder($by, $order);
+
+		$dbResultList = $query->exec();
+		while ($arResult = $dbResultList->fetch())
+		{
 			$arID[] = $arResult['ID'];
+		}
 	}
 
 	foreach ($arID as $ID)
 	{
-		if (strlen($ID) <= 0)
+		if ($ID == '')
 			continue;
 
 		switch ($_REQUEST['action'])
 		{
 			case "delete":
-				$lockedStatusList = array(
-					\Bitrix\Sale\OrderStatus::getInitialStatus(),
-					\Bitrix\Sale\OrderStatus::getFinalStatus(),
-					\Bitrix\Sale\DeliveryStatus::getInitialStatus(),
-					\Bitrix\Sale\DeliveryStatus::getFinalStatus(),
-				);
+				if (\Bitrix\Main\Loader::includeModule('crm'))
+				{
+					foreach (\Bitrix\Crm\Order\OrderStatus::getDefaultStatuses() as $statusId => $item)
+					{
+						if ($item['SYSTEM'] === 'Y')
+						{
+							$lockedStatusList[] = $statusId;
+						}
+					}
+
+					foreach (\Bitrix\Crm\Order\DeliveryStatus::getDefaultStatuses() as $statusId => $item)
+					{
+						if ($item['SYSTEM'] === 'Y')
+						{
+							$lockedStatusList[] = $statusId;
+						}
+					}
+				}
+				else
+				{
+					$lockedStatusList = array(
+						\Bitrix\Sale\OrderStatus::getInitialStatus(),
+						\Bitrix\Sale\OrderStatus::getFinalStatus(),
+						\Bitrix\Sale\DeliveryStatus::getInitialStatus(),
+						\Bitrix\Sale\DeliveryStatus::getFinalStatus(),
+					);
+				}
 
 				if (in_array($ID, $lockedStatusList))
 				{
-					continue;
+					continue 2;
 				}
 
-				@set_time_limit(0);
+				$registry = \Bitrix\Sale\Registry::getInstance(\Bitrix\Sale\Registry::REGISTRY_TYPE_ORDER);
 
-				$DB->StartTransaction();
+				/** @var Sale\Order $orderClass */
+				$orderClass = $registry->getOrderClassName();
 
-				if (!CSaleStatus::Delete($ID))
+				$dbRes = $orderClass::getList([
+					'select' => ['ID'],
+					'filter' => ['=STATUS_ID' => $ID],
+				]);
+				if ($dbRes->fetch())
 				{
-					$DB->Rollback();
-
-					if ($ex = $APPLICATION->GetException())
-						$lAdmin->AddGroupError($ex->GetString(), $ID);
-					else
-						$lAdmin->AddGroupError(GetMessage("ERROR_DEL_STATUS"), $ID);
+					$lAdmin->AddGroupError(Loc::getMessage('ERROR_DEL_STATUS_ORDER_USE', ['#STATUS_ID#' => $ID]));
 				}
 
-				$DB->Commit();
+				if (!$lAdmin->hasGroupErrors())
+				{
+					$dbRes = Sale\Shipment::getList([
+						'select' => ['ID'],
+						'filter' => ['=STATUS_ID' => $ID],
+					]);
+					if ($dbRes->fetch())
+					{
+						$lAdmin->AddGroupError(Loc::getMessage('ERROR_DEL_STATUS_SHIPMENT_USE', ['#STATUS_ID#' => $ID]));
+					}
+				}
+
+				if (!$lAdmin->hasGroupErrors())
+				{
+					if (!CSaleStatus::Delete($ID))
+					{
+						if ($ex = $APPLICATION->GetException())
+						{
+							$lAdmin->AddGroupError($ex->GetString(), $ID);
+						}
+						else
+						{
+							$lAdmin->AddGroupError(GetMessage("ERROR_DEL_STATUS"), $ID);
+						}
+					}
+				}
 
 				break;
 
@@ -92,15 +143,20 @@ if (($arID = $lAdmin->GroupAction()) && $saleModulePermissions >= "W")
 	}
 }
 
-$dbResultList = CSaleStatus::GetList(
-	array($by => $order),
-	$arFilter,
-	false,
-	false,
-	array('ID', 'SORT', 'TYPE', 'NOTIFY', 'LID', 'COLOR' ,'NAME', 'DESCRIPTION', $by)
+$query = \Bitrix\Sale\Internals\StatusTable::query();
+$query->setSelect([
+	'ID', 'SORT', 'TYPE', 'NOTIFY', 'LID' => 'STATUS_LANG.LID',
+	'COLOR' ,'NAME' => 'STATUS_LANG.NAME', 'DESCRIPTION' => 'STATUS_LANG.DESCRIPTION'
+]);
+$query->where(
+	\Bitrix\Main\ORM\Query\Query::filter()
+		->logic('OR')
+		->where('STATUS_LANG.LID', '=', LANGUAGE_ID)
+		->where('STATUS_LANG.LID', NULL)
 );
+$query->addOrder($by, $order);
 
-$dbResultList = new CAdminUiResult($dbResultList, $sTableID);
+$dbResultList = new CAdminUiResult($query->exec(), $sTableID);
 $dbResultList->NavStart();
 
 $lAdmin->SetNavigationParams($dbResultList, array("BASE_LINK" => "/bitrix/admin/sale_status.php"));
@@ -125,7 +181,7 @@ while ($arCCard = $dbResultList->NavNext(false))
 	$row->AddField("NAME", htmlspecialcharsbx($arCCard["NAME"])."<br><small>".htmlspecialcharsbx($arCCard["DESCRIPTION"])."</small><br>");
 	$row->AddField(
 		"COLOR",
-		strlen($arCCard["COLOR"]) ? "<div style=\"background:".$arCCard["COLOR"]."; width: 23px; border: 1px solid #87919c; border-radius: 4px; height: 23px;\"></div>" : $arCCard["COLOR"]
+		$arCCard["COLOR"] <> ''? "<div style=\"background:".$arCCard["COLOR"]."; width: 23px; border: 1px solid #87919c; border-radius: 4px; height: 23px;\"></div>" : $arCCard["COLOR"]
 	);
 	$row->AddField("TYPE", (
 		$arCCard["TYPE"] == 'O' ? GetMessage('SSEN_TYPE_O') :

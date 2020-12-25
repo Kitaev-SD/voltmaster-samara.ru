@@ -35,6 +35,7 @@ class ExcludeLocation extends ByLocation
 
 	/**
 	 * This function should accept only location CODE, not ID, being a part of modern API
+	 * @inheritdoc
 	 */
 	public static function check($locationCode, array $restrictionParams, $deliveryId = 0)
 	{
@@ -70,7 +71,7 @@ class ExcludeLocation extends ByLocation
 		$shpLocCode = self::extractParams($shipment);
 
 		//if location not defined in shipment
-		if(strlen($shpLocCode) < 0)
+		if($shpLocCode === '')
 			return array_keys($restrictionFields);
 
 		$res = LocationTable::getList(array(

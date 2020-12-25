@@ -18,7 +18,7 @@ if(!defined("B_PROLOG_INCLUDED") || B_PROLOG_INCLUDED !== true)
 
 <div class="mp_wrap">
 <?php
-$APPLICATION->IncludeComponent("bitrix:rest.marketplace.toolbar", '', array(
+/*$APPLICATION->IncludeComponent("bitrix:rest.marketplace.toolbar", '', array(
 	"COMPONENT_PAGE" => $arParams["COMPONENT_PAGE"],
 	"TOP_URL" => $arParams["TOP_URL"],
 	"CATEGORY_URL" => $arParams["CATEGORY_URL"],
@@ -28,7 +28,7 @@ $APPLICATION->IncludeComponent("bitrix:rest.marketplace.toolbar", '', array(
 	"UPDATES_URL" => $arParams["UPDATES_URL"],
 	"DETAIL_URL_TPL" => $arParams["DETAIL_URL_TPL"],
 	"CATEGORY_URL_TPL" => $arParams["CATEGORY_URL_TPL"],
-), $component);
+), $component);*/
 ?>
 	<div class="mp_section">
 <?php

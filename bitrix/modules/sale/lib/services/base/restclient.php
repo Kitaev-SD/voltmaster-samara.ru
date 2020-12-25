@@ -37,7 +37,7 @@ class RestClient
 	protected $accessSettings = null;
 	protected $serviceHost = 'https://saleservices.bitrix.info';
 
-	protected $version = 4;
+	protected $version = 5;
 
 	/**
 	 * Performs call to the REST method and returns decoded results of the call.
@@ -322,7 +322,7 @@ class RestClient
 	{
 		$result = Option::get('sale', static::UNSUCCESSFUL_CALL_OPTION, "");
 
-		if(strlen($result) > 0)
+		if($result <> '')
 			$result = unserialize($result);
 
 		return is_array($result) ? $result : array();

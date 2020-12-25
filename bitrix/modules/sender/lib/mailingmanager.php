@@ -9,10 +9,9 @@ namespace Bitrix\Sender;
 
 use Bitrix\Main\DB\Exception;
 use Bitrix\Main\Type;
-
-use Bitrix\Sender\Entity;
-use Bitrix\Sender\Internals\Model\LetterTable;
 use Bitrix\Sender\Dispatch\MethodSchedule;
+use Bitrix\Sender\Entity;
+use Bitrix\Sender\Internals\Model;
 
 class MailingManager
 {
@@ -66,26 +65,29 @@ class MailingManager
 	 * Send letter.
 	 *
 	 * @param integer $letterId Letter ID.
+	 *
 	 * @return string
+	 * @throws \Bitrix\Main\ArgumentException
+	 * @throws \Bitrix\Main\ObjectPropertyException
+	 * @throws \Bitrix\Main\SystemException
 	 */
 	public static function chainSend($letterId)
 	{
 		static::$error = null;
 
-		$letter = LetterTable::getRowById($letterId);
-		if($letter && $letter['STATUS'] === LetterTable::STATUS_PLAN)
+		$letter = Model\LetterTable::getRowById($letterId);
+		if($letter && $letter['STATUS'] === Model\LetterTable::STATUS_PLAN)
 		{
-			$updateResult = LetterTable::update($letterId, array('STATUS' => LetterTable::STATUS_SEND));
+			$updateResult = Model\LetterTable::update($letterId, array('STATUS' => Model\LetterTable::STATUS_SEND));
 			if ($updateResult->isSuccess())
 			{
-				$letter = LetterTable::getRowById($letterId);
+				$letter = Model\LetterTable::getRowById($letterId);
 			}
 		}
-		if(!$letter || $letter['STATUS'] !== LetterTable::STATUS_SEND)
+		if(!$letter || $letter['STATUS'] !== Model\LetterTable::STATUS_SEND)
 		{
 			return "";
 		}
-
 
 		$postingSendStatus = '';
 		if(!empty($letter['POSTING_ID']))
@@ -107,12 +109,12 @@ class MailingManager
 
 		if(!empty(static::$error) || $postingSendStatus === PostingManager::SEND_RESULT_CONTINUE)
 		{
-			return static::getAgentName($letterId);
+			return Runtime\SenderJob::getAgentName($letterId);
 		}
 
 		if ($letter['REITERATE'] !== 'Y')
 		{
-			LetterTable::update($letterId, array('STATUS' => LetterTable::STATUS_END));
+			Model\LetterTable::update($letterId, array('STATUS' => Model\LetterTable::STATUS_END));
 			return "";
 		}
 
@@ -133,11 +135,11 @@ class MailingManager
 				$dateCreate = $posting['DATE_CREATE'];
 				/** @var Type\DateTime $dateCreate|null */
 				$updateFields = [
-					'STATUS' => LetterTable::STATUS_SEND,
+					'STATUS' => Model\LetterTable::STATUS_SEND,
 					'AUTO_SEND_TIME' => $dateCreate ? $dateCreate->add($letter['TIME_SHIFT'].' minutes') : null,
 					'POSTING_ID' => $posting['ID']
 				];
-				LetterTable::update($letterId, $updateFields);
+				Model\LetterTable::update($letterId, $updateFields);
 				$isNeedUpdate = false;
 			}
 		}
@@ -159,7 +161,10 @@ class MailingManager
 	}
 
 	/**
+	 *
 	 * @throws \Bitrix\Main\ArgumentException
+	 * @throws \Bitrix\Main\ObjectPropertyException
+	 * @throws \Bitrix\Main\SystemException
 	 */
 	public static function checkSend()
 	{
@@ -174,6 +179,7 @@ class MailingManager
 				'<=AUTO_SEND_TIME' => new Type\DateTime(),
 			)
 		));
+
 		while ($mailingChain = $mailingChainDb->fetch())
 		{
 			static::chainSend($mailingChain['ID']);
@@ -262,8 +268,7 @@ class MailingManager
 					$arUpdateMailChain['AUTO_SEND_TIME'] = Type\DateTime::createFromPhp($timeOfExecute);
 				}
 
-
-				MailingChainTable::update(array('ID' => $arMailingChain['ID']), $arUpdateMailChain);
+				Model\LetterTable::update($arMailingChain['ID'], $arUpdateMailChain);
 			}
 		}
 

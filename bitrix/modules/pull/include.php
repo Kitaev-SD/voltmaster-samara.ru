@@ -1,8 +1,8 @@
 <?
 IncludeModuleLangFile(__FILE__);
 
-define("PULL_REVISION_WEB", 17);
-define("PULL_REVISION_MOBILE", 2);
+define("PULL_REVISION_WEB", 19);
+define("PULL_REVISION_MOBILE", 3);
 
 global $APPLICATION, $DBType;
 
@@ -15,6 +15,7 @@ CModule::AddAutoloadClasses(
 		"CPullOptions" => "classes/general/pull_options.php",
 		"CPullTableSchema" => "classes/general/pull_table_schema.php",
 
+		"CPushDescription" => "classes/general/pushservices/services_descriptions.php",
 		"CPullPush" => "classes/general/pull_push.php",
 		"CPushMessage" => "classes/general/pushservices/push_message.php",
 		"CPushService" => "classes/general/pushservices/push_service.php",
@@ -32,8 +33,8 @@ CModule::AddAutoloadClasses(
 );
 
 CJSCore::RegisterExt('pull', array(
-	'js' => '/bitrix/js/pull/pull.js',
-	'lang' => '/bitrix/modules/pull/lang/'.LANGUAGE_ID.'/js_pull.php',
-	'rel' => defined('BX_PULL_SKIP_LS')? array('ajax'): array('ajax', 'ls')
+	'skip_core' => true,
+	'rel' => array('pull.client')
 ));
-?>
+
+\Bitrix\Pull\Loader::register();

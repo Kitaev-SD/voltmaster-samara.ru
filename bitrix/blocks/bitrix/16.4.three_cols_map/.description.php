@@ -10,11 +10,13 @@ return [
 	'block' => [
 		'name' => Loc::getMessage("LANDING_BLOCK_16_4_THREE_COLS_MAP--NAME"),
 		'section' => ['contacts'],
-		'version' => '18.5.0',
+		'dynamic' => false,
+		'version' => '18.5.0', // old param for backward compatibility. Can used for old versions of module via repo. Do not delete!
 		'subtype' => ['map', 'form'],
 		'subtype_params' =>[
 			'required' => 'google'
 		],
+		'type' => ['page', 'store'],
 	],
 	'cards' => [
 		'.landing-block-card-address' => [
@@ -75,16 +77,20 @@ return [
 	],
 	'style' => [
 		'block' => [
-			'type' => ['block-default-wo-background-vh-animation']
+			'type' => ['block-default-wo-background']
 		],
 		'nodes' => [
+			'.landing-block-node-map' => [
+				'name' => Loc::getMessage("LANDING_BLOCK_16_4_THREE_COLS_MAP--MAP"),
+				'type' => 'animation',
+			],
 			'.landing-block-node-address-col' => [
 				'name' => Loc::getMessage("LANDING_BLOCK_16_4_THREE_COLS_MAP--COL"),
-				'type' => 'bg',
+				'type' => ['bg','animation'],
 			],
 			'.landing-block-node-third-col' => [
 				'name' => Loc::getMessage("LANDING_BLOCK_16_4_THREE_COLS_MAP--COL"),
-				'type' => 'bg',
+				'type' => ['bg','animation'],
 			],
 			'.landing-block-node-address-subtitle' => [
 				'name' => Loc::getMessage("LANDING_BLOCK_16_4_THREE_COLS_MAP--SUBTITLE"),

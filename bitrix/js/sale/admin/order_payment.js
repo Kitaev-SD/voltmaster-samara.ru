@@ -997,13 +997,13 @@ BX.Sale.Admin.OrderPayment.prototype.showCreateCheckWindow = function(paymentId)
 					'width': '516',
 					'buttons': [
 						{
-							title: top.BX.message('JS_CORE_WINDOW_SAVE'),
+							title: window.BX.message('JS_CORE_WINDOW_SAVE'),
 							id: 'saveCheckBtn',
 							name: 'savebtn',
-							className: top.BX.browser.IsIE() && top.BX.browser.IsDoctype() && !top.BX.browser.IsIE10() ? '' : 'adm-btn-save'
+							className: window.BX.browser.IsIE() && window.BX.browser.IsDoctype() && !window.BX.browser.IsIE10() ? '' : 'adm-btn-save'
 						},
 						{
-							title: top.BX.message('JS_CORE_WINDOW_CANCEL'),
+							title: window.BX.message('JS_CORE_WINDOW_CANCEL'),
 							id: 'cancelCheckBtn',
 							name: 'cancel'
 						}
@@ -1014,7 +1014,7 @@ BX.Sale.Admin.OrderPayment.prototype.showCreateCheckWindow = function(paymentId)
 				BX.bind(BX('checkTypeSelect'), 'change', function ()
 				{
 					var option = this.value;
-					var disabled = option.indexOf('advance') !== -1;
+					var disabled = option.indexOf('advance') !== -1 || option.indexOf('creditpayment') !== -1;
 
 					var parent = BX.findParent(this, {tag : 'tr'});
 					var tr = parent.nextElementSibling;
@@ -1023,6 +1023,11 @@ BX.Sale.Admin.OrderPayment.prototype.showCreateCheckWindow = function(paymentId)
 					{
 						if (checkboxList.hasOwnProperty(i))
 						{
+							if (option.indexOf('prepayment') !== -1)
+							{
+								disabled = (checkboxList[i].name.indexOf('PAYMENT') !== -1);
+							}
+
 							var sibling = checkboxList[i].nextElementSibling;
 							if (disabled)
 							{
@@ -1136,16 +1141,15 @@ BX.Sale.Admin.OrderPayment.prototype.sendQueryCheckStatus = function(checkId)
 			{
 				BX.Sale.Admin.OrderEditPage.showDialog(result.ERROR);
 			}
-			else
+
+			var paymentId = result.PAYMENT_ID;
+			BX('PAYMENT_CHECK_LIST_ID_' + paymentId).innerHTML = result.CHECK_LIST_HTML;
+			if (BX('PAYMENT_CHECK_LIST_ID_SHORT_VIEW' + paymentId) !== undefined && BX('PAYMENT_CHECK_LIST_ID_SHORT_VIEW' + paymentId) !== null)
 			{
-				CloseWaitWindow();
-				var paymentId = result.PAYMENT_ID;
-				BX('PAYMENT_CHECK_LIST_ID_' + paymentId).innerHTML = result.CHECK_LIST_HTML;
-				if (BX('PAYMENT_CHECK_LIST_ID_SHORT_VIEW' + paymentId) !== undefined && BX('PAYMENT_CHECK_LIST_ID_SHORT_VIEW' + paymentId) !== null)
-				{
-					BX('PAYMENT_CHECK_LIST_ID_SHORT_VIEW' + paymentId).innerHTML = result.CHECK_LIST_HTML;
-				}
+				BX('PAYMENT_CHECK_LIST_ID_SHORT_VIEW' + paymentId).innerHTML = result.CHECK_LIST_HTML;
 			}
+
+			CloseWaitWindow();
 		}, this)
 	};
 
@@ -1156,8 +1160,12 @@ BX.namespace("BX.Sale.Admin.GeneralPayment");
 
 BX.Sale.Admin.GeneralPayment = {
 
-	addNewPayment : function(event, formType)
+	addNewPayment : function(event, data)
 	{
+        data = data ? data : {};
+        addParams = BX.prop.getObject(data, 'addParams', {});
+        formType = BX.prop.getString(data, 'formType', '');
+
 		var obOrderId = BX('ID');
 
 		if (formType == 'edit')
@@ -1181,11 +1189,19 @@ BX.Sale.Admin.GeneralPayment = {
 					BX.Sale.Admin.OrderEditPage.unRegisterFieldUpdater("PRICE", BX.Sale.Admin.OrderPayment.prototype.setPrice);
 				}
 			};
+
+            if (addParams)
+                request = BX.merge(request, addParams);
+
 			BX.Sale.Admin.OrderAjaxer.sendRequest(request);
 		}
 		else
 		{
-			window.location='sale_order_payment_edit.php?lang='+BX.Sale.Admin.OrderEditPage.languageId+'&order_id='+obOrderId.value+'&backurl='+encodeURIComponent(window.location.pathname+window.location.search);
+            url = 'sale_order_payment_edit.php?lang='+BX.Sale.Admin.OrderEditPage.languageId+'&order_id='+obOrderId.value+'&backurl='+encodeURIComponent(window.location.pathname+window.location.search);
+			if (addParams)
+                url = BX.util.add_url_param(url, addParams);
+
+			window.location=url;
 		}
 	},
 	useCurrentBudget : function(event)

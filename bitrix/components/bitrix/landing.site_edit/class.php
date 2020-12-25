@@ -7,23 +7,16 @@ if (!defined('B_PROLOG_INCLUDED') || B_PROLOG_INCLUDED !== true)
 use \Bitrix\Landing\Site;
 use \Bitrix\Landing\Landing;
 use \Bitrix\Landing\Manager;
+use \Bitrix\Landing\Rights;
 use \Bitrix\Landing\TemplateRef;
+use \Bitrix\Landing\Domain\Register;
+use \Bitrix\Landing\Site\Cookies;
 use \Bitrix\Main\Localization\Loc;
 
 \CBitrixComponent::includeComponentClass('bitrix:landing.base.form');
 
 class LandingSiteEditComponent extends LandingBaseFormComponent
 {
-	/**
-	 * B24 service for detect IP for current zone.
-	 */
-	const B24_SERVICE_DETECT_IP = 'https://ip.bitrix24.site/getipforzone/?bx24_zone=';
-
-	/**
-	 * Default IP for DNS.
-	 */
-	const B24_DEFAULT_DNS_IP = '52.59.124.117';
-
 	/**
 	 * Class of current element.
 	 * @var string
@@ -37,7 +30,7 @@ class LandingSiteEditComponent extends LandingBaseFormComponent
 	protected function getMap()
 	{
 		return array(
-			'CODE', 'TITLE', 'TYPE', 'TPL_ID', 'DOMAIN_ID',
+			'CODE', 'TITLE', 'TYPE', 'TPL_ID', 'DOMAIN_ID', 'LANG',
 			'LANDING_ID_INDEX', 'LANDING_ID_404', 'LANDING_ID_503'
 		);
 	}
@@ -52,22 +45,61 @@ class LandingSiteEditComponent extends LandingBaseFormComponent
 	}
 
 	/**
-	 * Get IP for DNS record for custom domain.
-	 * @return string
+	 * Gets lang codes.
+	 * @return array
 	 */
-	protected function getIpForDNS()
+	protected function getLangCodes()
 	{
-		$ip = '';
-		$http = new \Bitrix\Main\Web\HttpClient;
-		$ip = $http->get($this::B24_SERVICE_DETECT_IP . Manager::getZone());
-		$ip = \CUtil::jsObjectToPhp($ip);
-
-		if (isset($ip['IP']))
+		if (
+			!Manager::isB24() ||
+			!defined('SITE_TEMPLATE_PATH')
+		)
 		{
-			return $ip['IP'];
+			return [];
 		}
 
-		return $this::B24_DEFAULT_DNS_IP;
+		$file = Manager::getDocRoot();
+		$file .= SITE_TEMPLATE_PATH;
+		$file .= '/languages.php';
+
+		if (file_exists($file))
+		{
+			include $file;
+		}
+
+		if (
+			isset($b24Languages) &&
+			is_array($b24Languages)
+		)
+		{
+			$langs = [];
+			foreach ($b24Languages as $code => $lang)
+			{
+				if (isset($lang['NAME']))
+				{
+					$langs[$code] = $lang['NAME'];
+				}
+			}
+			return $langs;
+		}
+		else
+		{
+			return [];
+		}
+	}
+
+	/**
+	 * Returns true, if this site without external domain.
+	 * @return bool
+	 */
+	protected function isIntranet()
+	{
+		return
+			isset($this->arResult['SITE']['DOMAIN_ID']['CURRENT']) &&
+			(
+				$this->arResult['SITE']['DOMAIN_ID']['CURRENT'] == '0' ||
+				$this->arResult['SITE']['DOMAIN_ID']['CURRENT'] == ''
+			);
 	}
 
 	/**
@@ -84,20 +116,83 @@ class LandingSiteEditComponent extends LandingBaseFormComponent
 			$this->checkParam('TYPE', '');
 			$this->checkParam('PAGE_URL_SITES', '');
 			$this->checkParam('PAGE_URL_LANDING_VIEW', '');
+			$this->checkParam('PAGE_URL_SITE_DOMAIN', '');
+			$this->checkParam('PAGE_URL_SITE_COOKIES', '');
 			$this->checkParam('TEMPLATE', '');
+
+			\Bitrix\Landing\Site\Type::setScope(
+				$this->arParams['TYPE']
+			);
 
 			$this->id = $this->arParams['SITE_ID'];
 			$this->successSavePage = $this->arParams['PAGE_URL_SITES'];
 			$this->template = $this->arParams['TEMPLATE'];
 
-			$this->arResult['IP_FOR_DNS'] = $this->getIpForDNS();
-			$this->arResult['TEMPLATES'] = $this->getTemplates();
-
-			$this->arResult['SETTINGS'] = \Bitrix\Landing\Hook\Page\Settings::getDataForSite(
-				$this->id
-			);
-			$this->arResult['DOMAINS'] = $this->getDomains();
 			$this->arResult['SITE'] = $this->getRow();
+			$this->arResult['LANG_CODES'] = $this->getLangCodes();
+			$this->arResult['TEMPLATES'] = $this->getTemplates();
+			$this->arResult['IS_INTRANET'] = $this->isIntranet();
+			$this->arResult['SHOW_RIGHTS'] = Rights::isAdmin() && Rights::isExtendedMode();
+			$this->arResult['SETTINGS'] = [];
+			$this->arResult['REGISTER'] = Register::getInstance();
+			$this->arResult['SITE_INCLUDES_SCRIPT'] = Cookies::isSiteIncludesScript($this->id);
+			$this->arResult['COOKIES_AGREEMENT'] = Cookies::getMainAgreement();
+
+			if (
+				!defined('LANDING_DISABLE_B24_MODE') &&
+				$this->arResult['SITE']['TYPE']['CURRENT'] == 'SMN'
+			)
+			{
+				Manager::forceB24disable(true);
+			}
+
+			if (Manager::isB24())
+			{
+				$this->arResult['IP_FOR_DNS'] = $this->getIpForDNS();
+			}
+
+			// set predefined for getting props from component
+			\Bitrix\Landing\Node\Component::setPredefineForDynamicProps([
+				'USE_ENHANCED_ECOMMERCE' => 'Y',
+				'SHOW_DISCOUNT_PERCENT' => 'Y',
+				'LABEL_PROP' => [
+					'NEWPRODUCT',
+					'SALELEADER',
+					'SPECIALOFFER'
+				],
+				'CONVERT_CURRENCY' => 'Y'
+			]);
+
+			// if access denied, or not found
+			if (
+				$this->id &&
+				!Rights::hasAccessForSite(
+					$this->id,
+					Rights::ACCESS_TYPES['sett']
+				)
+			)
+			{
+				$this->id = 0;
+				$this->arParams['SITE_ID'] = 0;
+				$this->addError('ACCESS_DENIED', '', true);
+			}
+
+			// rights
+			if ($this->arResult['SHOW_RIGHTS'])
+			{
+				$this->arResult['ACCESS_TASKS'] = $this->getAccessTasks();
+				$this->arResult['CURRENT_RIGHTS'] = [];
+				if ($this->id)
+				{
+					$this->arResult['CURRENT_RIGHTS'] = Rights::getDataForSite(
+						$this->id,
+						$this->getRightsValue(true)
+					);
+				}
+			}
+
+			// etc
+			$this->arResult['DOMAINS'] = $this->getDomains();
 			$this->arResult['LANDINGS'] = $this->arParams['SITE_ID'] > 0
 										? $this->getLandings(array(
 												'filter' => array(
@@ -118,13 +213,15 @@ class LandingSiteEditComponent extends LandingBaseFormComponent
 			if (!$this->arResult['SITE'])
 			{
 				$this->id = 0;
+				$this->arParams['SITE_ID'] = 0;
 			}
 
-			$this->arResult['HOOKS'] = $this->getHooks();
-			$this->arResult['TEMPLATES_REF'] = TemplateRef::getForSite($this->id);
-			$this->arResult['CUSTOM_DOMAIN'] = Manager::checkFeature(
-				Manager::FEATURE_CUSTOM_DOMAIN
-			);
+			if ($this->id)
+			{
+				\Bitrix\Landing\Hook::setEditMode();
+				$this->arResult['HOOKS'] = $this->getHooks();
+				$this->arResult['TEMPLATES_REF'] = TemplateRef::getForSite($this->id);
+			}
 		}
 
 		// callback for update site
@@ -148,9 +245,9 @@ class LandingSiteEditComponent extends LandingBaseFormComponent
 					{
 						foreach (explode(',', $tplRef) as $ref)
 						{
-							if (strpos($ref, ':') !== false)
+							if (mb_strpos($ref, ':') !== false)
 							{
-								list($a, $lid) = explode(':', $ref);
+								[$a, $lid] = explode(':', $ref);
 								$data[$a] = $lid;
 							}
 						}
@@ -174,11 +271,20 @@ class LandingSiteEditComponent extends LandingBaseFormComponent
 						$primary['ID'],
 						$data
 					);
+					// rights
+					if (Rights::isAdmin() && Rights::isExtendedMode())
+					{
+						Rights::setOperationsForSite(
+							$primary['ID'],
+							$this->getRightsValue()
+						);
+					}
 				}
 			);
 		}
 
 
 		parent::executeComponent();
+		Manager::forceB24disable(false);
 	}
 }

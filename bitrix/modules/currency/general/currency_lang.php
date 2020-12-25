@@ -1,5 +1,7 @@
 <?
-use Bitrix\Main\Localization\Loc,
+use Bitrix\Main,
+	Bitrix\Main\ModuleManager,
+	Bitrix\Main\Localization\Loc,
 	Bitrix\Currency;
 
 Loc::loadMessages(__FILE__);
@@ -57,7 +59,7 @@ class CAllCurrencyLang
 		global $DB, $USER, $APPLICATION;
 
 		$getErrors = ($getErrors === true);
-		$action = strtoupper($action);
+		$action = mb_strtoupper($action);
 		if ($action != 'ADD' && $action != 'UPDATE')
 			return false;
 		if (!is_array($fields))
@@ -414,8 +416,8 @@ class CAllCurrencyLang
 		if ('' != $currency)
 			$strSql .= "where CURL.CURRENCY = '".$DB->ForSql($currency, 3)."' ";
 
-		if (strtolower($by) == "currency") $strSqlOrder = " order by CURL.CURRENCY ";
-		elseif (strtolower($by) == "name") $strSqlOrder = " order by CURL.FULL_NAME ";
+		if (mb_strtolower($by) == "currency") $strSqlOrder = " order by CURL.CURRENCY ";
+		elseif (mb_strtolower($by) == "name") $strSqlOrder = " order by CURL.FULL_NAME ";
 		else
 		{
 			$strSqlOrder = " order BY CURL.LID ";
@@ -549,7 +551,10 @@ class CAllCurrencyLang
 
 	public static function GetFormatDescription($currency)
 	{
-		$boolAdminSection = (defined('ADMIN_SECTION') && ADMIN_SECTION === true);
+		$safeFormat = (
+			Main\Context::getCurrent()->getRequest()->isAdminSection()
+			|| ModuleManager::isModuleInstalled('bitrix24')
+		);
 		$currency = (string)$currency;
 
 		if (!isset(self::$arCurrencyFormat[$currency]))
@@ -579,7 +584,8 @@ class CAllCurrencyLang
 				{
 					$arCurFormat['FORMAT_STRING'] = self::$arDefaultValues['FORMAT_STRING'];
 				}
-				elseif ($boolAdminSection)
+
+				if ($safeFormat)
 				{
 					$arCurFormat["FORMAT_STRING"] = strip_tags(preg_replace(
 						'#<script[^>]*?>.*?</script[^>]*?>#is',
@@ -627,20 +633,28 @@ class CAllCurrencyLang
 		if ($currency === false)
 			return '';
 
-		$price = (float)$price;
-		$arCurFormat = (isset(self::$arCurrencyFormat[$currency]) ? self::$arCurrencyFormat[$currency] : self::GetFormatDescription($currency));
-		$intDecimals = $arCurFormat['DECIMALS'];
-		if (self::isAllowUseHideZero() && $arCurFormat['HIDE_ZERO'] == 'Y')
-		{
-			if (round($price, $arCurFormat["DECIMALS"]) == round($price, 0))
-				$intDecimals = 0;
-		}
-		$price = number_format($price, $intDecimals, $arCurFormat['DEC_POINT'], $arCurFormat['THOUSANDS_SEP']);
+		$format = (isset(self::$arCurrencyFormat[$currency])
+			? self::$arCurrencyFormat[$currency]
+			: self::GetFormatDescription($currency)
+		);
 
-		return (
-			$useTemplate
-			? self::applyTemplate($price, $arCurFormat['FORMAT_STRING'])
-			: $price
+		return self::formatValue($price, $format, $useTemplate);
+	}
+
+	public static function formatValue($value, array $format, $useTemplate = true)
+	{
+		$value = (float)$value;
+		$decimals = $format['DECIMALS'];
+		if (self::isAllowUseHideZero() && $format['HIDE_ZERO'] == 'Y')
+		{
+			if (round($value, $format['DECIMALS']) == round($value, 0))
+				$decimals = 0;
+		}
+		$result = number_format($value, $decimals, $format['DEC_POINT'], $format['THOUSANDS_SEP']);
+
+		return ($useTemplate
+			? self::applyTemplate($result, $format['FORMAT_STRING'])
+			: $result
 		);
 	}
 
@@ -670,7 +684,7 @@ class CAllCurrencyLang
 		return false;
 	}
 
-	public static function getParsedCurrencyFormat($currency)
+	public static function getParsedCurrencyFormat(string $currency): ?array
 	{
 		$arCurFormat = (isset(self::$arCurrencyFormat[$currency])
 			? self::$arCurrencyFormat[$currency]
@@ -706,9 +720,57 @@ class CAllCurrencyLang
 		return $result;
 	}
 
+	public static function getPriceControl(string $control, string $currency): string
+	{
+		if ($control === '')
+		{
+			return '';
+		}
+		if (!Currency\CurrencyManager::checkCurrencyID($currency))
+		{
+			return $control;
+		}
+		$format = static::getParsedCurrencyFormat($currency);
+		if (empty($format))
+		{
+			return $control;
+		}
+		$index = array_search('#', $format);
+		if ($index === false)
+		{
+			return $control;
+		}
+		$format[$index] = $control;
+
+		return implode('', $format);
+	}
+
 	protected static function clearFields($value)
 	{
 		return ($value !== null);
+	}
+
+	public static function getUnFormattedValue(string $formattedValue, string $currency, string $lang = LANGUAGE_ID): string
+	{
+		$format = static::GetCurrencyFormat($currency, $lang);
+		return static::unFormatValue($formattedValue, (string)$format['THOUSANDS_SEP'], (string)$format['DEC_POINT']);
+	}
+
+	protected static function unFormatValue(string $formattedValue, string $thousandsSeparator, string $decPoint): string
+	{
+		$result = $formattedValue;
+
+		if($thousandsSeparator !== '')
+		{
+			$result = str_replace($thousandsSeparator, '', $result);
+		}
+
+		if($decPoint !== '.' && $decPoint !== '')
+		{
+			$result = str_replace($decPoint, '.', $result);
+		}
+
+		return $result;
 	}
 }
 

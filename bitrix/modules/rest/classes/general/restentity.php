@@ -107,8 +107,10 @@ class CBitrixRestEntity extends IRestService
 				if($arRes)
 				{
 					return array(
+						'ID' => $arRes['ID'],
+						'IBLOCK_TYPE_ID' => $arRes['IBLOCK_TYPE_ID'],
 						'ENTITY' => $params['ENTITY'],
-						'NAME' => $arRes['NAME']
+						'NAME' => $arRes['NAME'],
 					);
 				}
 				else
@@ -127,8 +129,10 @@ class CBitrixRestEntity extends IRestService
 				if($entity)
 				{
 					$res[] = array(
+						'ID' => $arRes['ID'],
+						'IBLOCK_TYPE_ID' => $arRes['IBLOCK_TYPE_ID'],
 						'ENTITY' => $entity,
-						'NAME' => $arRes['NAME']
+						'NAME' => $arRes['NAME'],
 					);
 				}
 			}
@@ -1232,7 +1236,7 @@ class CBitrixRestEntity extends IRestService
 
 				case 'DATE_ACTIVE_FROM':
 				case 'DATE_ACTIVE_TO':
-					$arItemFields[$key] = CRestUtil::unConvertDateTime($param);
+					$arItemFields[$key] = CRestUtil::unConvertDateTime($param, true);
 				break;
 
 				case 'PREVIEW_PICTURE':
@@ -1329,7 +1333,7 @@ class CBitrixRestEntity extends IRestService
 							case 'DATE_ACTIVE_TO':
 							case 'TIMESTAMP_X':
 							case 'DATE_CREATE':
-								$arFilter[$key] = CRestUtil::unConvertDateTime($value);
+								$arFilter[$key] = CRestUtil::unConvertDateTime($value, true);
 							break;
 
 							case 'SECTION':
@@ -1386,7 +1390,7 @@ class CBitrixRestEntity extends IRestService
 						{
 							case 'TIMESTAMP_X':
 							case 'DATE_CREATE':
-								$arFilter[$key] = CRestUtil::unConvertDateTime($value);
+								$arFilter[$key] = CRestUtil::unConvertDateTime($value, true);
 							break;
 
 							case 'SECTION':

@@ -32,7 +32,7 @@ class PersonalProfileList extends CBitrixComponent
 
 		$params["PATH_TO_DETAIL"] = trim($params["PATH_TO_DETAIL"]);
 
-		if (strlen($params["PATH_TO_DETAIL"]) <= 0)
+		if ($params["PATH_TO_DETAIL"] == '')
 		{
 			$params["PATH_TO_DETAIL"] = htmlspecialcharsbx(Main\Context::getCurrent()->getRequest()->getRequestedPage()."?ID=#ID#");
 		}
@@ -57,6 +57,7 @@ class PersonalProfileList extends CBitrixComponent
 		{
 			if(!$this->arParams['AUTH_FORM_IN_TEMPLATE'])
 			{
+				$this->arResult['USER_IS_NOT_AUTHORIZED'] = 'Y';
 				$APPLICATION->AuthForm(GetMessage("SALE_ACCESS_DENIED"), false, false, 'N', false);
 			}
 			else
@@ -92,7 +93,7 @@ class PersonalProfileList extends CBitrixComponent
 			{
 				$errorMessage = GetMessage("SALE_NO_PROFILE");
 			}
-			if(strlen($errorMessage) > 0)
+			if($errorMessage <> '')
 				LocalRedirect($APPLICATION->GetCurPageParam("del_id=".$deleteElementId, Array("del_id", "sessid")));
 			else
 				LocalRedirect($APPLICATION->GetCurPageParam("success_del_id=".$deleteElementId, Array("del_id", "sessid")));
@@ -103,14 +104,14 @@ class PersonalProfileList extends CBitrixComponent
 		elseif((int)($_REQUEST["success_del_id"]) > 0)
 			$errorMessage = GetMessage("SALE_DEL_PROFILE_SUC", array("#ID#" => (int)($_REQUEST["success_del_id"])));
 
-		if(strlen($errorMessage) > 0)
+		if($errorMessage <> '')
 		{
 			$this->arResult["ERROR_MESSAGE"] = $errorMessage;
 			$this->arResult['ERRORS'][] = $errorMessage;
 		}
 
-		$by = (strlen($_REQUEST["by"])>0 ? $_REQUEST["by"]: "DATE_UPDATE");
-		$order = (strlen($_REQUEST["order"])>0 ? $_REQUEST["order"]: "DESC");
+		$by = ($_REQUEST["by"] <> '' ? $_REQUEST["by"]: "DATE_UPDATE");
+		$order = ($_REQUEST["order"] <> '' ? $_REQUEST["order"]: "DESC");
 
 		$dbUserProps = CSaleOrderUserProps::GetList(
 			array($by => $order),

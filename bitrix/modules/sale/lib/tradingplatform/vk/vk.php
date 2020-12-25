@@ -249,7 +249,7 @@ class Vk extends Platform
 
 //		uninstall vk-categories update agent
 		$vkCategories = new VkCategories($exportId);
-		$vkCategories->deleteAgent($exportId);
+		$vkCategories->deleteAgent();
 
 //		clear log
 		$logger = new Logger($exportId);
@@ -392,7 +392,7 @@ class Vk extends Platform
 		if (isset($settings["VK_SETTINGS"]["GROUP_ID"]))
 		{
 			$groupId = $settings["VK_SETTINGS"]["GROUP_ID"];
-			$groupId = substr($groupId,0,1) == '-' ? $groupId : '-'.$groupId;
+			$groupId = mb_substr($groupId, 0, 1) == '-' ? $groupId : '-'.$groupId;
 		}
 		
 		return $groupId;

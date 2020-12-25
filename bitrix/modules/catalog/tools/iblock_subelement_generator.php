@@ -360,7 +360,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && !$bReadOnly && check_bitrix_sessid()
 
 	$arIBlockElement = $dbIBlockElement->Fetch();
 
-	if(strlen($_POST['save']) > 0)
+	if($_POST['save'] <> '')
 	{
 		$parentElementId = (0 < $subPropValue ? $subPropValue : -$subTmpId);
 		$parentElement = new \Bitrix\Iblock\Template\Entity\Element($parentElementId);
@@ -809,6 +809,7 @@ else
 		<?
 		if ($USER->CanDoOperation('catalog_purchas_info') && !$useStoreControl)
 		{
+			$baseCurrency = Currency\CurrencyManager::getBaseCurrency();
 		?>
 		<tr>
 			<td class="adm-detail-content-cell-l"><? echo GetMessage("IB_SEG_PURCHASING_PRICE") ?></td>
@@ -819,7 +820,7 @@ else
 				<?
 				foreach (Currency\CurrencyManager::getCurrencyList() as $id => $title)
 				{
-					?><option value="<?=$id; ?>"><?=htmlspecialcharsbx($title); ?></option><?
+					?><option value="<?=$id; ?>"<?=($id == $baseCurrency ? ' selected' : ''); ?>><?=htmlspecialcharsbx($title); ?></option><?
 				}
 				unset($id, $title);
 				?>

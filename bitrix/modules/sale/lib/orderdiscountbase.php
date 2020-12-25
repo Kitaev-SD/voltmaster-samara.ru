@@ -582,6 +582,12 @@ abstract class OrderDiscountBase
 			if (!isset($orderDiscountIndex[$blockCounter]))
 				$orderDiscountIndex[$blockCounter] = 0;
 
+			if (!isset($discountList[$rule['ORDER_DISCOUNT_ID']]))
+			{
+				$discountList[$rule['ORDER_DISCOUNT_ID']] = $rule['ORDER_DISCOUNT_ID'];
+				$discountSort[] = $rule['ORDER_DISCOUNT_ID'];
+			}
+
 			if (static::isNativeModule($rule['MODULE_ID']))
 			{
 				$discountId = (int)$rule['ORDER_DISCOUNT_ID'];
@@ -599,7 +605,7 @@ abstract class OrderDiscountBase
 					case $discountClassName::ENTITY_BASKET_ITEM:
 						$index = static::transferEntityCodeFromInternal($rule, $basketList);
 						if ($index == '')
-							continue;
+							continue 2;
 
 						$ruleItem['BASKET_ID'] = static::transferEntityCodeFromInternal($rule, []);
 						static::fillRuleProductFields($ruleItem, $basketData, $index);
@@ -638,12 +644,6 @@ abstract class OrderDiscountBase
 				$applyBlocks[$blockCounter]['BASKET'][$index][] = $ruleResult;
 
 				unset($ruleResult);
-			}
-
-			if (!isset($discountList[$rule['ORDER_DISCOUNT_ID']]))
-			{
-				$discountList[$rule['ORDER_DISCOUNT_ID']] = $rule['ORDER_DISCOUNT_ID'];
-				$discountSort[] = $rule['ORDER_DISCOUNT_ID'];
 			}
 		}
 		unset($rule, $ruleIterator);
@@ -2284,12 +2284,12 @@ abstract class OrderDiscountBase
 		if ($action == '')
 			return $result;
 
-		$action = trim(substr($action, 8));
-		$action = substr($action, 2);
-		$key = strpos($action, ')');
+		$action = trim(mb_substr($action, 8));
+		$action = mb_substr($action, 2);
+		$key = mb_strpos($action, ')');
 		if ($key === false)
 			return $result;
-		$orderName = '\\'.substr($action, 0, $key);
+		$orderName = '\\'.mb_substr($action, 0, $key);
 
 		preg_match_all("/".$orderName."(?:,|\))/".BX_UTF_PCRE_MODIFIER, $action, $list);
 		if (isset($list[0]) && is_array($list[0]))

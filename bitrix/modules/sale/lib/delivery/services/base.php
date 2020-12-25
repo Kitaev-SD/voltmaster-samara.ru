@@ -40,6 +40,7 @@ abstract class Base
 	protected $trackingClass = "";
 	/** @var Requests\HandlerBase  */
 	protected $deliveryRequestHandler = null;
+
 	protected $extraServices = array();
 	protected $trackingParams = array();
 	protected $allowEditShipment = array();
@@ -57,7 +58,6 @@ abstract class Base
 	/**
 	 * Constructor
 	 * @param array $initParams Delivery service params
-	 * @throws \Bitrix\Main\ArgumentNullException
 	 * @throws \Bitrix\Main\ArgumentTypeException
 	 * @throws \Bitrix\Main\SystemException
 	 */
@@ -241,12 +241,16 @@ abstract class Base
 
 	/**
 	 * @param \Bitrix\Sale\Shipment $shipment.
-	 * @return \Bitrix\Sale\Delivery\CalculationResult
-	 * @throws SystemException
+	 * @return Delivery\CalculationResult
 	 */
 	protected function calculateConcrete(\Bitrix\Sale\Shipment $shipment)
 	{
-		throw new SystemException('Not implemented');
+		return (new Delivery\CalculationResult())
+			->addError(
+				new Error(
+					Loc::getMessage('SALE_DLVR_BASE_DELIVERY_PRICE_CALC_ERROR'),
+					'DELIVERY_CALCULATION'
+			));
 	}
 
 	/**
@@ -266,7 +270,12 @@ abstract class Base
 				if($iParams["TYPE"] == "DELIVERY_SECTION")
 					continue;
 
-				$errors = \Bitrix\Sale\Internals\Input\Manager::getError($iParams, $fields["CONFIG"][$key1][$key2]);
+				$errors = \Bitrix\Sale\Internals\Input\Manager::getRequiredError($iParams, $fields["CONFIG"][$key1][$key2]);
+
+				if(empty($errors))
+				{
+					$errors = \Bitrix\Sale\Internals\Input\Manager::getError($iParams, $fields["CONFIG"][$key1][$key2]);
+				}
 
 				if(!empty($errors))
 				{
@@ -278,7 +287,7 @@ abstract class Base
 		if($strError != "")
 			throw new SystemException($strError);
 
-		if(strpos($fields['CLASS_NAME'], '\\') !== 0)
+		if(mb_strpos($fields['CLASS_NAME'], '\\') !== 0)
 		{
 			$fields['CLASS_NAME'] = '\\'.$fields['CLASS_NAME'];
 		}
@@ -529,6 +538,15 @@ abstract class Base
 	}
 
 	/**
+	 * @param array $fields
+	 * @return \Bitrix\Main\Result
+	 */
+	public static function onBeforeAdd(array &$fields = array()): \Bitrix\Main\Result
+	{
+		return new \Bitrix\Main\Result();
+	}
+
+	/**
 	 * @param int $serviceId
 	 * @param array $fields
 	 * @return bool
@@ -665,7 +683,7 @@ abstract class Base
 	}
 
 	/**
-	 * @return array
+	 * @return bool
 	 */
 	public function isAllowEditShipment()
 	{
@@ -821,6 +839,10 @@ abstract class Base
 		return Manager::createObject($fields);
 	}
 
+	/**
+	 * @return bool
+	 * @throws \Bitrix\Main\LoaderException
+	 */
 	public static function isHandlerCompatible()
 	{
 		$result = true;
@@ -832,7 +854,7 @@ abstract class Base
 		{
 			$languageId = \CBitrix24::getLicensePrefix();
 
-			if(!in_array($languageId, ['ru', 'kz', 'by']))
+			if(!in_array($languageId, ['ru', 'kz', 'by', 'ua']))
 			{
 				$result = false;
 			}

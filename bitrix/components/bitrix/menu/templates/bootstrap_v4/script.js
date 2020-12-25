@@ -125,8 +125,8 @@
 	};
 })(window);
 
-BX.namespace("BX.Main.Menu");
-BX.Main.Menu.CatalogHorizontal = (function()
+BX.namespace("BX.Main.MenuComponent");
+BX.Main.MenuComponent.CatalogHorizontal = (function()
 {
 	var CatalogHorizontal = function(menuBlockId, itemImgDesc)
 	{
@@ -139,12 +139,10 @@ BX.Main.Menu.CatalogHorizontal = (function()
 
 	CatalogHorizontal.prototype.clickInMobile = function(element, event)
 	{
-		if (BX.findParent(element, {className: "bx-aside-nav"}, true))
-			return;
-
-		event.preventDefault();
-		element.onclick = '';
-		return false;
+		if (!BX.hasClass(element, "bx-hover"))
+		{
+			event.preventDefault();
+		}
 	};
 
 	CatalogHorizontal.prototype.toggleInMobile = function(element)
@@ -154,14 +152,14 @@ BX.Main.Menu.CatalogHorizontal = (function()
 		if (BX.hasClass(parentObj, "bx-opened"))
 		{
 			BX.removeClass(parentObj, "bx-opened");
-			BX.removeClass(arrow, "fa-angle-down");
-			BX.addClass(arrow, "fa-angle-left");
+			BX.removeClass(arrow, "bx-nav-angle-top");
+			BX.addClass(arrow, "bx-nav-angle-bottom");
 		}
 		else
 		{
 			BX.addClass(parentObj, "bx-opened");
-			BX.addClass(arrow, "fa-angle-down");
-			BX.removeClass(arrow, "fa-angle-left");
+			BX.addClass(arrow, "bx-nav-angle-top");
+			BX.removeClass(arrow, "bx-nav-angle-bottom");
 		}
 	};
 
@@ -170,6 +168,7 @@ BX.Main.Menu.CatalogHorizontal = (function()
 		var templateWrap = this.templateWrap;
 		var menuMobile = document.body.querySelector("[data-role='bx-menu-mobile']");
 		var menuMobileButton = document.body.querySelector("[data-role='bx-menu-button-mobile']");
+		var menuMobilePosition = document.body.querySelector("[data-role='bx-menu-button-mobile-position']");
 
 		if (document.body.clientWidth <= 767) //mobile
 		{
@@ -191,7 +190,7 @@ BX.Main.Menu.CatalogHorizontal = (function()
 					attrs: {className: "bx-aside-nav-control bx-closed", "data-role" : "bx-menu-button-mobile"},
 					children: [
 						BX.create("i", {
-							attrs: {className: "fa fa-bars"}
+							attrs: {className: "bx-nav-bars"}
 						})
 					],
 					events: {
@@ -217,7 +216,9 @@ BX.Main.Menu.CatalogHorizontal = (function()
 					}
 				});
 
-				document.body.insertBefore(menuMobileButton, document.body.firstChild);
+				// document.body.insertBefore(menuMobileButton, document.body.firstChild);
+
+				menuMobilePosition.appendChild(menuMobileButton);
 			}
 		}
 		else

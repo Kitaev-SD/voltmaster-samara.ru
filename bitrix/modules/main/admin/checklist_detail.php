@@ -49,11 +49,11 @@ if($_REQUEST["TEST_ID"] && $arPoints[$_REQUEST["TEST_ID"]])
 			break;
 	}
 	$arTotal = count($arPoints);
-	if(strlen($arPoints[$arTestID]["STATE"]["COMMENTS"]["SYSTEM"]["DETAIL"])>0)
-	$display="inline-block";
+	if($arPoints[$arTestID]["STATE"]["COMMENTS"]["SYSTEM"]["DETAIL"] <> '')
+		$display="inline-block";
 	else
 		$display="none";
-	$display_result = (count($arPoints[$arTestID]["STATE"]["COMMENTS"]["SYSTEM"])>0)?"block":"none";
+	$display_result = (!empty($arPoints[$arTestID]["STATE"]["COMMENTS"]["SYSTEM"])? "block" : "none");
 	$APPLICATION->RestartBuffer();?>
 
 	

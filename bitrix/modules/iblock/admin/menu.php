@@ -21,7 +21,7 @@ function _get_elements_menu($arType, $arIBlock, $SECTION_ID)
 	{
 		return array(
 			"text" => htmlspecialcharsex($arIBlock["ELEMENTS_NAME"]),
-			"url" => $urlElementAdminPage."&find_el_y=Y"."&apply_filter=Y",
+			"url" => $urlElementAdminPage."&find_el_y=Y"."&clear_filter=Y&apply_filter=Y",
 			"more_url" => array(
 				$urlElementAdminPage."&find_el_y=Y",
 				$urlElementAdminPage."&find_section_section=-1",
@@ -90,9 +90,9 @@ function _get_sections_menu($arType, $arIBlock, $DEPTH_LEVEL, $SECTION_ID, $arSe
 		if(isset($_REQUEST['admin_mnu_menu_id']))
 		{
 			$menu_id = "menu_iblock_/".$arType["ID"]."/".$arIBlock["ID"]."/";
-			if(strncmp($_REQUEST['admin_mnu_menu_id'], $menu_id, strlen($menu_id)) == 0)
+			if(strncmp($_REQUEST['admin_mnu_menu_id'], $menu_id, mb_strlen($menu_id)) == 0)
 			{
-				$rsSections = CIBlockSection::GetNavChain($arIBlock["ID"], substr($_REQUEST['admin_mnu_menu_id'], strlen($menu_id)), array('ID', 'IBLOCK_ID'));
+				$rsSections = CIBlockSection::GetNavChain($arIBlock["ID"], mb_substr($_REQUEST['admin_mnu_menu_id'], mb_strlen($menu_id)), array('ID', 'IBLOCK_ID'));
 				while($arSection = $rsSections->Fetch())
 					$arSectionsChain[$arSection["ID"]] = $arSection["ID"];
 			}
@@ -213,7 +213,7 @@ function _get_iblocks_menu($arType)
 			{
 				$arItems = _get_sections_menu($arType, $arIBlock, 1, 0);
 			}
-			elseif(isset($_REQUEST['admin_mnu_menu_id']) && strpos($_REQUEST['admin_mnu_menu_id'], $items_id) !== false)
+			elseif(isset($_REQUEST['admin_mnu_menu_id']) && mb_strpos($_REQUEST['admin_mnu_menu_id'], $items_id) !== false)
 			{
 				$arItems = _get_sections_menu($arType, $arIBlock, 1, 0);
 			}

@@ -142,7 +142,7 @@ if($_REQUEST['save'])
 					break;
 				case 2:
 					if ($w%2)
-						$arWeekDays = array(1,3,5);
+						$arWeekDays = array(1,3,5,0);
 					else
 						$arWeekDays = array(0,2,4,6);
 					break;
@@ -229,7 +229,6 @@ if($_REQUEST['save'])
 		COption::SetOptionString("main", "skip_mask_array_auto", serialize($skip_mask_array));
 
 		IntOptionSet('dump_max_file_size', intval($_REQUEST['max_file_size']));
-		IntOptionSet('skip_symlinks', $_REQUEST['skip_symlinks'] == 'Y');
 
 		if ($strError)
 			CAdminMessage::ShowMessage(array(
@@ -624,7 +623,8 @@ if ($BUCKET_ID == -1 && !$bBitrixCloud)
 				foreach($arSitePath as $path => $val)
 				{
 					$path = rtrim(str_replace('\\','/',$path),'/');
-					list($k,$v) = each($val);
+					$k = key($val);
+					$v = current($val);
 					echo '<div><input type=checkbox id="dump_site_id'.$i.'" name="dump_site_id[]" value="'.htmlspecialcharsbx($k).'" '.(in_array($k, $dump_site_id) ? ' checked' : '').'> <label for="dump_site_id'.$i.'">'.htmlspecialcharsbx($v).'</label></div>';
 					$i++;
 				}
@@ -710,13 +710,6 @@ if ($DB->type == 'MYSQL')
 	<td><input type="text" name="max_file_size" size="10" value="<?=IntOption("dump_max_file_size", 0)?>">
 	<?echo GetMessage("MAIN_DUMP_FILE_MAX_SIZE_kb")?></td>
 </tr>
-<tr>
-	<td><?echo GetMessage("MAIN_DUMP_SKIP_SYMLINKS")?></td>
-	<td><input type="checkbox" name="skip_symlinks" value="Y" <?=IntOption("skip_symlinks", 0) ? "checked" : ''?>></td>
-</tr>
-
-
-
 
 <tr class="heading">
 	<td colspan="2"><?=GetMessage("DUMP_MAIN_ARC_MODE")?></td>

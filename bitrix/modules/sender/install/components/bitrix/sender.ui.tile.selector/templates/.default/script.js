@@ -63,6 +63,7 @@
 		this.duplicates = params.duplicates;
 		this.multiple = params.multiple;
 		this.readonly = params.readonly;
+		this.manualInputEnd = params.manualInputEnd;
 
 		this.attributeId = 'data-bx-id';
 		this.attributeData = 'data-bx-data';
@@ -104,8 +105,12 @@
 			BX.bind(this.tileContainer, 'click', this.onButtonSelect.bind(this));
 		}
 		BX.bind(this.input, 'input', this.onInput.bind(this));
-		BX.bind(this.input, 'blur', this.onInputEnd.bind(this));
-		Helper.handleKeyEnter(this.input, this.onInputEnd.bind(this));
+
+		if (!this.manualInputEnd)
+		{
+			BX.bind(this.input, 'blur', this.onInputEnd.bind(this));
+			Helper.handleKeyEnter(this.input, this.onInputEnd.bind(this));
+		}
 	};
 	TileSelector.prototype.getSearchInput = function ()
 	{
@@ -757,18 +762,25 @@
 			return;
 		}
 
-		this.popup = BX.PopupWindowManager.create(
+		this.popup = BX.Main.PopupManager.create(
 			this.id,
 			this.context,
 			{
 				width: 620,
-				height: 225,
+				height: 300,
 				autoHide: true,
 				lightShadow: true,
 				closeByEsc: true,
-				closeIcon: true,
+				closeIcon: false,
 				offsetLeft: 40,
-				angle: true
+				angle: true,
+				buttons: [
+					new BX.UI.CloseButton({
+						onclick: function() {
+							this.popup.close();
+						}.bind(this),
+					})
+				]
 			}
 		);
 

@@ -36,7 +36,7 @@ if($arParams["PAGE_RESULT_COUNT"]<=0)
 	$arParams["PAGE_RESULT_COUNT"] = 50;
 
 $arParams["PAGER_TITLE"] = trim($arParams["PAGER_TITLE"]);
-if(strlen($arParams["PAGER_TITLE"]) <= 0)
+if($arParams["PAGER_TITLE"] == '')
 	$arParams["PAGER_TITLE"] = GetMessage("SEARCH_RESULTS");
 $arParams["PAGER_SHOW_ALWAYS"] = $arParams["PAGER_SHOW_ALWAYS"]!="N";
 $arParams["USE_TITLE_RANK"] = $arParams["USE_TITLE_RANK"]=="Y";
@@ -45,7 +45,7 @@ $arParams["PAGER_TEMPLATE"] = trim($arParams["PAGER_TEMPLATE"]);
 if($arParams["DEFAULT_SORT"] !== "date")
 	$arParams["DEFAULT_SORT"] = "rank";
 
-if(strlen($arParams["FILTER_NAME"])<=0 || !preg_match("/^[A-Za-z_][A-Za-z01-9_]*$/", $arParams["FILTER_NAME"]))
+if($arParams["FILTER_NAME"] == '' || !preg_match("/^[A-Za-z_][A-Za-z01-9_]*$/", $arParams["FILTER_NAME"]))
 	$arFILTERCustom = array();
 else
 {
@@ -72,7 +72,7 @@ if(
 	$arParams["SHOW_WHEN"]
 	&& isset($_REQUEST["from"])
 	&& is_string($_REQUEST["from"])
-	&& strlen($_REQUEST["from"])
+	&& mb_strlen($_REQUEST["from"])
 	&& CheckDateTime($_REQUEST["from"])
 )
 	$from = $_REQUEST["from"];
@@ -83,7 +83,7 @@ if(
 	$arParams["SHOW_WHEN"]
 	&& isset($_REQUEST["to"])
 	&& is_string($_REQUEST["to"])
-	&& strlen($_REQUEST["to"])
+	&& mb_strlen($_REQUEST["to"])
 	&& CheckDateTime($_REQUEST["to"])
 )
 	$to = $_REQUEST["to"];
@@ -150,9 +150,9 @@ if($obCache->StartDataCache($arParams["CACHE_TIME"], $this->GetCacheID(), "/".SI
 	foreach($arParams["arrWHERE"] as $code)
 	{
 		list($module_id, $part_id) = explode("_", $code, 2);
-		if(strlen($module_id)>0)
+		if($module_id <> '')
 		{
-			if(strlen($part_id)<=0)
+			if($part_id == '')
 			{
 				switch($module_id)
 				{
@@ -205,8 +205,7 @@ $arResult["REQUEST"]["TO"] = htmlspecialcharsbx($to);
 
 if($q!==false)
 {
-
-	if($arParams["USE_LANGUAGE_GUESS"] == "N" || isset($_REQUEST["spell"]) || $arParams["USE_LANGUAGE_GUESS"] === null)
+	if($arParams["USE_LANGUAGE_GUESS"] == "N" || isset($_REQUEST["spell"]))
 	{
 		$arResult["REQUEST"]["~QUERY"] = $q;
 		$arResult["REQUEST"]["QUERY"] = htmlspecialcharsex($q);
@@ -227,7 +226,7 @@ if($q!==false)
 			$arResult["REQUEST"]["~QUERY"] = $q;
 			$arResult["REQUEST"]["QUERY"] = htmlspecialcharsex($q);
 		}
-	} 
+	}
 
 }
 else
@@ -235,6 +234,7 @@ else
 	$arResult["REQUEST"]["~QUERY"] = false;
 	$arResult["REQUEST"]["QUERY"] = false;
 }
+
 //------------ CUSTOM -------------------------------------------------
 $q_lower = strtolower($q);
 
@@ -275,7 +275,7 @@ if($tags!==false)
 	foreach($arTags as $tag)
 	{
 		$tag = trim($tag);
-		if(strlen($tag) > 0)
+		if($tag <> '')
 			$arResult["REQUEST"]["~TAGS_ARRAY"][$tag] = $tag;
 	}
 	$arResult["REQUEST"]["TAGS_ARRAY"] = htmlspecialcharsex($arResult["REQUEST"]["~TAGS_ARRAY"]);
@@ -318,7 +318,7 @@ if($this->InitComponentTemplate($templatePage))
 	$template = &$this->GetTemplate();
 	$arResult["FOLDER_PATH"] = $folderPath = $template->GetFolder();
 
-	if(strlen($folderPath) > 0)
+	if($folderPath <> '')
 	{
 		$arFilter = array(
 			"SITE_ID" => SITE_ID,
@@ -326,11 +326,11 @@ if($this->InitComponentTemplate($templatePage))
 			"TAGS" => $arResult["REQUEST"]["~TAGS"],
 		);
 		$arFilter = array_merge($arFILTERCustom, $arFilter);
-		if(strlen($where)>0)
+		if($where <> '')
 		{
 			list($module_id, $part_id) = explode("_",$where,2);
 			$arFilter["MODULE_ID"] = $module_id;
-			if(strlen($part_id)>0) $arFilter["PARAM1"] = $part_id;
+			if($part_id <> '') $arFilter["PARAM1"] = $part_id;
 		}
 		if($arParams["CHECK_DATES"])
 			$arFilter["CHECK_DATES"]="Y";
@@ -358,7 +358,7 @@ if($this->InitComponentTemplate($templatePage))
 			$obSearch->NavStart($arParams["PAGE_RESULT_COUNT"], false);
 			$ar = $obSearch->GetNext();
 			//Search restart
-			if(($arParams["RESTART"] == "Y") && $obSearch->Query->bStemming)
+			if(!$ar && ($arParams["RESTART"] == "Y") && $obSearch->Query->bStemming)
 			{
 				$exFILTER["STEMMING"] = false;
 				$obSearch = new CSearch();
@@ -410,6 +410,7 @@ if($this->InitComponentTemplate($templatePage))
 			$arResult["NAV_CACHED_DATA"] = $navComponentObject->GetTemplateCachedData();
 			$arResult["NAV_RESULT"] = $obSearch;
 		}
+
 
 		#____________________________________________________________________________________________________________
 		# -------- ВНИМАНИЕ! Это костыль! ---------------------------------------------------------------------------
@@ -510,7 +511,6 @@ if($this->InitComponentTemplate($templatePage))
 
 		}
 		# -------- ВНИМАНИЕ! Это костыль! END --------------------------------------
-
 
 		$arResult["TAGS_CHAIN"] = array();
 		$url = array();

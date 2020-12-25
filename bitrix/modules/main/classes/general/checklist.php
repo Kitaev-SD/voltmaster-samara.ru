@@ -244,7 +244,7 @@ class CCheckList
 			"NAME" => GetMessage("CL_".$ID),
 			"DESC" => GetMessage("CL_".$ID."_DESC", array('#LANG#' => LANG)),
 			"AUTOTEST_DESC" => GetMessage("CL_".$ID."_AUTOTEST_DESC"),
-			"HOWTO" => (strlen($arHowTo)>0)?(str_ireplace('#LANG#', LANG, $arHowTo)):"",
+			"HOWTO" => ($arHowTo <> '')?(str_ireplace('#LANG#', LANG, $arHowTo)):"",
 			"LINKS" => GetMessage("CL_".$ID."_LINKS")
 		);
 
@@ -294,7 +294,7 @@ class CCheckList
 		$arClass = 	$arPoint["CLASS_NAME"];
 		$arMethod = $arPoint["METHOD_NAME"];
 
-		if (strlen($arPoint["FILE_PATH"])>0 && file_exists($_SERVER["DOCUMENT_ROOT"].$arPoint["FILE_PATH"]))
+		if ($arPoint["FILE_PATH"] <> '' && file_exists($_SERVER["DOCUMENT_ROOT"].$arPoint["FILE_PATH"]))
 			include($_SERVER["DOCUMENT_ROOT"].$arPoint["FILE_PATH"]);
 
 		if(is_callable(array($arClass, $arMethod)))
@@ -495,7 +495,7 @@ class CCheckListResult
 	public static function Update($ID, $arFields)
 	{
 		global $DB;
-		$ID = IntVal($ID);
+		$ID = intval($ID);
 
 		$strUpdate = $DB->PrepareUpdate("b_checklist", $arFields);
 
@@ -577,7 +577,7 @@ class CAutoCheck
 				$arResult["MESSAGE"]["DETAIL"] .= $component["name"]." \n";
 			}
 
-			if (strlen($arResult["MESSAGE"]["DETAIL"]) == 0)
+			if ($arResult["MESSAGE"]["DETAIL"] == '')
 			{
 				$arResult["MESSAGE"]["PREVIEW"] = GetMessage("CL_HAVE_NO_CUSTOM_COMPONENTS");
 			}
@@ -601,7 +601,7 @@ class CAutoCheck
 					$arResult["MESSAGE"]["DETAIL"] .= GetMessage("CL_EMPTY_DESCRIPTION")." ".$component["name"]." \n";
 			}
 
-			if (strlen($arResult["MESSAGE"]["DETAIL"]) == 0)
+			if ($arResult["MESSAGE"]["DETAIL"] == '')
 			{
 				$arResult["STATUS"] = true;
 				$arResult["MESSAGE"]["PREVIEW"] = GetMessage("CL_HAVE_CUSTOM_COMPONENTS_DESC");
@@ -636,7 +636,7 @@ class CAutoCheck
 
 		foreach($arTmpFiles as $ar)
 		{
-			if (strpos($ar['NAME'], ".enc.gz") || strpos($ar['NAME'], ".tar.gz") || strpos($ar['NAME'], ".tar") || strpos($ar['NAME'], ".enc"))
+			if (mb_strpos($ar['NAME'], ".enc.gz") || mb_strpos($ar['NAME'], ".tar.gz") || mb_strpos($ar['NAME'], ".tar") || mb_strpos($ar['NAME'], ".enc"))
 				$arCount++;
 		}
 
@@ -647,7 +647,7 @@ class CAutoCheck
 			{
 				foreach($backup->listFiles() as $ar)
 				{
-					if (strpos($ar['FILE_NAME'], ".enc.gz") || strpos($ar['FILE_NAME'], ".tar.gz") || strpos($ar['FILE_NAME'], ".tar") || strpos($ar['FILE_NAME'], ".enc"))
+					if (mb_strpos($ar['FILE_NAME'], ".enc.gz") || mb_strpos($ar['FILE_NAME'], ".tar.gz") || mb_strpos($ar['FILE_NAME'], ".tar") || mb_strpos($ar['FILE_NAME'], ".enc"))
 						$arCount++;
 				}
 			}
@@ -729,7 +729,7 @@ class CAutoCheck
 		{
 			$arResult["MESSAGE"]["PREVIEW"] = GetMessage("NOT_FOUND_TEMPLATE");
 		}
-		elseif (strlen($arMessage) == 0)
+		elseif ($arMessage == '')
 		{
 			$arResult["STATUS"] = true;
 		}
@@ -744,16 +744,32 @@ class CAutoCheck
 
 	public static function CheckKernel($arParams)
 	{
-
-		$time_start = time();
 		global $DB;
-		$arCompare = array(
+
+		$startTime = time();
+		$installFilesMapping = array(
 			"install/components/bitrix/" => "/bitrix/components/bitrix/",
 			"install/js/" => "/bitrix/js/",
 			"install/activities/" => "/bitrix/activities/",
 			"install/admin/" => "/bitrix/admin/",
 			"install/wizards/" => "/bitrix/wizards/",
 		);
+
+		$events = \Bitrix\Main\EventManager::getInstance()->findEventHandlers("main", "onKernelCheckInstallFilesMappingGet");
+		foreach ($events as $event)
+		{
+			$pathList = ExecuteModuleEventEx($event);
+			if(is_array($pathList))
+			{
+				foreach ($pathList as $pathFrom=>$pathTo)
+				{
+					if(!array_key_exists($pathFrom, $installFilesMapping))
+					{
+						$installFilesMapping[$pathFrom] = $pathTo;
+					}
+				}
+			}
+		}
 
 		if(!$_SESSION["BX_CHECKLIST"][$arParams["TEST_ID"]])
 			$_SESSION["BX_CHECKLIST"][$arParams["TEST_ID"]] = array();
@@ -764,7 +780,7 @@ class CAutoCheck
 			$rsInstalledModules = CModule::GetList();
 			while ($ar = $rsInstalledModules->Fetch())
 			{
-				if (!strpos($ar["ID"], "."))
+				if (!mb_strpos($ar["ID"], "."))
 					$NS["MLIST"][] = $ar["ID"];
 			}
 			$NS["MNUM"] = 0;
@@ -772,22 +788,22 @@ class CAutoCheck
 			$NS["FILES_COUNT"] = 0;
 			$NS["MODFILES_COUNT"] = 0;
 		}
+
 		$arError = false;
-		$module_id = $NS["MLIST"][$NS["MNUM"]];
-		$module_folder = $_SERVER["DOCUMENT_ROOT"]."/bitrix/modules/".$module_id."/";
-		$dbtype = strtolower($DB->type);
-		$arFilesCount = 0;
-		$arModifiedFilesCount = 0;
+		$moduleId = $NS["MLIST"][$NS["MNUM"]];
+		$moduleFolder = $_SERVER["DOCUMENT_ROOT"]."/bitrix/modules/".$moduleId."/";
+		$dbtype = mb_strtolower($DB->type);
+		$fileCount = 0;
+		$modifiedFileCount = 0;
 		$state = array();
-		$Skip = false;
+		$skip = false;
 
-		$ver = \Bitrix\Main\ModuleManager::getVersion($module_id);
-
+		$ver = \Bitrix\Main\ModuleManager::getVersion($moduleId);
 		if ($ver === false)
 		{
 			$state = array(
 				"STATUS" => false,
-				"MESSAGE" =>  GetMessage("CL_MODULE_VERSION_ERROR", array("#module_id#" => $module_id))."\n"
+				"MESSAGE" =>  GetMessage("CL_MODULE_VERSION_ERROR", array("#module_id#" => $moduleId))."\n"
 			);
 			$arError = true;
 		}
@@ -804,7 +820,7 @@ class CAutoCheck
 				$http = new \Bitrix\Main\Web\HttpClient();
 				$http->setProxy($proxyAddr, $proxyPort, $proxyUserName, $proxyPassword);
 
-				$data = $http->get("http://".$sHost."/bitrix/updates/checksum.php?check_sum=Y&module_id=".$module_id."&ver=".$ver."&dbtype=".$dbtype."&mode=2");
+				$data = $http->get("http://".$sHost."/bitrix/updates/checksum.php?check_sum=Y&module_id=".$moduleId."&ver=".$ver."&dbtype=".$dbtype."&mode=2");
 
 				$NS["FILE_LIST"] = $result = unserialize(gzinflate($data));
 				$NS["MODULE_FILES_COUNT"] = count($NS["FILE_LIST"]);
@@ -813,41 +829,47 @@ class CAutoCheck
 			{
 				$result = $NS["FILE_LIST"];
 			}
-			$arMessage = "";
+
+			$message = "";
 			$timeout = COption::GetOptionString("main", "update_load_timeout", "30");
 			if (is_array($result) && !$result["error"])
 			{
 				foreach($result as $file => $checksum)
 				{
-					$arFile = $module_folder.$file;
+					$filePath = $moduleFolder.$file;
 					unset($NS["FILE_LIST"][$file]);
-					if (!file_exists($arFile))
+
+					if (!file_exists($filePath))
 						continue;
-					$arFilesCount++;
-					if (md5_file($arFile)!=$checksum)
+
+					$fileCount++;
+					if (md5_file($filePath)!=$checksum)
 					{
-						$arMessage.= str_replace(array("//", "\\\\"), array("/", "\\"), $arFile)."\n";
-						$arModifiedFilesCount++;
+						$message.= str_replace(array("//", "\\\\"), array("/", "\\"), $filePath)."\n";
+						$modifiedFileCount++;
 					}
-					$arTmpCompare = $arCompare;
-					foreach ($arTmpCompare as $key => $value)
-					if (strpos($file, $key) === 0)
+
+					foreach ($installFilesMapping as $key => $value)
 					{
-						$arFile = str_replace($key, $_SERVER["DOCUMENT_ROOT"].$value, $file);
-						if (file_exists($arFile) && md5_file($arFile)!=$checksum)
+						if (mb_strpos($file, $key) === 0)
 						{
-							$arModifiedFilesCount++;
-							$arMessage.= str_replace(array("//", "\\\\"), array("/", "\\"), $arFile)."\n";
+							$filePath = str_replace($key, $_SERVER["DOCUMENT_ROOT"].$value, $file);
+							if (file_exists($filePath) && md5_file($filePath)!=$checksum)
+							{
+								$modifiedFileCount++;
+								$message.= str_replace(array("//", "\\\\"), array("/", "\\"), $filePath)."\n";
+							}
+							$fileCount++;
 						}
-						$arFilesCount++;
 					}
-					if ((time()-$time_start)>=$timeout)
+
+					if ((time()-$startTime)>=$timeout)
 						break;
 				}
-				if (strlen($arMessage)> 0)
+				if ($message <> '')
 				{
 					$state = array(
-						"MESSAGE" => $arMessage,
+						"MESSAGE" => $message,
 						"STATUS" => false
 					);
 				}
@@ -856,28 +878,30 @@ class CAutoCheck
 			{
 				if($result["error"]!= "unknow module id")
 				{
-					$state["MESSAGE"] = GetMessage("CL_CANT_CHECK", array("#module_id#" => $module_id))."\n";
+					$state["MESSAGE"] = GetMessage("CL_CANT_CHECK", array("#module_id#" => $moduleId))."\n";
 					$arError = true;
 				}
 				else
-					$Skip = true;
+					$skip = true;
 			}
 		}
 		if ($state["MESSAGE"])
-			$NS["MESSAGE"][$module_id].=$state["MESSAGE"];
-		if (!$arError && !$Skip)
+		{
+			$NS["MESSAGE"][$moduleId].=$state["MESSAGE"];
+		}
+		if (!$arError && !$skip)
 		{
 			if (count($NS["FILE_LIST"]) == 0)
 			{
-				if (strlen($NS["MESSAGE"][$module_id]) == 0)
-					$NS["MESSAGE"][$module_id] = GetMessage("CL_NOT_MODIFIED", array("#module_id#" => $module_id))."\n";
+				if ($NS["MESSAGE"][$moduleId] == '')
+					$NS["MESSAGE"][$moduleId] = GetMessage("CL_NOT_MODIFIED", array("#module_id#" => $moduleId))."\n";
 				else
-					$NS["MESSAGE"][$module_id] = GetMessage("CL_MODIFIED_FILES", array("#module_id#" => $module_id))."\n".$NS["MESSAGE"][$module_id];
+					$NS["MESSAGE"][$moduleId] = GetMessage("CL_MODIFIED_FILES", array("#module_id#" => $moduleId))."\n".$NS["MESSAGE"][$moduleId];
 			}
-			$NS["FILES_COUNT"]+=$arFilesCount;
-			$NS["MODFILES_COUNT"]+=$arModifiedFilesCount;
+			$NS["FILES_COUNT"]+=$fileCount;
+			$NS["MODFILES_COUNT"]+=$modifiedFileCount;
 		}
-		if ($state["STATUS"] === false || $arError == true || $Skip)
+		if ($state["STATUS"] === false || $arError == true || $skip)
 		{
 			if ($state["STATUS"] === false || $arError == true)
 				$NS["STATUS"] = false;
@@ -1035,18 +1059,18 @@ class CAutoCheck
 		$have_sign = false;
 		$have_dit = false;
 		$arResult["STATUS"] = true;
-		if (strlen($DBPassword)==0)
+		if ($DBPassword == '')
 			$arMessage.=GetMessage("CL_EMPTY_PASS")."\n";
 		else
 		{
-			if ($DBPassword == strtolower($DBPassword))
+			if ($DBPassword == mb_strtolower($DBPassword))
 				$arMessage .= (++$err).". ".GetMessage("CL_SAME_REGISTER")."\n";
 
-			for($j=0, $c=strlen($DBPassword); $j<$c; $j++)
+			for($j=0, $c = mb_strlen($DBPassword); $j<$c; $j++)
 			{
-				if (strpos($sign, $DBPassword[$j])!==false)
+				if (mb_strpos($sign, $DBPassword[$j]) !== false)
 					$have_sign = true;
-				if (strpos($dit, $DBPassword[$j])!==false)
+				if (mb_strpos($dit, $DBPassword[$j]) !== false)
 					$have_dit = true;
 				if ($have_dit == true && $have_sign == true)
 					break;
@@ -1056,7 +1080,7 @@ class CAutoCheck
 				$arMessage .= (++$err).". ".GetMessage("CL_HAVE_NO_DIT")."\n";
 			if (!$have_sign)
 				$arMessage .= (++$err).". ".GetMessage("CL_HAVE_NO_SIGN")."\n";
-			if (strlen($DBPassword)<8)
+			if (mb_strlen($DBPassword) < 8)
 				$arMessage .= (++$err).". ".GetMessage("CL_LEN_MIN")."\n";
 		}
 		if($arMessage)
@@ -1174,7 +1198,7 @@ class CAutoCheck
 			{
 				$arFileNum++;
 				//this is not first step?
-				if (strlen($_SESSION["BX_CHECKLIST"]["LAST_FILE"])>0)
+				if ($_SESSION["BX_CHECKLIST"]["LAST_FILE"] <> '')
 				{
 					if ($_SESSION["BX_CHECKLIST"]["LAST_FILE"] == $file)
 						$_SESSION["BX_CHECKLIST"]["LAST_FILE"] = "";
@@ -1201,7 +1225,7 @@ class CAutoCheck
 			}
 		}
 		$arResult = array("STATUS" => true);
-		if (strlen($_SESSION["BX_CHECKLIST"]["FOUND"])>0)
+		if ($_SESSION["BX_CHECKLIST"]["FOUND"] <> '')
 		{
 			$arResult["STATUS"] = false;
 			$arResult["MESSAGE"]=array(
@@ -1330,7 +1354,7 @@ class CCheckListTools
 					if (!in_array($file, $arExept["FOLDERS"]))
 						CCheckListTools::__scandir($pwd."$file/", $arFiles, $arExept);
 				}
-				elseif(in_array(substr(strrchr($file, '.'), 1), $arExept["EXT"])
+				elseif(in_array(mb_substr(strrchr($file, '.'), 1), $arExept["EXT"])
 					&& !in_array($pwd.$file, $arExept["FILES"])
 					&& !in_array($file, $arExept["FILES"])
 					)

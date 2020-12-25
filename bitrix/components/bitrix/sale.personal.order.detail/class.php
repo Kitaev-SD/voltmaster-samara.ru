@@ -229,17 +229,17 @@ class CBitrixPersonalOrderDetailComponent extends CBitrixComponent
 	{
 		global $APPLICATION;
 
-		$this->tryParseInt($arParams["CACHE_TIME"], 3600, true);
+		self::tryParseInt($arParams["CACHE_TIME"], 3600, true);
 
 		$arParams['CACHE_GROUPS'] = (isset($arParams['CACHE_GROUPS']) && $arParams['CACHE_GROUPS'] == 'N' ? 'N' : 'Y');
 
-		$this->tryParseString($arParams["PATH_TO_LIST"], $APPLICATION->GetCurPage());
-		$this->tryParseString($arParams["PATH_TO_PAYMENT"], "payment.php");
+		self::tryParseString($arParams["PATH_TO_LIST"], $APPLICATION->GetCurPage());
+		self::tryParseString($arParams["PATH_TO_PAYMENT"], "payment.php");
 
-		$this->tryParseString($arParams["PATH_TO_CANCEL"], $APPLICATION->GetCurPage()."?"."ID=#ID#");
-		$arParams["PATH_TO_CANCEL"] .= (strpos($arParams["PATH_TO_CANCEL"], "?") === false ? "?" : "&");
+		self::tryParseString($arParams["PATH_TO_CANCEL"], $APPLICATION->GetCurPage()."?"."ID=#ID#");
+		$arParams["PATH_TO_CANCEL"] .= (mb_strpos($arParams["PATH_TO_CANCEL"], "?") === false ? "?" : "&");
 
-		$this->tryParseString($arParams["ACTIVE_DATE_FORMAT"], "d.m.Y");
+		self::tryParseString($arParams["ACTIVE_DATE_FORMAT"], "d.m.Y");
 
 		// fields & props to select from IBlock
 		if(!is_array($arParams["CUSTOM_SELECT_PROPS"]))
@@ -248,14 +248,14 @@ class CBitrixPersonalOrderDetailComponent extends CBitrixComponent
 			$this->tryParseArray($arParams["CUSTOM_SELECT_PROPS"]);
 
 		// resample sizes
-		$this->tryParseInt($arParams["PICTURE_WIDTH"], 110);
-		$this->tryParseInt($arParams["PICTURE_HEIGHT"], 110);
+		self::tryParseInt($arParams["PICTURE_WIDTH"], 110);
+		self::tryParseInt($arParams["PICTURE_HEIGHT"], 110);
 
 		// resample type for images
 		if(!in_array($arParams['RESAMPLE_TYPE'], array(BX_RESIZE_IMAGE_EXACT, BX_RESIZE_IMAGE_PROPORTIONAL, BX_RESIZE_IMAGE_PROPORTIONAL_ALT)))
 			$arParams['RESAMPLE_TYPE'] = BX_RESIZE_IMAGE_PROPORTIONAL;
 
-		$this->tryParseBoolean($arParams['AUTH_FORM_IN_TEMPLATE']);
+		self::tryParseBoolean($arParams['AUTH_FORM_IN_TEMPLATE']);
 
 		if (empty($arParams['REFRESH_PRICES']))
 		{
@@ -281,7 +281,7 @@ class CBitrixPersonalOrderDetailComponent extends CBitrixComponent
 		{
 			$arParams['HIDE_USER_INFO'] = array();
 		}
-		
+
 		return $arParams;
 	}
 
@@ -295,7 +295,7 @@ class CBitrixPersonalOrderDetailComponent extends CBitrixComponent
 		foreach($fld as $k => &$item)
 		{
 			$item = trim($item);
-			if(!strlen($item))
+			if($item == '')
 				unset($fld[$k]);
 		}
 
@@ -329,7 +329,7 @@ class CBitrixPersonalOrderDetailComponent extends CBitrixComponent
 	public static function tryParseString(&$fld, $default)
 	{
 		$fld = trim((string)$fld);
-		if(!strlen($fld) && isset($default))
+		if(!mb_strlen($fld) && isset($default))
 			$fld = htmlspecialcharsbx($default);
 
 		return $fld;
@@ -386,7 +386,7 @@ class CBitrixPersonalOrderDetailComponent extends CBitrixComponent
 	{
 		$this->requestData["ID"] = urldecode(urldecode($this->arParams["ID"]));
 
-		if (!strlen($this->requestData["ID"]))
+		if ($this->requestData["ID"] == '')
 			$this->doCaseOrderIdNotSet();
 	}
 
@@ -402,7 +402,7 @@ class CBitrixPersonalOrderDetailComponent extends CBitrixComponent
 
 			foreach($this->arParams['CUSTOM_SELECT_PROPS'] as $prop)
 			{
-				if (strpos($prop, 'PROPERTY_') !== false)
+				if (mb_strpos($prop, 'PROPERTY_') !== false)
 				{
 					$propId = str_replace('PROPERTY_', '', $prop);
 
@@ -547,6 +547,7 @@ class CBitrixPersonalOrderDetailComponent extends CBitrixComponent
 			}
 
 			$basketValues['FORMATED_SUM'] = SaleFormatCurrency($basketValues["PRICE"] * $basketValues['QUANTITY'], $basketValues["CURRENCY"]);
+			$basketValues['FORMATED_BASE_SUM'] = SaleFormatCurrency($basketValues["BASE_PRICE"] * $basketValues['QUANTITY'], $basketValues["CURRENCY"]);
 
 			$basket[$basketValues['ID']] = $basketValues;
 		}
@@ -603,7 +604,7 @@ class CBitrixPersonalOrderDetailComponent extends CBitrixComponent
 
 			foreach ($this->arParams['CUSTOM_SELECT_PROPS'] as $customProperty)
 			{
-				if (strpos($customProperty, "PROPERTY_") !== false)
+				if (mb_strpos($customProperty, "PROPERTY_") !== false)
 				{
 					$code = str_replace('PROPERTY_', '', $customProperty);
 					if (!in_array($code , $skuPropertyCodes))
@@ -634,7 +635,7 @@ class CBitrixPersonalOrderDetailComponent extends CBitrixComponent
 	public function obtainBasketPropsElement(&$basketItems, $elementIds, $skuParentMap)
 	{
 		$imgFields = array("PREVIEW_PICTURE", "DETAIL_PICTURE");
-		$productPropertySelect = array_merge(['ID'], $imgFields);
+		$productPropertySelect = array_merge(['ID', 'IBLOCK_ID'], $imgFields);
 		if (is_array($this->arParams['CUSTOM_SELECT_PROPS']))
 		{
 			$productPropertySelect = array_merge($productPropertySelect, $this->arParams['CUSTOM_SELECT_PROPS']);
@@ -659,7 +660,7 @@ class CBitrixPersonalOrderDetailComponent extends CBitrixComponent
 				{
 					foreach ($productProperties[$productId] as $key => $value)
 					{
-						if (strpos($key, "PROPERTY_") !== false || in_array($key, $imgFields))
+						if (mb_strpos($key, "PROPERTY_") !== false || in_array($key, $imgFields))
 						{
 							$item[$key] = $value;
 						}
@@ -672,13 +673,13 @@ class CBitrixPersonalOrderDetailComponent extends CBitrixComponent
 					$arFieldsToFill = array_merge($this->arParams['CUSTOM_SELECT_PROPS'], $imgFields); // fields to be filled with parents' values if empty
 					foreach ($arFieldsToFill as $field)
 					{
-						if(!strlen($field))
+						if($field == '')
 							continue;
-						$field = strtoupper($field);
+						$field = mb_strtoupper($field);
 						$fieldVal = (in_array($field, $imgFields)) ? $field : $field."_VALUE";
 						$parentId = $skuParentMap[$item["PRODUCT_ID"]];
 
-						if ((!isset($item[$fieldVal]) || (isset($item[$fieldVal]) && strlen($item[$fieldVal]) == 0))
+						if ((!isset($item[$fieldVal]) || (isset($item[$fieldVal]) && $item[$fieldVal] == ''))
 							&& (isset($productProperties[$parentId][$fieldVal]) && !empty($productProperties[$parentId][$fieldVal]))) // can be array or string
 						{
 							$item[$fieldVal] = $productProperties[$parentId][$fieldVal];
@@ -735,6 +736,7 @@ class CBitrixPersonalOrderDetailComponent extends CBitrixComponent
 			return array();
 
 		$productDataList = array();
+		$iblockIds = [];
 
 		$productDataRow = \CIBlockElement::GetList(
 			array("SORT" => "ASC"),
@@ -749,6 +751,77 @@ class CBitrixPersonalOrderDetailComponent extends CBitrixComponent
 		while ($product = $productDataRow->GetNext())
 		{
 			$productDataList[$product['ID']] = $product;
+			$iblockIds[] = $product['IBLOCK_ID'];
+		}
+
+		$propertyCodes = [];
+		foreach ($select as $selectName)
+		{
+			if (mb_strpos($selectName, 'PROPERTY_') !== false)
+			{
+				$propertyCodes[] = str_replace('PROPERTY_', '', $selectName);
+			}
+		}
+
+		if (!empty($iblockIds) && !empty($propertyCodes))
+		{
+			$iblockIds = array_unique($iblockIds);
+			$directProperties = [];
+			foreach ($iblockIds as $iblockId)
+			{
+				$propertyData = CIBlockProperty::GetList(
+					array('SORT' => 'ASC', 'ID' => 'ASC'),
+					array(
+						'IBLOCK_ID' => $iblockId,
+						'ACTIVE' => 'Y',
+						'PROPERTY_TYPE' => \Bitrix\Iblock\PropertyTable::TYPE_STRING,
+						'USER_TYPE' => 'directory'
+					)
+				);
+
+				while ($property = $propertyData->Fetch())
+				{
+					if (in_array($property['CODE'], $propertyCodes))
+					{
+						if ($this->useHL)
+						{
+							$hlBlockResult = HL\HighloadBlockTable::getList([
+								"filter" => [
+									"TABLE_NAME" => $property["USER_TYPE_SETTINGS"]["TABLE_NAME"]
+								]
+							]);
+							$hlBlock = $hlBlockResult->fetch();
+
+							if ($hlBlock)
+							{
+								$values = [];
+								$entity = HL\HighloadBlockTable::compileEntity($hlBlock);
+								$entityDataClass = $entity->getDataClass();
+								$directoryData = $entityDataClass::getList();
+								while ($element = $directoryData->fetch())
+								{
+									$values[$element['UF_XML_ID']] = $element['UF_NAME'];
+								}
+								$property['VALUES'] = $values;
+							}
+							$directProperties[] = $property;
+						}
+					}
+				}
+			}
+
+			if (!empty($directProperties))
+			{
+				foreach ($productDataList as &$product)
+				{
+					foreach ($directProperties as $property)
+					{
+						$currentValue = $product["PROPERTY_{$property['CODE']}_VALUE"];
+						$product["~PROPERTY_{$property['CODE']}_VALUE"] =
+						$product["PROPERTY_{$property['CODE']}_VALUE"] = $property['VALUES'][$currentValue];
+					}
+				}
+			}
 		}
 
 		return $productDataList;
@@ -1247,22 +1320,14 @@ class CBitrixPersonalOrderDetailComponent extends CBitrixComponent
 
 		$this->requestData["ID"] = $this->order->getId();
 
-		$orderValues = $this->order->getFieldValues();
-
-		if (empty($orderValues))
-		{
-			throw new Main\SystemException(
-				str_replace("#ID#", $this->requestData["ID"], Localization\Loc::getMessage("SPOD_NO_ORDER")),
-				self::E_ORDER_NOT_FOUND
-			);
-		}
+		$orderFields = $this->order->getFieldValues();
 
 		if (
 			is_array($this->arParams['RESTRICT_CHANGE_PAYSYSTEM'])
-			&& in_array($orderValues['STATUS_ID'], $this->arParams['RESTRICT_CHANGE_PAYSYSTEM'])
+			&& in_array($orderFields['STATUS_ID'], $this->arParams['RESTRICT_CHANGE_PAYSYSTEM'])
 		)
 		{
-			$orderValues['LOCK_CHANGE_PAYSYSTEM'] = 'Y';
+			$orderFields['LOCK_CHANGE_PAYSYSTEM'] = 'Y';
 		}
 
 		$shipmentOrder = array();
@@ -1298,34 +1363,49 @@ class CBitrixPersonalOrderDetailComponent extends CBitrixComponent
 				}
 			}
 
-			if ($shipmentFields["DELIVERY_ID"] > 0 && strlen($shipmentFields["TRACKING_NUMBER"]))
+			if ($shipmentFields["DELIVERY_ID"] > 0 && mb_strlen($shipmentFields["TRACKING_NUMBER"]))
 			{
 				$shipmentFields["TRACKING_URL"] = $trackingManager->getTrackingUrl($shipmentFields["DELIVERY_ID"], $shipmentFields["TRACKING_NUMBER"]);
 			}
-			
+			$currency = $shipmentFields["CURRENCY"];
+			if (empty($currency))
+			{
+				$currency = $this->order->getCurrency();
+			}
+			$shipmentFields["PRICE_DELIVERY_FORMATTED"] = SaleFormatCurrency($shipmentFields['PRICE_DELIVERY'], $currency);
+			$this->formatDate($shipmentFields);
 			$shipmentOrder[] = $shipmentFields;
 		}
 
-		$orderValues['SHIPMENT'] = $shipmentOrder;
+		$orderFields['SHIPMENT'] = $shipmentOrder;
 
 		$paymentOrder = array();
 
 		$paymentCollection = $this->order->getPaymentCollection();
-
+		$dateFormat = $this->arParams['ACTIVE_DATE_FORMAT'];
 		/** @var \Bitrix\Sale\Payment $payment*/
 		foreach ($paymentCollection as $payment)
 		{
 			$paymentFields = $payment->getFieldValues();
 			$paymentFields['PAY_SYSTEM_NAME'] = htmlspecialcharsbx($paymentFields['PAY_SYSTEM_NAME']);
 			$paymentFields['CHECK_DATA'] = CheckManager::getCheckInfo($payment);
+			if ($paymentFields['DATE_PAID'] instanceof Main\Type\Date)
+			{
+				$paymentFields['DATE_PAID_FORMATTED'] = $paymentFields['DATE_PAID']->format($dateFormat);
+			}
+			if ($paymentFields['DATE_BILL'] instanceof Main\Type\Date)
+			{
+				$paymentFields['DATE_BILL_FORMATTED'] = $paymentFields['DATE_BILL']->format($dateFormat);
+			}
+			$this->formatDate($paymentFields);
 			$paymentOrder[$paymentFields['ID']] = $paymentFields;
 		}
-		
-		$orderValues['PAYMENT'] = $paymentOrder;
 
-		$orderValues['IS_ALLOW_PAY'] = $this->order->isAllowPay() ? 'Y' : 'N';
+		$orderFields['PAYMENT'] = $paymentOrder;
 
-		$this->dbResult = $orderValues;
+		$orderFields['IS_ALLOW_PAY'] = $this->order->isAllowPay() ? 'Y' : 'N';
+
+		$this->dbResult = $orderFields;
 	}
 
 	/**
@@ -1405,8 +1485,8 @@ class CBitrixPersonalOrderDetailComponent extends CBitrixComponent
 						$handlerFolder = Sale\PaySystem\Manager::getPathToHandlerFolder($service->getField('ACTION_FILE'));
 						$pathToAction = Main\Application::getDocumentRoot().$handlerFolder;
 						$pathToAction = str_replace("\\", "/", $pathToAction);
-						while (substr($pathToAction, strlen($pathToAction) - 1, 1) == "/")
-							$pathToAction = substr($pathToAction, 0, strlen($pathToAction) - 1);
+						while (mb_substr($pathToAction, mb_strlen($pathToAction) - 1, 1) == "/")
+							$pathToAction = mb_substr($pathToAction, 0, mb_strlen($pathToAction) - 1);
 						if (file_exists($pathToAction))
 						{
 							if (is_dir($pathToAction) && file_exists($pathToAction."/payment.php"))
@@ -1616,7 +1696,7 @@ class CBitrixPersonalOrderDetailComponent extends CBitrixComponent
 			{
 				continue;
 			}
-			
+
 			foreach ($shipment['ITEMS'] as $i => &$item)
 			{
 				if (isset($basket[$item['BASKET_ID']]))
@@ -1648,6 +1728,7 @@ class CBitrixPersonalOrderDetailComponent extends CBitrixComponent
 		{
 			foreach ($this->dbResult['BASKET'] as &$arItem)
 			{
+				$this->dbResult['BASE_PRODUCT_SUM'] += $arItem["BASE_PRICE"] * $arItem['QUANTITY'];
 				$this->dbResult['PRODUCT_SUM'] += $arItem["PRICE"] * $arItem['QUANTITY'];
 				$arItem["QUANTITY"] = doubleval($arItem["QUANTITY"]);
 				$this->dbResult["ORDER_WEIGHT"] += $arItem["WEIGHT"] * $arItem["QUANTITY"];
@@ -1679,13 +1760,13 @@ class CBitrixPersonalOrderDetailComponent extends CBitrixComponent
 	 */
 	protected function formatResultUrls()
 	{
-		if ( $this->arResult["CAN_CANCEL"] === "Y")
+		if ($this->arResult["CAN_CANCEL"] === "Y")
 		{
 			$this->arResult["URL_TO_CANCEL"] = CComponentEngine::makePathFromTemplate($this->arParams["PATH_TO_CANCEL"], array("ID" => urlencode(urlencode( $this->arResult["ACCOUNT_NUMBER"])))).'CANCEL=Y';
 		}
 		if (empty ($this->arParams["PATH_TO_COPY"]))
 		{
-			$urlSign = (strstr($this->arParams["PATH_TO_LIST"], "?")) ? '&' : "?";
+			$urlSign = (mb_strstr($this->arParams["PATH_TO_LIST"], "?")) ? '&' : "?";
 			$this->arResult["URL_TO_COPY"] = CComponentEngine::makePathFromTemplate($this->arParams["PATH_TO_LIST"].$urlSign.'ID=#ID#', array("ID" => urlencode(urlencode( $this->arResult["ACCOUNT_NUMBER"]))))."&amp;COPY_ORDER=Y";
 		}
 		else
@@ -1694,6 +1775,8 @@ class CBitrixPersonalOrderDetailComponent extends CBitrixComponent
 		}
 		$this->arResult["URL_TO_LIST"] = $this->arParams["PATH_TO_LIST"];
 		$this->arResult["SITE_ID"] =  $this->arResult["LID"];
+
+		$this->arResult["RETURN_URL"] = (new Sale\PaySystem\Context())->getUrl();
 	}
 
 	/**
@@ -1707,6 +1790,7 @@ class CBitrixPersonalOrderDetailComponent extends CBitrixComponent
 		$arResult["PRICE_FORMATED"] = SaleFormatCurrency($arResult["PRICE"], $arResult["CURRENCY"]);
 
 		$arResult["PRODUCT_SUM_FORMATED"] = SaleFormatCurrency($arResult["PRODUCT_SUM"], $arResult["CURRENCY"]);
+		$arResult["BASE_PRODUCT_SUM_FORMATED"] = SaleFormatCurrency($arResult["BASE_PRODUCT_SUM"], $arResult["CURRENCY"]);
 
 		$arResult["PRICE_DELIVERY_FORMATED"] = SaleFormatCurrency($arResult['PRICE_DELIVERY'], $arResult["CURRENCY"]);
 		foreach ($arResult['PAYMENT'] as &$payment)
@@ -1724,7 +1808,24 @@ class CBitrixPersonalOrderDetailComponent extends CBitrixComponent
 
 		if (doubleval($arResult["DISCOUNT_VALUE"]))
 			$arResult["DISCOUNT_VALUE_FORMATED"] = SaleFormatCurrency($arResult["DISCOUNT_VALUE"], $arResult["CURRENCY"]);
-		$arResult["CAN_CANCEL"] = (($arResult["CANCELED"]!="Y" && $arResult["STATUS_ID"]!="F" && $arResult["PAYED"]!="Y") ? "Y" : "N");
+
+		if ($this->arParams['DISALLOW_CANCEL'] === 'Y')
+		{
+			$arResult["CAN_CANCEL"] = 'N';
+		}
+		else
+		{
+			$arResult["CAN_CANCEL"] = (($arResult["CANCELED"]!="Y" && $arResult["STATUS_ID"]!="F" && $arResult["PAYED"]!="Y") ? "Y" : "N");
+		}
+
+		if (doubleval($arResult["SUM_PAID"]))
+			$arResult["SUM_PAID_FORMATED"] = SaleFormatCurrency($arResult["SUM_PAID"], $arResult["CURRENCY"]);
+
+		if ($arResult["SUM_PAID"] !== $arResult["PRICE"])
+		{
+			$arResult["SUM_REST"] = $arResult["PRICE"] - $arResult["SUM_PAID"];
+			$arResult["SUM_REST_FORMATED"] = SaleFormatCurrency($arResult["SUM_REST"], $arResult["CURRENCY"]);
+		}
 	}
 
 	/**
@@ -1737,9 +1838,7 @@ class CBitrixPersonalOrderDetailComponent extends CBitrixComponent
 
 		if (!empty($arResult["STATUS"]))
 		{
-			$arResult["STATUS"]["NAME"] = htmlspecialcharsEx($arResult["STATUS"]["NAME"]);
-			if (doubleval($arResult["SUM_PAID"]))
-				$arResult["SUM_PAID_FORMATED"] = SaleFormatCurrency($arResult["SUM_PAID"], $arResult["CURRENCY"]);
+			$arResult["STATUS"]["NAME"] = htmlspecialcharsbx($arResult["STATUS"]["NAME"]);
 		}
 	}
 
@@ -1765,8 +1864,8 @@ class CBitrixPersonalOrderDetailComponent extends CBitrixComponent
 
 		if (!empty($arResult["PERSON_TYPE"]))
 		{
-			$arResult["PERSON_TYPE"]["NAME"] = htmlspecialcharsEx($arResult["PERSON_TYPE"]["NAME"]);
-			$arResult["USER"]["PERSON_TYPE_NAME"] = htmlspecialcharsEx($arResult["PERSON_TYPE"]["NAME"]);
+			$arResult["PERSON_TYPE"]["NAME"] = htmlspecialcharsbx($arResult["PERSON_TYPE"]["NAME"]);
+			$arResult["USER"]["PERSON_TYPE_NAME"] = htmlspecialcharsbx($arResult["PERSON_TYPE"]["NAME"]);
 
 		}
 	}
@@ -1780,7 +1879,7 @@ class CBitrixPersonalOrderDetailComponent extends CBitrixComponent
 		$arResult =& $this->arResult;
 
 		if (!empty($arResult["PAY_SYSTEM"]))
-			$arResult["PAY_SYSTEM"]["NAME"] = htmlspecialcharsEx($arResult["PAY_SYSTEM"]["NAME"]);
+			$arResult["PAY_SYSTEM"]["NAME"] = htmlspecialcharsbx($arResult["PAY_SYSTEM"]["NAME"]);
 	}
 
 	/**
@@ -1797,9 +1896,9 @@ class CBitrixPersonalOrderDetailComponent extends CBitrixComponent
 		{
 			if (!empty($shipment["DELIVERY_ID"]))
 			{
-				$shipment["DELIVERY"]["NAME"] = htmlspecialcharsEx($shipment["DELIVERY"]["NAME"]);
+				$shipment["DELIVERY"]["NAME"] = htmlspecialcharsbx($shipment["DELIVERY"]["NAME"]);
 				$shipment["DELIVERY"]["SRC_LOGOTIP"] = CFile::GetPath($shipment["DELIVERY"]['LOGOTIP']);
-				if (!strlen($shipment["DELIVERY"]["SRC_LOGOTIP"]))
+				if ($shipment["DELIVERY"]["SRC_LOGOTIP"] == '')
 				{
 					$shipment["DELIVERY"]["SRC_LOGOTIP"] = '/bitrix/images/sale/logo-default-d.gif';
 				}
@@ -1848,7 +1947,7 @@ class CBitrixPersonalOrderDetailComponent extends CBitrixComponent
 				{
 					$arResult["DISCOUNT_VALUE"] += ($arBasket["DISCOUNT_PRICE"] * $arBasket["QUANTITY"]);
 					$arBasket["DISCOUNT_PRICE_PERCENT"] = $discountClassName::calculateDiscountPercent(
-						$arBasket["DISCOUNT_PRICE"] + $arBasket["PRICE"],
+						$arBasket["BASE_PRICE"],
 						$arBasket["DISCOUNT_PRICE"]
 					);
 					$arBasket["DISCOUNT_PRICE_PERCENT_FORMATED"] = $arBasket["DISCOUNT_PRICE_PERCENT"]."%";
@@ -1912,7 +2011,6 @@ class CBitrixPersonalOrderDetailComponent extends CBitrixComponent
 
 		$this->formatDate($this->arResult);
 		$this->formatResultStatus();
-		$this->formatResultUrls();
 		$this->formatResultUser();
 		$this->formatResultPerson();
 		$this->formatResultDeliverySystem();
@@ -1920,6 +2018,7 @@ class CBitrixPersonalOrderDetailComponent extends CBitrixComponent
 		$this->formatResultBasket();
 		$this->formatResultTaxes();
 		$this->formatResultPrices();
+		$this->formatResultUrls();
 	}
 
 	/**
@@ -1928,19 +2027,25 @@ class CBitrixPersonalOrderDetailComponent extends CBitrixComponent
 	 */
 	protected function formatResultErrors()
 	{
-		$errors = array();
+		$errors = [];
 		if (!empty($this->errorsFatal))
+		{
 			$errors['FATAL'] = $this->errorsFatal;
+			// backward compatiblity
+			if (is_array($this->errorsFatal))
+			{
+				$error = reset($this->errorsFatal);
+				$this->arResult['ERROR_MESSAGE'] = $error;
+			}
+		}
+
 		if (!empty($this->errorsNonFatal))
 			$errors['NONFATAL'] = $this->errorsNonFatal;
 
 		if (!empty($errors))
+		{
 			$this->arResult['ERRORS'] = $errors;
-
-		// backward compatiblity
-		$error = each($this->errorsFatal);
-		if (!empty($error))
-			$this->arResult['ERROR_MESSAGE'] = $error['value'];
+		}
 	}
 
 	/**
@@ -1966,7 +2071,7 @@ class CBitrixPersonalOrderDetailComponent extends CBitrixComponent
 		}
 		catch(Exception $e)
 		{
-			$this->errorsFatal[htmlspecialcharsEx($e->getCode())] = htmlspecialcharsEx($e->getMessage());
+			$this->errorsFatal[htmlspecialcharsbx($e->getCode())] = htmlspecialcharsbx($e->getMessage());
 		}
 
 		$this->formatResultErrors();
@@ -1982,7 +2087,7 @@ class CBitrixPersonalOrderDetailComponent extends CBitrixComponent
 	 */
 	protected function setRegistry()
 	{
-		$this->registry = Sale\Registry::getInstance(Sale\Order::getRegistryType());
+		$this->registry = Sale\Registry::getInstance(Sale\Registry::REGISTRY_TYPE_ORDER);
 	}
 
 	/**
@@ -1992,12 +2097,14 @@ class CBitrixPersonalOrderDetailComponent extends CBitrixComponent
 	 */
 	protected function formatDate(&$arr)
 	{
-		if (strlen($this->arParams['ACTIVE_DATE_FORMAT']))
+		if($this->arParams['ACTIVE_DATE_FORMAT'] <> '')
 		{
-			foreach ($this->orderDateFields2Convert as $fld)
+			foreach($this->orderDateFields2Convert as $fld)
 			{
-				if (!empty($arr[$fld]))
+				if(!empty($arr[$fld]))
+				{
 					$arr[$fld."_FORMATED"] = CIBlockFormatProperties::DateFormat($this->arParams['ACTIVE_DATE_FORMAT'], MakeTimeStamp($arr[$fld]));
+				}
 			}
 		}
 	}
@@ -2013,6 +2120,7 @@ class CBitrixPersonalOrderDetailComponent extends CBitrixComponent
 	}
 
 	/**
+	 * @deprecated
 	 * The callback that changes body encoding when nescessary. Feature doesn`t work here and in the previous version of the component. Left for backward compatibility.
 	 * @param string $content page content
 	 * @return void

@@ -13,6 +13,9 @@
 
 use Bitrix\Main\Web\Json;
 use Bitrix\Main\Localization\Loc;
+\Bitrix\Main\UI\Extension::load("ui.icons.b24");
+
+$GLOBALS['APPLICATION']->IncludeComponent('bitrix:main.mail.confirm', '', array());
 
 $containerId = 'sender-ui-mailbox-selector';
 ?>
@@ -28,11 +31,15 @@ $containerId = 'sender-ui-mailbox-selector';
 	});
 </script>
 <div id="<?=htmlspecialcharsbx($containerId)?>" class="sender-ui-mailbox-selector-wrap">
-	<span class="sender-ui-mailbox-icon" style="background-image: url(<?=htmlspecialcharsbx($arResult['CURRENT']['icon'])?>)"></span>
-	<span data-role="mailbox" class="sender-ui-mailbox-name">
-		<?=htmlspecialcharsbx($arResult['CURRENT']['name'])?>
-		<?=htmlspecialcharsbx(empty($arResult['CURRENT']['email']) ? '' : '<' . $arResult['CURRENT']['email'] . '>')?>
-		<?=(empty($arResult['LIST']) && empty($arResult['CURRENT']['email']) ? Loc::getMessage('SENDER_UI_MAILBOX_SELECTOR_SETUP') : '')?>
+	<span class="ui-icon ui-icon-common-user sender-ui-mailbox-icon">
+		<i <?if ($arResult['CURRENT']['icon']):?> style="background-image: url(<?=htmlspecialcharsbx($arResult['CURRENT']['icon'])?>)"<?endif?>></i>
+	</span>
+	<span class="sender-ui-mailbox-dropdown"  data-role="mailbox-wrap">
+		<span data-role="mailbox" class="sender-ui-mailbox-name">
+			<?=htmlspecialcharsbx($arResult['CURRENT']['name'])?>
+			<?=htmlspecialcharsbx(empty($arResult['CURRENT']['email']) ? '' : '<' . $arResult['CURRENT']['email'] . '>')?>
+			<?=(empty($arResult['LIST']) && empty($arResult['CURRENT']['email']) ? Loc::getMessage('SENDER_UI_MAILBOX_SELECTOR_SETUP') : '')?>
+		</span>
 	</span>
 	<input data-role="mailbox-input" type="hidden" name="<?=htmlspecialcharsbx($arParams['INPUT_NAME'])?>" value="<?=htmlspecialcharsbx($arResult['CURRENT']['sender'])?>">
 </div>

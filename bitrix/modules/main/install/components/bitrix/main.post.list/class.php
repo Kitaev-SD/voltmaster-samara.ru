@@ -12,30 +12,31 @@ final class MainPostList extends CBitrixComponent
 	const STATUS_SCOPE_MOBILE = 'mobile';
 	const STATUS_SCOPE_WEB = 'web';
 
-	private $scope;
+	private $scope = null;
 	private $sign;
 	static $users = array();
+	public $exemplarId;
 
 	public function __construct($component = null)
 	{
 		parent::__construct($component);
 
-		$this->scope = self::STATUS_SCOPE_WEB;
-		if (is_callable(array('\Bitrix\MobileApp\Mobile', 'getApiVersion')) && \Bitrix\MobileApp\Mobile::getApiVersion() >= 1 &&
-			defined("BX_MOBILE") && BX_MOBILE === true)
-			$this->scope = self::STATUS_SCOPE_MOBILE;
-
-		$templateName = $this->getTemplateName();
-
-		if ((empty($templateName) || $templateName == ".default" || $templateName == "bitrix24"))
+		if(is_object($component) && ($component instanceof cbitrixcomponent) && method_exists($component, "isweb"))
 		{
-			if ($this->isWeb())
-				$this->setTemplateName(".default");
-			else
-				$this->setTemplateName("mobile_app");
+			$this->scope = $component->isWeb() ? self::STATUS_SCOPE_WEB : self::STATUS_SCOPE_MOBILE;
 		}
 
 		$this->sign = (new \Bitrix\Main\Security\Sign\Signer());
+		if ($this->request->get("EXEMPLAR_ID"))
+			$this->exemplarId = $this->request->get("EXEMPLAR_ID");
+		else if (
+			$this->request->isPost() ||
+			$this->request->get("sessid") !== null ||
+			$this->request->get("logajax") !== null/*socialnetwork*/
+		)
+			$this->exemplarId = implode("_", [$this->getUserId(), randString(6)]);
+		else
+			$this->exemplarId = implode("_", [$this->getUserId(), $this->randString(6)]);
 	}
 
 	protected function isWeb()
@@ -56,7 +57,7 @@ final class MainPostList extends CBitrixComponent
 		$viewMode = "plain";
 		if ($this->isAjax())
 		{
-			$viewMode = strtoupper($this->request->getPost("MODE") ?: $this->request->getQuery("MODE"));
+			$viewMode = mb_strtoupper($this->request->getPost("MODE")?: $this->request->getQuery("MODE"));
 		}
 		return $viewMode;
 	}
@@ -64,7 +65,7 @@ final class MainPostList extends CBitrixComponent
 	protected function joinToPull()
 	{
 		$text = "";
-		if ($this->getUser()->isAuthorized()
+		if ($this->getUser() && $this->getUser()->isAuthorized()
 			&& Loader::includeModule("pull")
 			&& \CPullOptions::GetNginxStatus()
 		)
@@ -73,19 +74,19 @@ final class MainPostList extends CBitrixComponent
 			{
 				if ($this->arParams["RIGHTS"]["MODERATE"] == "Y" || $this->arParams["RIGHTS"]["MODERATE"] == "ALL")
 				{
-					\CPullWatch::Add($this->getUser()->getId(), 'UNICOMMENTSEXTENDED'.$this->arParams["ENTITY_XML_ID"]);
+					\CPullWatch::Add($this->getUserId(), 'UNICOMMENTSEXTENDED'.$this->arParams["ENTITY_XML_ID"]);
 					$text = <<<HTML
 						<script>
-							BX.ready(function(){BX.PULL.extendWatch("UNICOMMENTSEXTENDED{$this->arParams["ENTITY_XML_ID"]}");});
+							BX.ready(function(){if (BX.PULL) { BX.PULL.extendWatch("UNICOMMENTSEXTENDED{$this->arParams["ENTITY_XML_ID"]}"); }});
 						</script>
 HTML;
 				}
 				else
 				{
-					\CPullWatch::Add($this->getUser()->GetId(), 'UNICOMMENTS'.$this->arParams["ENTITY_XML_ID"]);
+					\CPullWatch::Add($this->getUserId(), 'UNICOMMENTS'.$this->arParams["ENTITY_XML_ID"]);
 					$text = <<<HTML
 						<script>
-							BX.ready(function(){BX.PULL.extendWatch("UNICOMMENTS{$this->arParams["ENTITY_XML_ID"]}");});
+							BX.ready(function(){if (BX.PULL) { BX.PULL.extendWatch("UNICOMMENTS{$this->arParams["ENTITY_XML_ID"]}"); }});
 						</script>
 HTML;
 				}
@@ -94,7 +95,7 @@ HTML;
 			{
 				if ($this->arParams["RIGHTS"]["MODERATE"] == "Y" || $this->arParams["RIGHTS"]["MODERATE"] == "ALL")
 				{
-					\CPullWatch::Add($this->getUser()->GetId(), 'UNICOMMENTSMOBILEEXTENDED'.$this->arParams["ENTITY_XML_ID"]);
+					\CPullWatch::Add($this->getUserId(), 'UNICOMMENTSMOBILEEXTENDED'.$this->arParams["ENTITY_XML_ID"]);
 					$text .= <<<HTML
 						<script>
 							BXMobileApp.onCustomEvent('onPullExtendWatch', {'id': "UNICOMMENTSMOBILEEXTENDED{$this->arParams["ENTITY_XML_ID"]}"}, true);
@@ -103,7 +104,7 @@ HTML;
 				}
 				else
 				{
-					\CPullWatch::Add($this->getUser()->GetId(), 'UNICOMMENTSMOBILE'.$this->arParams["ENTITY_XML_ID"]);
+					\CPullWatch::Add($this->getUserId(), 'UNICOMMENTSMOBILE'.$this->arParams["ENTITY_XML_ID"]);
 					$text = <<<HTML
 						<script>
 							BXMobileApp.onCustomEvent('onPullExtendWatch', {'id': "UNICOMMENTSMOBILE{$this->arParams["ENTITY_XML_ID"]}"}, true);
@@ -126,7 +127,6 @@ HTML;
 					&& intval($arParams["PUSH&PULL"]["AUTHOR_ID"]) > 0
 				)
 			) &&
-			//$this->getUser()->IsAuthorized() &&
 			($this->request->getPost("ENTITY_XML_ID") == $arParams["ENTITY_XML_ID"] ||
 				$this->request->getQuery("ENTITY_XML_ID") == $arParams["ENTITY_XML_ID"]) || $arParams["MODE"] == "PULL_MESSAGE") &&
 			is_array($arParams["PUSH&PULL"]) && $arParams["PUSH&PULL"]["ID"] > 0 &&
@@ -142,9 +142,9 @@ HTML;
 					$comment["ACTION"] = $arParams["PUSH&PULL"]["ACTION"];
 					$comment["POST_CONTENT_TYPE_ID"] = (!empty($arParams["POST_CONTENT_TYPE_ID"]) ? $arParams["POST_CONTENT_TYPE_ID"] : '');
 					$comment["COMMENT_CONTENT_TYPE_ID"] = (!empty($arParams["COMMENT_CONTENT_TYPE_ID"]) ? $arParams["COMMENT_CONTENT_TYPE_ID"] : '');
-					$comment["USER_ID"] = (isset($arParams["PUSH&PULL"]) && isset($arParams["PUSH&PULL"]["AUTHOR_ID"]) && intval($arParams["PUSH&PULL"]["AUTHOR_ID"]) > 0 ? intval($arParams["PUSH&PULL"]["AUTHOR_ID"]) : $this->getUser()->getId());
-					if ($this->request->getPost("EXEMPLAR_ID") !== null)
-						$comment["EXEMPLAR_ID"] = $this->request->getPost("EXEMPLAR_ID");
+					$comment["USER_ID"] = (isset($arParams["PUSH&PULL"]) && isset($arParams["PUSH&PULL"]["AUTHOR_ID"]) && intval($arParams["PUSH&PULL"]["AUTHOR_ID"]) > 0 ? intval($arParams["PUSH&PULL"]["AUTHOR_ID"]) : $this->getUserId());
+					$comment["EXEMPLAR_ID"] = $this->exemplarId;
+					$comment["OPERATION_ID"] = $this->request->get("OPERATION_ID") ?: $this->exemplarId;
 					if ($this->request->getPost("COMMENT_EXEMPLAR_ID") !== null)
 						$comment["COMMENT_EXEMPLAR_ID"] = $this->request->getPost("COMMENT_EXEMPLAR_ID");
 
@@ -165,7 +165,7 @@ HTML;
 							)
 						);
 					}
-					else if ($comment["ACTION"] == "MODERATE")
+					else if ($comment["ACTION"] == "MODERATE" || $comment["ACTION"] == "HIDE")
 					{
 						\CPullWatch::AddToStack('UNICOMMENTS'.$arParams["ENTITY_XML_ID"],
 							array(
@@ -201,7 +201,7 @@ HTML;
 								)
 							);
 						}
-						else if ($comment["ACTION"] == "MODERATE")
+						else if ($comment["ACTION"] == "MODERATE" || $comment["ACTION"] == "HIDE")
 						{
 							\CPullWatch::AddToStack('UNICOMMENTSMOBILE'.$arParams["ENTITY_XML_ID"],
 								Array(
@@ -229,8 +229,10 @@ HTML;
 						'params' => array(
 							"ID" => $arParams["PUSH&PULL"]["ID"],
 							"ENTITY_XML_ID" => $arParams["ENTITY_XML_ID"],
+							"EXEMPLAR_ID" => $this->exemplarId,
+							"OPERATION_ID" => $this->request->get("OPERATION_ID") ?: $this->exemplarId,
 							"ACTION" => "DELETE",
-							"USER_ID" => $this->getUser()->getId()
+							"USER_ID" => $this->getUserId()
 						)
 					)
 				);
@@ -241,8 +243,10 @@ HTML;
 						'params' => array(
 							"ID" => $arParams["PUSH&PULL"]["ID"],
 							"ENTITY_XML_ID" => $arParams["ENTITY_XML_ID"],
+							"EXEMPLAR_ID" => $this->exemplarId,
+							"OPERATION_ID" => $this->request->get("OPERATION_ID") ?: $this->exemplarId,
 							"ACTION" => "DELETE",
-							"USER_ID" => $this->getUser()->getId()
+							"USER_ID" => $this->getUserId()
 						)
 					)
 				);
@@ -256,8 +260,10 @@ HTML;
 							'params' => array(
 								"ID" => $arParams["PUSH&PULL"]["ID"],
 								"ENTITY_XML_ID" => $arParams["ENTITY_XML_ID"],
+								"EXEMPLAR_ID" => $this->exemplarId,
+								"OPERATION_ID" => $this->request->get("OPERATION_ID") ?: $this->exemplarId,
 								"ACTION" => "DELETE",
-								"USER_ID" => $this->getUser()->getId()
+								"USER_ID" => $this->getUserId()
 							)
 						)
 					);
@@ -268,8 +274,10 @@ HTML;
 							'params' => array(
 								"ID" => $arParams["PUSH&PULL"]["ID"],
 								"ENTITY_XML_ID" => $arParams["ENTITY_XML_ID"],
+								"EXEMPLAR_ID" => $this->exemplarId,
+								"OPERATION_ID" => $this->request->get("OPERATION_ID") ?: $this->exemplarId,
 								"ACTION" => "DELETE",
-								"USER_ID" => $this->getUser()->getId()
+								"USER_ID" => $this->getUserId()
 							)
 						)
 					);
@@ -291,19 +299,33 @@ HTML;
 		}
 
 		$res = $id;
-		if (is_integer($res))
+		if (!is_array($res))
 		{
 			if (!array_key_exists($res, static::$users))
 			{
 				$res = \CUser::GetById($res)->Fetch();
+				$avatarId = intval($res["PERSONAL_PHOTO"]);
 				$res = array(
 					"ID" => $res["ID"],
 					"NAME" => $res["NAME"],
 					"LAST_NAME" => $res["LAST_NAME"],
 					"SECOND_NAME" => $res["SECOND_NAME"],
-					"AVATAR" => $res["AVATAR"],
+					"AVATAR" => null,
 					"EXTERNAL_AUTH_ID" => $res["EXTERNAL_AUTH_ID"]
 				);
+				if (
+						$avatarId > 0 &&
+						(
+							$avatar = \CFile::ResizeImageGet(
+								$avatarId,
+								["width" => 42, "height" => 42],
+								BX_RESIZE_IMAGE_EXACT,
+								false)
+						)
+					)
+				{
+					$res["AVATAR"] = $avatar["src"];
+				}
 				static::$users[$id] = $res;
 			}
 			$res = static::$users[$id];
@@ -350,6 +372,7 @@ HTML;
 			"NEW" => $res["NEW"], //"Y" | "N"
 			"AUX" => (isset($res["AUX"]) ? $res["AUX"] : ''),
 			"AUX_LIVE_PARAMS" => (isset($res["AUX_LIVE_PARAMS"]) ? $res["AUX_LIVE_PARAMS"] : array()),
+			"CAN_DELETE" => (isset($res["CAN_DELETE"]) ? $res["CAN_DELETE"] : 'Y'),
 			"APPROVED" => $res["APPROVED"], //"Y" | "N"
 			"POST_TIMESTAMP" => ($res["POST_TIMESTAMP"] - CTimeZone::GetOffset()),
 			"~POST_MESSAGE_TEXT" => $res["~POST_MESSAGE_TEXT"],
@@ -371,6 +394,16 @@ HTML;
 				'HIDE_TODAY' => true
 			));
 
+			$classNameList = [
+				$val["CLASSNAME"]
+			];
+
+			if (!empty($res['AUX']))
+			{
+				$classNameList[] = 'mpl-comment-aux';
+				$classNameList[] = 'mpl-comment-aux-'.mb_strtolower($res['AUX']);
+			}
+
 			$result[$key] = array(
 				"POST_TIME" => (isset($val["POST_TIME"]) ? $val["POST_TIME"] : $defaultDateTime),
 				"POST_DATE" => (isset($val["POST_DATE"]) ? $val["POST_DATE"] : $defaultDateTime),
@@ -390,7 +423,7 @@ HTML;
 					"m" => "mago",
 					"Y" => "Yago"
 				), $res["POST_TIMESTAMP"], time() + CTimeZone::getOffset()),
-				"CLASSNAME" => $val["CLASSNAME"],
+				"CLASSNAME" => implode(' ', $classNameList),
 				"POST_MESSAGE_TEXT" => $val["POST_MESSAGE_TEXT"],
 				"BEFORE_HEADER" => $val["BEFORE_HEADER"].$this->getApplication()->GetViewContent($templateId.'BEFORE_HEADER'),
 				"BEFORE_ACTIONS" => $val["BEFORE_ACTIONS"].$this->getApplication()->GetViewContent($templateId.'BEFORE_ACTIONS'),
@@ -425,11 +458,11 @@ HTML;
 		{
 			if (!empty($res["RATING_USER_REACTION"]))
 			{
-				$emotion = strtoupper($res["RATING_USER_REACTION"]);
+				$emotion = mb_strtoupper($res["RATING_USER_REACTION"]);
 			}
 			else
 			{
-				$emotion = (!empty($this->arParams["RATING_RESULTS"][$result["ID"]]["USER_REACTION"]) ? strtoupper($this->arParams["RATING_RESULTS"][$result["ID"]]["USER_REACTION"]) : 'LIKE');
+				$emotion = (!empty($this->arParams["RATING_RESULTS"][$result["ID"]]["USER_REACTION"])? mb_strtoupper($this->arParams["RATING_RESULTS"][$result["ID"]]["USER_REACTION"]) : 'LIKE');
 			}
 
 			$buttonText = \CRatingsComponentsMain::getRatingLikeMessage($emotion);
@@ -548,7 +581,7 @@ HTML;
 					$ids = array();
 					foreach($images as $file)
 					{
-						$id = "mpl-".$arParams["ENTITY_XML_ID"]."-".strtolower(randString(5));
+						$id = "mpl-".$arParams["ENTITY_XML_ID"]."-".mb_strtolower(randString(5));
 						$ids[] = $id;
 						$thumbnail = ($file["THUMBNAIL"] ?: $file["SRC"]);
 						?><div class="post-item-attached-img-block" onclick="<?
@@ -726,13 +759,18 @@ HTML;
 					$strParams .= ($i > 0 ? '&' : '').urlencode($key).'='.urlencode($value);
 					$i++;
 				}
-				$authorUrl .= (strpos($authorUrl, '?') === false ? '?' : '&').$strParams;
+				$authorUrl .= (mb_strpos($authorUrl, '?') === false ? '?' : '&').$strParams;
 			}
 		}
+
+		$viewUri = new \Bitrix\Main\Web\Uri(htmlspecialcharsback(str_replace(array("#ID#", "#id#"), $res["ID"], $arParams["VIEW_URL"])));
+		$viewUri->deleteParams(['b24statAction']);
 
 		$replacement = array(
 			"#ID#" =>
 				$res["ID"],
+			"#EXEMPLAR_ID#" =>
+				$this->exemplarId,
 			"#FULL_ID#" =>
 				$arParams["ENTITY_XML_ID"]."-".$res["ID"],
 			"#CONTENT_ID#" =>
@@ -752,7 +790,7 @@ HTML;
 			"#VOTE_ID#" =>
 				(is_array($res["RATING"]) ? $res["RATING"]["VOTE_ID"] : ""),
 			"#VIEW_URL#" =>
-				str_replace(array("#ID#", "#id#"), $res["ID"], $arParams["VIEW_URL"]),
+				$viewUri->getUri(),
 			"#VIEW_SHOW#" =>
 				($arParams["VIEW_URL"] == "" ? "N" : "Y"),
 			"#EDIT_URL#" =>
@@ -760,22 +798,37 @@ HTML;
 			"#EDIT_SHOW#" => (
 				empty($res["AUX"])
 				&& (
-					$arParams["RIGHTS"]["EDIT"] == "Y" || $arParams["RIGHTS"]["EDIT"] == "ALL" ||
-					$arParams["RIGHTS"]["EDIT"] == "OWN" && $USER->GetID() == intval($res["AUTHOR"]["ID"])
+					$arParams["RIGHTS"]["EDIT"] == "Y"
+					|| $arParams["RIGHTS"]["EDIT"] == "ALL"
+					|| ($arParams["RIGHTS"]["EDIT"] == "OWN" && $this->getUserId() == intval($res["AUTHOR"]["ID"]))
 				)
 					? "Y"
 					: "N"
 			),
 			"#MODERATE_URL#" =>
 				str_replace(array("#ID#", "#id#"), $res["ID"], $arParams["MODERATE_URL"]),
-			"#MODERATE_SHOW#" =>
-				($arParams["RIGHTS"]["MODERATE"] == "Y" || $arParams["RIGHTS"]["MODERATE"] == "ALL" ||
-				$arParams["RIGHTS"]["MODERATE"] == "OWN" && $USER->GetID() == intval($res["AUTHOR"]["ID"]) ? "Y" : "N"),
+			"#MODERATE_SHOW#" =>(
+				empty($res["AUX"])
+				&& (
+					$arParams["RIGHTS"]["MODERATE"] == "Y"
+					|| $arParams["RIGHTS"]["MODERATE"] == "ALL"
+					|| $arParams["RIGHTS"]["MODERATE"] == "OWN" && $this->getUserId() == intval($res["AUTHOR"]["ID"])
+				)
+					? "Y"
+					: "N"
+			),
 			"#DELETE_URL#" =>
 				str_replace(array("#ID#", "#id#"), $res["ID"], $arParams["DELETE_URL"]),
-			"#DELETE_SHOW#" =>
-				($arParams["RIGHTS"]["DELETE"] == "Y" || $arParams["RIGHTS"]["DELETE"] == "ALL" ||
-				$arParams["RIGHTS"]["DELETE"] == "OWN" && $USER->GetID() == intval($res["AUTHOR"]["ID"]) ? "Y" : "N"),
+			"#DELETE_SHOW#" => (
+				(empty($res["CAN_DELETE"]) || $res["CAN_DELETE"] == 'Y')
+				&& (
+					$arParams["RIGHTS"]["DELETE"] == "Y"
+					|| $arParams["RIGHTS"]["DELETE"] == "ALL"
+					|| ($arParams["RIGHTS"]["DELETE"] == "OWN" && $this->getUserId() == intval($res["AUTHOR"]["ID"]))
+				)
+					? "Y"
+					: "N"
+			),
 			"#CREATETASK_SHOW#" => (
 				empty($res["AUX"])
 				&& $arParams["RIGHTS"]["CREATETASK"] == "Y"
@@ -799,19 +852,19 @@ HTML;
 				(empty($res["AUTHOR"]["AVATAR"]) ? "N" : "Y"),
 			"#AUTHOR_AVATAR#" => (
 				!empty($res["AUTHOR"]["AVATAR"])
-					? $res["AUTHOR"]["AVATAR"]
+					? \CHTTP::urnEncode($res["AUTHOR"]["AVATAR"])
 					: (
 						!empty($arParams["AVATAR_DEFAULT"])
-							? $arParams["AVATAR_DEFAULT"]
+							? \CHTTP::urnEncode($arParams["AVATAR_DEFAULT"])
 							: ""
 					)
 			),
 			"#AUTHOR_AVATAR_BG#" => (
 				!empty($res["AUTHOR"]["AVATAR"])
-					? "background-image:url('".$res["AUTHOR"]["AVATAR"]."')"
+					? "background-image:url('".\CHTTP::urnEncode($res["AUTHOR"]["AVATAR"])."')"
 					: (
 						!empty($arParams["AVATAR_DEFAULT"])
-							? "background-image:url('".$arParams["AVATAR_DEFAULT"]."')"
+							? "background-image:url('".\CHTTP::urnEncode($arParams["AVATAR_DEFAULT"])."')"
 							: ""
 					)
 				),
@@ -833,7 +886,12 @@ HTML;
 			"#AUTHOR_TOOLTIP_PARAMS#" => htmlspecialcharsbx(\Bitrix\Main\Web\Json::encode($authorTooltipParams)),
 			"#SHOW_POST_FORM#" =>
 				$arParams["SHOW_POST_FORM"],
-			"#AUTHOR_EXTRANET_STYLE#" => $authorStyle,
+			"#SHOW_MENU#" =>
+				(!isset($arParams["SHOW_MENU"]) || !!$arParams["SHOW_MENU"] ? 'Y' : 'N'),
+			"#AUTHOR_EXTRANET_STYLE#" =>
+				$authorStyle,
+			"#RATING_NONEMPTY_CLASS#" =>
+				(!empty($res['RATING']) && !empty($res['RATING']['TOTAL_VOTES']) && $res['RATING']['TOTAL_VOTES'] > 0 ? 'comment-block-rating-nonempty' : ''),
 			"background:url('') no-repeat center;" =>
 				""
 		);
@@ -850,6 +908,7 @@ HTML;
 		/*@param string $arParams["mfi"] contains hash of something to add new uploaded file into session array */
 		$arParams["mfi"] = trim($arParams["mfi"]);
 		// List params
+		$arParams["EXEMPLAR_ID"] = trim($this->exemplarId);
 		/*@param string $arParams["ENTITY_XML_ID"] main param that means ID */
 		$arParams["ENTITY_XML_ID"] = trim($arParams["ENTITY_XML_ID"]);
 		/*@param array $arParams["RECORDS"] contains data to view */
@@ -859,7 +918,7 @@ HTML;
 		$arParams["PREORDER"] = ($arParams["PREORDER"] == "Y" ? "Y" : "N");
 		$arParams["RIGHTS"] = (is_array($arParams["RIGHTS"]) ? $arParams["RIGHTS"] : array());
 		foreach (array("MODERATE", "EDIT", "DELETE", "CREATETASK") as $act)
-			$arParams["RIGHTS"][$act] = in_array(strtoupper($arParams["RIGHTS"][$act]), array("Y", "ALL", "OWN", "OWNLAST")) ? $arParams["RIGHTS"][$act] : "N";
+			$arParams["RIGHTS"][$act] = in_array(mb_strtoupper($arParams["RIGHTS"][$act]), array("Y", "ALL", "OWN", "OWNLAST")) ? $arParams["RIGHTS"][$act] : "N";
 		$arParams["LAST_RECORD"] = array();
 		// Answer params
 		/*@param int $arParams["RESULT"] contains id of new record for cutting out and sending back*/
@@ -883,7 +942,8 @@ HTML;
 		$arParams["NAME_TEMPLATE"] = (!!$_REQUEST["NAME_TEMPLATE"] ? $_REQUEST["NAME_TEMPLATE"] : (!!$arParams["NAME_TEMPLATE"] ? $arParams["NAME_TEMPLATE"] : \CSite::GetNameFormat()));
 		$arParams["SHOW_LOGIN"] = ($_REQUEST["SHOW_LOGIN"] == "Y" ? "Y" : ($arParams["SHOW_LOGIN"] == "Y" ? "Y" : "N"));
 		$arParams["DATE_TIME_FORMAT"] = trim($arParams["DATE_TIME_FORMAT"]);
-		$arParams["SHOW_POST_FORM"] = ($arParams["SHOW_POST_FORM"] == "Y" ? "Y" : "N");
+		$arParams["FORM_ID"] = trim($arParams["FORM_ID"]);
+		$arParams["SHOW_POST_FORM"] = ($arParams["SHOW_POST_FORM"] == "Y" || $arParams["FORM_ID"] <> '' ? "Y" : "N");
 		$arParams["BIND_VIEWER"] = ($arParams["BIND_VIEWER"] == "N" ? "N" : "Y");
 		$arParams["SIGN"] = $this->sign->sign($arParams["ENTITY_XML_ID"], "main.post.list");
 
@@ -913,7 +973,7 @@ HTML;
 					$path .= ($arParams["NAV_RESULT"]->NavPageNomer - 1);
 				else
 					$path .= ($arParams["NAV_RESULT"]->NavPageNomer + 1);
-				$arParams["NAV_STRING"] .= (strpos($arParams["NAV_STRING"], "?") === false ? "?" : "&").$path;
+				$arParams["NAV_STRING"] .= (mb_strpos($arParams["NAV_STRING"], "?") === false ? "?" : "&").$path;
 			}
 		}
 		if (!empty($arParams["RECORDS"]))
@@ -925,7 +985,10 @@ HTML;
 				for ($ii = 0; $ii < $arParams["VISIBLE_RECORDS_COUNT"]; $ii++)
 				{
 					$res = array_shift($arParams["RECORDS"]);
-					$list[$res["ID"]] = $res;
+					if (!empty($res))
+					{
+						$list[$res["ID"]] = $res;
+					}
 				}
 
 				$arParams["RECORDS"] = $list;
@@ -945,20 +1008,22 @@ HTML;
 				$arParams["RECORDS"][$key] = $this->buildComment($res);
 		}
 
-		$arResult["AUTHOR"] = array(
-			"ID" => $this->getUser()->getId(),
-			"NAME" => CUser::FormatName(
-				$arParams["NAME_TEMPLATE"],
-				array(
-					"NAME" => $this->getUser()->getFirstName(),
-					"LAST_NAME" => $this->getUser()->getLastName(),
-					"SECOND_NAME" => $this->getUser()->getSecondName(),
-					"LOGIN" => $this->getUser()->getLogin(),
-					"NAME_LIST_FORMATTED" => "",
-				),
-				($arParams["SHOW_LOGIN"] != "N"),
-				false),
-			"AVATAR" => \CFile::ResizeImageGet(
+		if ($this->getUserId() > 0)
+		{
+			$arResult["AUTHOR"] = array(
+				"ID" => $this->getUserId(),
+				"NAME" => CUser::FormatName(
+					$arParams["NAME_TEMPLATE"],
+					array(
+						"NAME" => $this->getUser()->getFirstName(),
+						"LAST_NAME" => $this->getUser()->getLastName(),
+						"SECOND_NAME" => $this->getUser()->getSecondName(),
+						"LOGIN" => $this->getUser()->getLogin(),
+						"NAME_LIST_FORMATTED" => "",
+					),
+					($arParams["SHOW_LOGIN"] != "N"),
+					false),
+				"AVATAR" => \CFile::ResizeImageGet(
 					$_SESSION["SESS_AUTH"]["PERSONAL_PHOTO"],
 					array(
 						"width" => $arParams["AVATAR_SIZE"],
@@ -966,7 +1031,16 @@ HTML;
 					),
 					BX_RESIZE_IMAGE_EXACT
 				)
-		);
+			);
+		}
+		else
+		{
+			$arResult["AUTHOR"] = [
+				"ID" => 0,
+				"NAME" => "Guest",
+				"AVATAR" => ""
+			];
+		}
 
 		$arResult["NAV_STRING_COUNT_MORE"] = 0;
 		if ($arParams["NAV_STRING"] && $arParams["NAV_RESULT"])
@@ -1000,6 +1074,31 @@ HTML;
 
 	public function executeComponent()
 	{
+		if ($this->scope === null)
+		{
+			if ($this->isAjax() && $this->request->getPost("scope") !== null)
+			{
+				$this->scope = $this->request->getPost("scope");
+			}
+			else
+			{
+				$this->scope = self::STATUS_SCOPE_WEB;
+				if (is_callable(array('\Bitrix\MobileApp\Mobile', 'getApiVersion')) && \Bitrix\MobileApp\Mobile::getApiVersion() >= 1 &&
+					defined("BX_MOBILE") && BX_MOBILE === true)
+					$this->scope = self::STATUS_SCOPE_MOBILE;
+			}
+		}
+
+		$templateName = $this->getTemplateName();
+
+		if ((empty($templateName) || $templateName == ".default" || $templateName == "bitrix24"))
+		{
+			if ($this->isWeb())
+				$this->setTemplateName(".default");
+			else
+				$this->setTemplateName("mobile_app");
+		}
+
 		try
 		{
 			$this->prepareParams($this->arParams, $this->arResult);
@@ -1015,6 +1114,44 @@ HTML;
 				ExecuteModuleEventEx($arEvent, array(&$output, &$this->arParams, &$this->arResult));
 			}
 			$this->sendIntoPull($this->arParams, $this->arResult);
+
+			if (
+				(!$this->isWeb())
+				&& mb_strtolower($this->getMode()) == 'plain'
+				&& is_array($this->arParams['RECORDS'])
+				&& !empty($this->arParams['RECORDS'])
+				&& !empty($this->arParams['IS_POSTS_LIST'])
+				&& $this->arParams['IS_POSTS_LIST'] == "N"
+				&& Loader::includeModule('socialnetwork')
+			)
+			{
+				$contentEntityType = (
+					!empty($this->arParams["RATING_TYPE_ID"])
+						? $this->arParams["RATING_TYPE_ID"]
+						: (
+							!empty($this->arParams["CONTENT_TYPE_ID"])
+								? $this->arParams["CONTENT_TYPE_ID"]
+								: ''
+							)
+				);
+
+				foreach($this->arParams['RECORDS'] as $key => $record)
+				{
+					if (!empty($contentEntityType))
+					{
+						$provider = \Bitrix\Socialnetwork\Livefeed\Provider::init([
+							'ENTITY_TYPE' => $contentEntityType,
+							'ENTITY_ID' => $record["ID"],
+						]);
+						if ($provider)
+						{
+							$provider->setContentView(array(
+								'save' => false
+							));
+						}
+					}
+				}
+			}
 
 			if ($this->arParams["MODE"] == "PULL_MESSAGE")
 			{
@@ -1055,7 +1192,10 @@ HTML;
 	private function parseHTML($response, $mode = "RECORD")
 	{
 		include_once(__DIR__."/html_parser.php");
-		$JSResult = array();
+		$JSResult = array(
+			"exemplarId" => $this->exemplarId,
+			"operationId" => $this->request->get("OPERATION_ID")
+		);
 		$FHParser = new MPLSimpleHTMLParser($response);
 		$SHParser = new MPLSimpleHTMLParser($this->getApplication()->GetHeadStrings());
 		$arParams = &$this->arParams;
@@ -1066,7 +1206,7 @@ HTML;
 				$FHParser->getInnerHTML('<!--RCRDLIST_'.$arParams["ENTITY_XML_ID"].'-->', '<!--RCRDLIST_END_'.$arParams["ENTITY_XML_ID"].'-->');
 
 			$messageNavigation = $FHParser->getTagHTML(
-					$this->scope == self::STATUS_SCOPE_MOBILE
+					(!$this->isWeb())
 						? 'a[class=post-comments-link]'
 						: 'a[class=feed-com-all]'
 			);
@@ -1094,11 +1234,10 @@ HTML;
 				unset($res["WEB"]);
 				unset($res["MOBILE"]);
 
-
 				if (!!$res["FILES"] && (
 						$this->arParams["RIGHTS"]["EDIT"] == "ALL" ||
 						$this->arParams["RIGHTS"]["EDIT"] == "Y" ||
-						$this->arParams["RIGHTS"]["EDIT"] == "OWN" && $res["AUTHOR"]["ID"] == $this->getUser()->getId()
+						$this->arParams["RIGHTS"]["EDIT"] == "OWN" && $res["AUTHOR"]["ID"] == $this->getUserId()
 					))
 				{
 					$_SESSION["MFI_UPLOADED_FILES_".$arParams["mfi"]] = array();
@@ -1139,16 +1278,32 @@ HTML;
 		return $JSResult;
 	}
 
-	public function getApplication()
+	protected function getApplication()
 	{
 		global $APPLICATION;
 		return $APPLICATION;
 	}
 
-	public function getUser()
+	protected function getUser()
 	{
 		global $USER;
 		return $USER;
+	}
+
+	protected function getUserId()
+	{
+		static $userId = null;
+		if (is_null($userId))
+		{
+			$userId = 0;
+
+			global $USER;
+			if (($USER instanceof \CUser) && $USER->IsAuthorized())
+			{
+				$userId = $USER->GetID();
+			}
+		}
+		return $userId;
 	}
 
 	public function getDateTimeFormatted($timestamp, $arFormatParams)

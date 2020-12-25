@@ -60,7 +60,7 @@ class MFIComponent extends \CBitrixComponent
 			);
 
 			$value = $this->arParams['INPUT_VALUE'];
-			if (is_array($value) && strlen(implode(",", $value)) > 0)
+			if (is_array($value) && implode(",", $value) <> '')
 			{
 				$dbRes = CFile::GetList(array(), array("@ID" => implode(",", $value)));
 				while ($file = $dbRes->GetNext())
@@ -69,6 +69,7 @@ class MFIComponent extends \CBitrixComponent
 					$file['URL'] = $this->controller->getUrlDownload($file['ID']);
 					$file['URL_DELETE'] = $this->controller->getUrlDelete($file['ID']);
 					$file['FILE_SIZE_FORMATTED'] = CFile::FormatSize($file['FILE_SIZE']);
+					$file["SRC"] = CFile::GetFileSRC($file);
 					$this->arResult['FILES'][$file['ID']] = $file;
 				}
 			}
@@ -119,17 +120,17 @@ class MFIComponent extends \CBitrixComponent
 		elseif (
 			$arParams['ALLOW_UPLOAD'] != 'I' &&
 			(
-				$arParams['ALLOW_UPLOAD'] != 'F' || strlen($arParams['ALLOW_UPLOAD_EXT']) <= 0
+				$arParams['ALLOW_UPLOAD'] != 'F' || $arParams['ALLOW_UPLOAD_EXT'] == ''
 			)
 		)
 		{
 			$arParams['ALLOW_UPLOAD'] = 'A';
 		}
 
-		if (substr($arParams['INPUT_NAME'], -2) == '[]')
-			$arParams['INPUT_NAME'] = substr($arParams['INPUT_NAME'], 0, -2);
-		if (substr($arParams['INPUT_NAME_UNSAVED'], -2) == '[]')
-			$arParams['INPUT_NAME_UNSAVED'] = substr($arParams['INPUT_NAME_UNSAVED'], 0, -2);
+		if (mb_substr($arParams['INPUT_NAME'], -2) == '[]')
+			$arParams['INPUT_NAME'] = mb_substr($arParams['INPUT_NAME'], 0, -2);
+		if (mb_substr($arParams['INPUT_NAME_UNSAVED'], -2) == '[]')
+			$arParams['INPUT_NAME_UNSAVED'] = mb_substr($arParams['INPUT_NAME_UNSAVED'], 0, -2);
 		if (!is_array($arParams['INPUT_VALUE']) && intval($arParams['INPUT_VALUE']) > 0)
 			$arParams['INPUT_VALUE'] = array($arParams['INPUT_VALUE']);
 

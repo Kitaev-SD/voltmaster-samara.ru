@@ -1,9 +1,9 @@
 <?
 $MESS["TR_TOOLS_ERROR_EMPTY_FILE"] = "Нет файла";
-$MESS["TR_TOOLS_ERROR_FILE_NOT_LANG"] = "Файл \"%FILE%\" не является языковым";
-$MESS["TR_TOOLS_ERROR_WRITE_FILE"] = "Невозможно перезаписать файл \"%FILE%\"";
+$MESS["TR_TOOLS_ERROR_FILE_NOT_LANG"] = "Файл \"#FILE#\" не является языковым";
+$MESS["TR_TOOLS_ERROR_WRITE_FILE"] = "Невозможно перезаписать файл \"#FILE#\"";
 $MESS["TR_TOOLS_ERROR_RIGHTS"] = "Нет прав на запись";
-$MESS["TR_TOOLS_ERROR_CREATE_BACKUP"] = "Не удалось создать бэкап файла \"%FILE%\"";
+$MESS["TR_TOOLS_ERROR_CREATE_BACKUP"] = "Не удалось создать бэкап файла \"#FILE#\"";
 $MESS["TR_TOOLS_ERROR_LINE_FILE_EXT"] = "Ошибка в строке #LINE#:<br>&nbsp;&nbsp;#ERROR#";
 $MESS["TR_TOOLS_ERROR_LINE_FILE_BIG"] = "Ошибка в строке #LINE#:<br>&nbsp;&nbsp;#FILENAME#&nbsp;&nbsp;#PHRASE#&nbsp;&nbsp;#ERROR#";
 $MESS["BX_TRANSLATE_IMPORT_ERR_EMPTY_FIRST_ROW"] = "Строка заголовка пуста или содержит некорректные данные";
@@ -17,4 +17,7 @@ $MESS["BX_TRANSLATE_IMPORT_ERR_ROW_LANG_ABSENT"] = "нет фразы для я�
 $MESS["BX_TRANSLATE_IMPORT_MESS_FILENAME"] = "файл #FILENAME#";
 $MESS["BX_TRANSLATE_IMPORT_MESS_PHRASE_CODE"] = "фраза #PHRASE#";
 $MESS["BX_TRANSLATE_IMPORT_ERR_BAD_FILEPATH"] = "Некорректный путь #FILE#";
+$MESS["BX_TRANSLATE_LIST_GROUP_ERR_CANNOT_CREATE_BACKUP_LANG_FILE"] = "Не удалось создать бэкап файла #FILEPATH#";
+$MESS["BX_TRANSLATE_LIST_GROUP_ERR_CANNOT_REWRITE_LANG_FILE"] = "Не удалось перезаписать файл #FILEPATH#";
+$MESS["TR_CREATE_BACKUP_ERROR"] = "Не удалось создать бэкап файла \"#FILE#\"";
 ?>

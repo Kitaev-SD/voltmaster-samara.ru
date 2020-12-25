@@ -183,7 +183,7 @@ if ($arID = $lAdmin->GroupAction())
 	foreach ($arID as $ID)
 	{
 
-		if (strlen($ID) <= 0)
+		if ($ID == '')
 			continue;
 
 		switch ($_REQUEST['action'])
@@ -416,11 +416,11 @@ while($f = $rsDirContent->NavNext(true, "f_"))
 		$arActions[] = array(
 			"ICON" => "archive",
 			"TEXT" => 'DEBUG - '.GetMessage("INTEGRITY_CHECK"),
-			"ACTION" => 
-			strpos($f['NAME'], '.enc.') ?
-			"if(k=prompt('".CUtil::JSEscape(GetMessage("INTEGRITY_CHECK"))."?')) document.location=\"/bitrix/admin/dump.php?f_id=".urlencode($f['NAME'])."&action=check_archive&".bitrix_sessid_get().'&dump_encrypt_key="+k;'
-			:
-			"if(confirm('".CUtil::JSEscape(GetMessage("INTEGRITY_CHECK"))."?')) document.location=\"/bitrix/admin/dump.php?f_id=".urlencode($f['NAME'])."&action=check_archive&".bitrix_sessid_get().'";'
+			"ACTION" =>
+				mb_strpos($f['NAME'], '.enc.')?
+					"if(k=prompt('".CUtil::JSEscape(GetMessage("INTEGRITY_CHECK"))."?')) document.location=\"/bitrix/admin/dump.php?f_id=".urlencode($f['NAME'])."&action=check_archive&".bitrix_sessid_get().'&dump_encrypt_key="+k;'
+					:
+					"if(confirm('".CUtil::JSEscape(GetMessage("INTEGRITY_CHECK"))."?')) document.location=\"/bitrix/admin/dump.php?f_id=".urlencode($f['NAME'])."&action=check_archive&".bitrix_sessid_get().'";'
 		);
 	}
 
@@ -455,7 +455,7 @@ while($f = $rsDirContent->NavNext(true, "f_"))
 				foreach($arWriteBucket as $arBucket)
 					$arActions[] = array(
 						"ICON" => "clouds",
-						"TEXT" => GetMessage("MAIN_DUMP_SEND_CLOUD").htmlspecialcharsbx('"'.$arBucket['BUCKET'].'"'),
+						"TEXT" => GetMessage("MAIN_DUMP_SEND_CLOUD").' "'.htmlspecialcharsbx($arBucket['BUCKET']).'"',
 						"ACTION" => "if(confirm('".CUtil::JSEscape(GetMessage("MAIN_DUMP_SEND_FILE_CLOUD"))."?')) ".$lAdmin->ActionRedirect("/bitrix/admin/dump.php?f_id=".urlencode($f['NAME'])."&action=cloud_send&dump_bucket_id=".$arBucket['ID']."&".bitrix_sessid_get())
 					);
 			}

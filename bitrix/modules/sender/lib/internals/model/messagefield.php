@@ -51,9 +51,34 @@ class MessageFieldTable extends Entity\DataManager
 				'required' => true,
 			),
 			'VALUE' => array(
-				'data_type' => 'text'
+				'data_type' => 'text',
+				'save_data_modification' => array('\Bitrix\Main\Text\Emoji', 'getSaveModificator'),
+				'fetch_data_modification' => array('\Bitrix\Main\Text\Emoji', 'getFetchModificator'),
 			),
 		);
 	}
 
+	/**
+	 * Delete fields by message ID.
+	 *
+	 * @param int $messageId Message ID.
+	 * @return bool
+	 */
+	public static function deleteByMessageId($messageId)
+	{
+		$items = static::getList([
+			'select' => ['MESSAGE_ID', 'CODE'],
+			'filter' => ['=MESSAGE_ID' => $messageId]
+		]);
+		foreach ($items as $primary)
+		{
+			$result = static::delete($primary);
+			if (!$result->isSuccess())
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
 }

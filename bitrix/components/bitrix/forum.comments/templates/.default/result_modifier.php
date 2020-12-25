@@ -6,11 +6,11 @@
  * @var CBitrixComponentTemplate $this
  * @var ForumCommentsComponent $this->__component
  */
-if ($arResult["ERROR_MESSAGE"] && strpos($arResult["ERROR_MESSAGE"], "MID=") !== false)
+if ($arResult["ERROR_MESSAGE"] && mb_strpos($arResult["ERROR_MESSAGE"], "MID=") !== false)
 {
 	$arResult["ERROR_MESSAGE"] = preg_replace(array("/\(MID\=\d+\)/is", "/\s\s/", "/\s\./"), array("", " ", "."), $arResult["ERROR_MESSAGE"]);
 }
-if ($arResult["OK_MESSAGE"] && strpos($arResult["OK_MESSAGE"], "MID=") !== false)
+if ($arResult["OK_MESSAGE"] && mb_strpos($arResult["OK_MESSAGE"], "MID=") !== false)
 {
 	$arResult["OK_MESSAGE"] = preg_replace(array("/\(MID\=\d+\)/is", "/\s\s/", "/\s\./"), array("", " ", "."), $arResult["OK_MESSAGE"]);
 }
@@ -30,10 +30,35 @@ $arResult["PUSH&PULL"] = false;
 
 $request = \Bitrix\Main\Context::getCurrent()->getRequest();
 $post = array_merge($request->getQueryList()->toArray(), $request->getPostList()->toArray());
-$action = strtolower($post["comment_review"] == "Y" ? (strtolower($post['REVIEW_ACTION']) == "edit" ? "edit" : "add") : $post['REVIEW_ACTION']);
 
 if (!empty($arResult["MESSAGES"]))
 {
+	if ($arResult["MID"] > 0)
+	{
+		$messages = [];
+		foreach($arResult["MESSAGES"] as $id => $fields)
+		{
+			$messages[$id] = $fields;
+			if ($id == $arResult["MID"])
+			{
+				break;
+			}
+		}
+
+		$arResult["VISIBLE_RECORDS_COUNT"] = count($messages);
+		if ($arResult["VISIBLE_RECORDS_COUNT"] < 3)
+		{
+			$arResult["VISIBLE_RECORDS_COUNT"] = 3;
+		}
+
+		if (count($arResult["MESSAGES"]) > $arResult["VISIBLE_RECORDS_COUNT"])
+		{
+			$arResult["MESSAGES"] = array_slice($arResult["MESSAGES"], 0, $arResult["VISIBLE_RECORDS_COUNT"]);
+		}
+
+		$arResult["NAV_RESULT"]->bShowAll = false;
+	}
+
 	$arResult["NAV_STRING"] = GetPagePath(false, false);
 	if ($arResult["NAV_RESULT"])
 	{
@@ -52,7 +77,7 @@ if (!empty($arResult["MESSAGES"]))
 	foreach ($arResult["MESSAGES"] as $key => $res)
 	{
 		$arResult["MESSAGES"][$key] = forumCommentsCommentWeb($res, $arParams, $arResult, $this->__component);
-		if (intval($arResult["RESULT"]) == intval($res["ID"]))
+		if (in_array($arResult["ACTION"], ["hide", "show", "edit", "add"]) && intval($arResult["RESULT"]) == intval($res["ID"]))
 		{
 			if ($this->__component->prepareMobileData)
 			{
@@ -63,13 +88,13 @@ if (!empty($arResult["MESSAGES"]))
 					$this->__component
 				);
 			}
-			if (in_array($action, array('hide', 'show')))
+			if (in_array($arResult["ACTION"], array('hide', 'show')))
 			{
 				$action = "MODERATE";
 			}
 			else
 			{
-				$action = ($action == "edit" ? "EDIT" : "REPLY");
+				$action = ($arResult["ACTION"] == "edit" ? "EDIT" : "REPLY");
 			}
 
 			$arResult["PUSH&PULL"] = array(
@@ -79,7 +104,7 @@ if (!empty($arResult["MESSAGES"]))
 		}
 	}
 }
-if ($action == "del" && $arResult["RESULT"] > 0)
+if ($arResult["ACTION"] == "del" && $arResult["RESULT"] > 0)
 {
 	$arResult["PUSH&PULL"] = array(
 		"ID" => $arResult["RESULT"],

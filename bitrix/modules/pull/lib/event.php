@@ -1,21 +1,33 @@
 <?php
 namespace Bitrix\Pull;
 
+use Bitrix\Main;
 use Bitrix\Main\Localization\Loc;
 
 class Event
 {
 	const SHARED_CHANNEL = 0;
 
+	private static $backgroundContext = false;
+
 	private static $messages = array();
+	private static $deferredMessages = array();
 	private static $push = array();
 	private static $error = false;
 
-	public static function add($recipient, $parameters, $channelType = \CPullChannel::TYPE_PRIVATE)
+	public static function add($recipient, array $parameters, $channelType = \CPullChannel::TYPE_PRIVATE)
 	{
 		if (!isset($parameters['module_id']))
 		{
 			self::$error = new Error(__METHOD__, 'EVENT_PARAMETERS_FORMAT', Loc::getMessage('PULL_EVENT_PARAMETERS_FORMAT_ERROR'), $parameters);
+			return false;
+		}
+
+		$badUnicodeSymbolsPath = Common::findInvalidUnicodeSymbols($parameters);
+		if($badUnicodeSymbolsPath)
+		{
+			$warning = 'Parameters array contains invalid UTF-8 characters by the path ' . $badUnicodeSymbolsPath;
+			self::$error = new Error(__METHOD__, 'EVENT_BAD_ENCODING', $warning, $parameters);
 			return false;
 		}
 
@@ -97,24 +109,20 @@ class Event
 			$pushParametersCallback = null;
 		}
 
-		$eventCode = self::getParamsCode($parameters);
-		if (self::$messages[$eventCode])
+		if($parameters['hasCallback'])
 		{
-			self::$messages[$eventCode]['users'] = array_unique(array_merge(self::$messages[$eventCode]['users'], array_values($channels)));
-			self::$messages[$eventCode]['channels'] = array_unique(array_merge(self::$messages[$eventCode]['channels'], array_keys($channels)));
+			self::addMessage(self::$deferredMessages, $channels, $parameters);
 		}
 		else
 		{
-			$hasCallback = $parameters['hasCallback'];
-			unset($parameters['hasCallback']);
-
-			self::$messages[$eventCode]['event'] = $parameters;
-			self::$messages[$eventCode]['hasCallback'] = $hasCallback;
-			self::$messages[$eventCode]['users'] = array_unique(array_values($channels));
-			self::$messages[$eventCode]['channels'] = array_unique(array_keys($channels));
+			self::addMessage(self::$messages, $channels, $parameters);
 		}
 
-		if (defined('BX_CHECK_AGENT_START') && !defined('BX_WITH_ON_AFTER_EPILOG'))
+
+		if (
+			self::$backgroundContext
+			|| defined('BX_CHECK_AGENT_START') && !defined('BX_WITH_ON_AFTER_EPILOG')
+		)
 		{
 			self::send();
 		}
@@ -133,6 +141,24 @@ class Event
 		}
 
 		return true;
+	}
+
+	private static function addMessage(array &$destination, array $channels, array $parameters)
+	{
+		$eventCode = self::getParamsCode($parameters);
+		unset($parameters['hasCallback']);
+
+		if ($destination[$eventCode])
+		{
+			$destination[$eventCode]['users'] = array_unique(array_merge($destination[$eventCode]['users'], array_values($channels)));
+			$destination[$eventCode]['channels'] = array_unique(array_merge($destination[$eventCode]['channels'], array_keys($channels)));
+		}
+		else
+		{
+			$destination[$eventCode]['event'] = $parameters;
+			$destination[$eventCode]['users'] = array_unique(array_values($channels));
+			$destination[$eventCode]['channels'] = array_unique(array_keys($channels));
+		}
 	}
 
 	private static function addPush($users, $parameters)
@@ -212,7 +238,10 @@ class Event
 			self::$push[$pushCode]['users'] = array_unique(array_values($users));
 		}
 
-		if (defined('BX_CHECK_AGENT_START') && !defined('BX_WITH_ON_AFTER_EPILOG'))
+		if (
+			self::$backgroundContext
+			|| defined('BX_CHECK_AGENT_START') && !defined('BX_WITH_ON_AFTER_EPILOG')
+		)
 		{
 			self::send();
 		}
@@ -220,32 +249,22 @@ class Event
 		return true;
 	}
 
-	private static function executeEvent($parameters)
+	private static function processDeferredMessages()
 	{
-		if (!defined('BX_PULL_EPILOG_AFTER') && $parameters['hasCallback'])
+		foreach (self::$deferredMessages as $eventCode => $message)
 		{
-			return null;
-		}
-
-		if ($parameters['hasCallback'])
-		{
-			\Bitrix\Main\Loader::includeModule($parameters['event']['paramsCallback']['module_id']);
-			if (
-				method_exists($parameters['event']['paramsCallback']['class'], $parameters['event']['paramsCallback']['method']))
+			$callback = $message['event']['paramsCallback'];
+			if (Main\Loader::includeModule($callback['module_id']) && method_exists($callback['class'], $callback['method']))
 			{
-				$parameters['event']['params'] = call_user_func_array(
-					array(
-						$parameters['event']['paramsCallback']['class'],
-						$parameters['event']['paramsCallback']['method']
-					),
-					Array(
-						$parameters['event']['paramsCallback']['params']
-					)
-				);
-				unset($parameters['event']['paramsCallback']);
+				$messageParameters = call_user_func_array([$callback['class'], $callback['method']], [$callback['params']]);
+				self::addMessage(self::$messages, $message['channels'], $messageParameters);
 			}
 		}
+		self::$deferredMessages = [];
+	}
 
+	private static function executeEvent($parameters)
+	{
 		if (empty($parameters['channels']))
 		{
 			return true;
@@ -256,7 +275,7 @@ class Event
 
 	private static function executePushEvent($parameters)
 	{
-		if (!defined('BX_PULL_EPILOG_AFTER') && $parameters['hasPushCallback'])
+		if (!self::$backgroundContext && $parameters['hasPushCallback'])
 		{
 			return null;
 		}
@@ -264,7 +283,7 @@ class Event
 		$data = Array();
 		if ($parameters['hasPushCallback'])
 		{
-			\Bitrix\Main\Loader::includeModule($parameters['push']['pushParamsCallback']['module_id']);
+			Main\Loader::includeModule($parameters['push']['pushParamsCallback']['module_id']);
 			if (method_exists($parameters['push']['pushParamsCallback']['class'], $parameters['push']['pushParamsCallback']['method']))
 			{
 				$data = call_user_func_array(
@@ -293,6 +312,7 @@ class Event
 		$data['sub_tag'] = isset($data['sub_tag'])? $data['sub_tag']: '';
 		$data['app_id'] = isset($data['app_id'])? $data['app_id']: '';
 		$data['send_immediately'] = $data['send_immediately'] == 'Y'? 'Y': 'N';
+		$data['important'] = $data['important'] == 'Y'? 'Y': 'N';
 
 		$users = Array();
 		foreach ($parameters['users'] as $userId)
@@ -310,6 +330,7 @@ class Event
 			'USER_ID' => $users,
 			'SKIP_USERS' => is_array($data['skip_users'])? $data['skip_users']: Array(),
 			'MESSAGE' => $data['message'],
+			'EXPIRY' => $data['expiry'],
 			'PARAMS' => $data['params'],
 			'ADVANCED_PARAMS' => $data['advanced_params'],
 			'BADGE' => $data['badge'],
@@ -318,6 +339,7 @@ class Event
 			'SUB_TAG' => $data['sub_tag'],
 			'APP_ID' => $data['app_id'],
 			'SEND_IMMEDIATELY' => $data['send_immediately'],
+			'IMPORTANT' => $data['important'],
 		));
 
 		return true;
@@ -325,54 +347,97 @@ class Event
 
 	public static function send()
 	{
+		if (self::$backgroundContext)
+		{
+			self::processDeferredMessages();
+		}
+
+		static::executeEvents();
+		static::executePushEvents();
+
+		return true;
+	}
+
+	public static function executeEvents()
+	{
 		$hitCount = 0;
 		$channelCount = 0;
 		$messagesCount = count(self::$messages);
 		$messagesBytes = 0;
 		$logs = Array();
 
-		foreach (self::$messages as $eventCode => $event)
+		if(count(self::$messages) === 0)
 		{
-			if (\Bitrix\Pull\Log::isEnabled())
-			{
-				// TODO change code after release - $parameters['hasCallback']
-				$currentHits = ceil(count($event['channels'])/\CPullOptions::GetCommandPerHit());
-				$hitCount += $currentHits;
-
-				$currentChannelCount = count($event['channels']);
-				$channelCount += $currentChannelCount;
-
-				$currentMessagesBytes = self::getBytes($event['event'])+self::getBytes($event['channels']);
-				$messagesBytes += $currentMessagesBytes;
-				$logs[] = 'Command: '.$event['event']['module_id'].'/'.$event['event']['command'].'; Hits: '.$currentHits.'; Channel: '.$currentChannelCount.'; Bytes: '.$currentMessagesBytes.'';
-			}
-
-			$result = self::executeEvent($event);
-			if (!is_null($result))
-			{
-				unset(self::$messages[$eventCode]);
-			}
+			return true;
 		}
 
-		if ($logs && \Bitrix\Pull\Log::isEnabled())
+		if (!\CPullOptions::GetQueueServerStatus())
 		{
-			if (count($logs) > 1)
-			{
-				$logs[] = 'Total - Hits: '.$hitCount.'; Channel: '.$channelCount.'; Messages: '.$messagesCount.'; Bytes: '.$messagesBytes.'';
-			}
+			self::$messages = [];
 
-			if (count($logs) > 1 || $hitCount > 1 || $channelCount > 1 || $messagesBytes > 1000)
-			{
-				$logTitle = '!! Pull messages stats - important !!';
-			}
-			else
-			{
-				$logTitle = '-- Pull messages stats --';
-			}
-
-			\Bitrix\Pull\Log::write(implode("\n", $logs), $logTitle);
+			return true;
 		}
 
+		if(Config::isProtobufUsed())
+		{
+			if(ProtobufTransport::sendMessages(self::$messages))
+			{
+				self::$messages = [];
+			}
+		}
+		else
+		{
+			foreach (self::$messages as $eventCode => $event)
+			{
+				if (\Bitrix\Pull\Log::isEnabled())
+				{
+					// TODO change code after release - $parameters['hasCallback']
+					$currentHits = ceil(count($event['channels'])/\CPullOptions::GetCommandPerHit());
+					$hitCount += $currentHits;
+
+					$currentChannelCount = count($event['channels']);
+					$channelCount += $currentChannelCount;
+
+					$currentMessagesBytes = self::getBytes($event['event'])+self::getBytes($event['channels']);
+					$messagesBytes += $currentMessagesBytes;
+					$logs[] = 'Command: '.$event['event']['module_id'].'/'.$event['event']['command'].'; Hits: '.$currentHits.'; Channel: '.$currentChannelCount.'; Bytes: '.$currentMessagesBytes.'';
+				}
+
+				if (empty($event['channels']))
+				{
+					continue;
+				}
+
+				if (\CPullStack::AddByChannel($event['channels'], $event['event']))
+				{
+					unset(self::$messages[$eventCode]);
+				}
+			}
+
+			if ($logs && \Bitrix\Pull\Log::isEnabled())
+			{
+				if (count($logs) > 1)
+				{
+					$logs[] = 'Total - Hits: '.$hitCount.'; Channel: '.$channelCount.'; Messages: '.$messagesCount.'; Bytes: '.$messagesBytes.'';
+				}
+
+				if (count($logs) > 1 || $hitCount > 1 || $channelCount > 1 || $messagesBytes > 1000)
+				{
+					$logTitle = '!! Pull messages stats - important !!';
+				}
+				else
+				{
+					$logTitle = '-- Pull messages stats --';
+				}
+
+				\Bitrix\Pull\Log::write(implode("\n", $logs), $logTitle);
+			}
+		}
+	}
+
+
+	public static function executePushEvents()
+	{
 		foreach (self::$push as $pushCode => $event)
 		{
 			$result = self::executePushEvent($event);
@@ -381,25 +446,27 @@ class Event
 				unset(self::$push[$pushCode]);
 			}
 		}
-
-		return true;
 	}
 
 	public static function onAfterEpilog()
 	{
-		define('BX_PULL_EPILOG_AFTER', true);
-
-		if(defined("BX_FORK_AGENTS_AND_EVENTS_FUNCTION"))
+		if (
+			defined("BX_FORK_AGENTS_AND_EVENTS_FUNCTION")
+			&& \CMain::forkActions(array(__CLASS__, "sendInBackground"))
+		)
 		{
-			if(\CMain::forkActions(array(__CLASS__, "send")))
-			{
-				return true;
-			}
+			return true;
 		}
 
-		self::send();
+		self::sendInBackground();
 
 		return true;
+	}
+
+	public static function sendInBackground()
+	{
+		self::$backgroundContext = true;
+		self::send();
 	}
 
 	public static function getChannelIds($users, $type = \CPullChannel::TYPE_PRIVATE)
@@ -439,7 +506,7 @@ class Event
 			'select' => Array('USER_ID', 'CHANNEL_ID', 'USER_ACTIVE' => 'USER.ACTIVE'),
 			'filter' => Array(
 				'=CHANNEL_ID' => $channels
- 			)
+			)
 		));
 		while ($row = $orm->fetch())
 		{
@@ -464,15 +531,8 @@ class Event
 			return false;
 		}
 
-		$parameters['module_id'] = strtolower($parameters['module_id']);
-		if (isset($parameters['expire']))
-		{
-			$parameters['expire'] = intval($parameters['expire']);
-		}
-		else
-		{
-			$parameters['expire'] = 86400;
-		}
+		$parameters['module_id'] = mb_strtolower($parameters['module_id']);
+		$parameters['expiry'] = (int)($parameters['expiry'] ?? 86400);
 
 		if (isset($parameters['paramsCallback']))
 		{
@@ -490,7 +550,7 @@ class Event
 				$parameters['paramsCallback']['module_id'] = $parameters['module_id'];
 			}
 
-			\Bitrix\Main\Loader::includeModule($parameters['paramsCallback']['module_id']);
+			Main\Loader::includeModule($parameters['paramsCallback']['module_id']);
 
 			if (!method_exists($parameters['paramsCallback']['class'], $parameters['paramsCallback']['method']))
 			{
@@ -533,7 +593,7 @@ class Event
 
 	private static function preparePushParameters($parameters)
 	{
-		$parameters['module_id'] = strtolower($parameters['module_id']);
+		$parameters['module_id'] = mb_strtolower($parameters['module_id']);
 
 		if (isset($parameters['pushParamsCallback']))
 		{
@@ -551,7 +611,7 @@ class Event
 				$parameters['pushParamsCallback']['module_id'] = $parameters['module_id'];
 			}
 
-			\Bitrix\Main\Loader::includeModule($parameters['pushParamsCallback']['module_id']);
+			Main\Loader::includeModule($parameters['pushParamsCallback']['module_id']);
 
 			if (!method_exists($parameters['pushParamsCallback']['class'], $parameters['pushParamsCallback']['method']))
 			{
@@ -642,7 +702,7 @@ class Event
 
 		if (is_string($variable))
 		{
-			$bytes += strlen($variable);
+			$bytes += mb_strlen($variable);
 		}
 		else if (is_array($variable))
 		{
@@ -653,7 +713,7 @@ class Event
 		}
 		else
 		{
-			$bytes += strlen((string)$variable);
+			$bytes += mb_strlen((string)$variable);
 		}
 
 		return $bytes;
@@ -661,7 +721,7 @@ class Event
 
 	private static function isChannelEntity($entity)
 	{
-		return is_string($entity) && strlen($entity) == 32;
+		return is_string($entity) && mb_strlen($entity) == 32;
 	}
 
 	public static function getLastError()

@@ -8,7 +8,7 @@
 
 		if (event.block.querySelectorAll(selector).length > 0)
 		{
-			if (typeof(window["landingForms"]) == 'undefined')
+			if (typeof window["landingForms"] == 'undefined')
 			{
 				window["landingForms"] = {};
 			}
@@ -26,10 +26,10 @@
 		if (event.block.querySelectorAll(selector).length > 0)
 		{
 			var currentForm = window["landingForms"][event.block.id];
-			if (typeof(event.node) != 'undefined' && typeof(event.data) != 'undefined' && typeof(currentForm) != 'undefined')
+			if (typeof event.node != 'undefined' && typeof event.data != 'undefined' && typeof currentForm != 'undefined')
 			{
 				// recreate styles if needed, Use just first node
-				if(currentForm.readFormStylesFromNode(event.node[0]))
+				if (currentForm.readFormStylesFromNode(event.node[0]))
 				{
 					currentForm.createFormOptions();
 					currentForm.onFormReloadWithDebounce();
@@ -48,7 +48,7 @@
 		if (event.block.querySelectorAll(selector).length > 0)
 		{
 			var currentForm = window["landingForms"][event.block.id];
-			if (typeof(event.data) != 'undefined' && typeof(currentForm) != 'undefined')
+			if (typeof event.data != 'undefined' && typeof currentForm != 'undefined')
 			{
 				for (var attr in event.data)
 				{
@@ -94,11 +94,11 @@
 		if (document.querySelectorAll(selector).length > 0)
 		{
 			var currentForm = window["landingForms"][event.block.id];
-			if (typeof(currentForm) != 'undefined')
+			if (typeof currentForm != 'undefined')
 			{
 				currentForm.onFormRemove();
 			}
-			delete(window["landingForms"][event.block.id]);
+			delete (window["landingForms"][event.block.id]);
 		}
 	});
 
@@ -114,12 +114,14 @@
 
 		this.hideHeaderString = ".crm-webform-header-container{display:none;}";
 		this.hideBitrixLogoString = ".crm-webform-bottom-link{display:none}.crm-webform-bottom-logo-container{height:0;margin:0;}";
-		this.paddingFixesString =
-			".content{min-height:170px;}" +
-			".crm-webform-fieldset-footer{padding-bottom:0;}" +
+		this.additionalCssString =
+			".content-wrap{min-height:170px;}" +
 			".crm-webform-body{padding-bottom:0;padding-top:0;}" +
-			".content-wrap{padding-bottom:0;}" +
-			".crm-webform-block.crm-webform-default{margin-bottom:0;}";
+			".crm-webform-block.crm-webform-default{margin-bottom:0;}" +
+			".calendar-resbook-webform-block-date-item-inner{transition: border-color ease-in-out 0.5s;}";
+		this.fixHeightCssString =
+			".crm-webform-fieldset-footer{padding-bottom:0;}" +
+			".content-wrap{padding-bottom:0;}";
 
 		this.block = block;
 		this.selector = selector;
@@ -140,7 +142,10 @@
 			'bg': {'params': ['background-color', 'background-image']},
 			'bg-content': {'params': ['background-color']},
 			'bg-block': {'params': ['background-color']},
+			'bg-as-text': {'params': ['background-color']},
+			'light-bg': {'params': ['background-color']},
 			'main-bg': {'params': ['background-color']},
+			'main-bg-light': {'params': ['background-color']},
 			'main-border-color': {'params': ['border-top-color', 'border-bottom-color', 'border-left-color', 'border-right-color']},
 			'main-font-family': {'params': ['font-family']},
 			'main-font-color': {'params': ['color']},
@@ -163,6 +168,10 @@
 			'input-bg': {'params': ['background-color']},
 			'input-box-shadow': {'params': ['box-shadow']},
 			'input-select-bg': {'params': ['background-color']},
+			'input-bg-light': {'params': ['background-color']},
+			'input-bg-light2': {'params': ['background-color']},
+			'input-bg-light3': {'params': ['background-color']},
+			'gradient-box-shadow': {'params': ['box-shadow']},
 			'input-border': {
 				'params': [
 					'border-top-color', 'border-bottom-color', 'border-left-color', 'border-right-color',
@@ -197,25 +206,68 @@
 			'body.crm-webform-iframe': ['bg'],
 			'.content, .page-theme-transparent .content': ['bg-content'],
 			'.crm-webform-block, .page-theme-transparent .crm-webform-block': ['bg-block', 'border-block'],
-			'.crm-webform-header-container': ['bg-block', 'border-block', 'main-font-family', 'main-font-color', 'main-font-weight', 'header-text-font-size'],
+			'.crm-webform-header-container': [
+				'bg-block', 'border-block', 'main-font-family', 'main-font-color', 'main-font-weight',
+				'header-text-font-size'
+			],
 			'.crm-webform-header-container h2': ['main-font-color', 'bg-block'],
+			'.crm-webform-resourcebooking-wrap-live': ['bg-block'],
+			'.crm-webform-field-resourcebooking .crm-webform-label-content': ['bg-block'],
 			'.crm-webform-inner-header': ['main-font-color', 'main-font-family'],
-			'.crm-webform-mini-cart-title, .crm-webform-mini-cart-services-container': ['main-font-color', 'main-font-family'],
+			'.crm-webform-mini-cart-title, .crm-webform-mini-cart-services-container': [
+				'main-font-color', 'main-font-family'
+			],
 			'.crm-webform-header': ['main-font-family', 'header-font-weight', 'header-font-size'],
 			'.crm-webform-label': ['main-font-family', 'label-font-weight', 'label-font-size', 'second-font-color'],
-			'button.crm-webform-submit-button, .crm-webform-file-upload .crm-webform-file-button': ['main-bg', 'main-font-family', 'button-font-color', 'input-border-radius'],
+			'button.crm-webform-submit-button, .crm-webform-file-upload .crm-webform-file-button': [
+				'main-bg', 'main-font-family', 'button-font-color', 'input-border-radius'
+			],
 			'.crm-webform-label-content, .crm-webform-file-text-field': ['input-bg'],
 			'.crm-webform-input-label': ['input-box-shadow'],
-			'.crm-webform-input, .crm-webform-file-text-field': ['main-font-family', 'main-font-weight', 'input-border', 'main-font-color'],
+			'.crm-webform-input, .crm-webform-file-text-field': [
+				'main-font-family', 'main-font-weight', 'input-border', 'main-font-color'
+			],
 			'.crm-webform-icon': ['input-border-color', 'second-font-color', 'icon-font-color'],
 			'.crm-webform-desktop-font-style a': ['second-font-color'],
 			'.crm-webform-desktop-font-style a:hover': ['main-font-color'],
 			'.crm-webform-input option': ['main-font-family', 'input-select-bg', 'main-font-color'],
-			'.crm-webform-active .crm-webform-input, .crm-webform-active mark, .crm-webform-input:hover': ['input-border-hover'],
+			'.crm-webform-active .crm-webform-input, .crm-webform-active mark, .crm-webform-input:hover': [
+				'input-border-hover'
+			],
 			'.crm-webform-checkbox-container:hover i': ['main-border-color'],
-			'.crm-webform-checkbox-name': ['main-font-family'],
+			'.crm-webform-checkbox-name': ['main-font-family', 'second-font-color'],
 			'.crm-webform-input+i:after': ['main-font-color-hover'],
-			'.crm-webform-agreement-modifier .crm-webform-checkbox-name': ['agreement-label-font-size']
+			'.crm-webform-agreement-modifier .crm-webform-checkbox-name': ['agreement-label-font-size'],
+			// resource booking
+			'.calendar-resbook-webform-block-input-dropdown': [
+				'input-bg', 'input-border', 'main-font-color'
+			],
+			'.calendar-resbook-webform-block-strip': ['input-bg'],
+			'.calendar-resbook-webform-block-strip-date': ['main-font-color'],
+			'.calendar-resbook-webform-block-strip-day': ['second-font-color'],
+			'.popup-window[id^="calendar_popup"], .popup-window[id^="calendar_popup"] .popup-window-content': ['light-bg'],
+			'.calendar-resbook-webform-block-input-dropdown:hover': ['input-border-hover'],
+			'.calendar-resbook-webform-block-input-dropdown::before': ['bg-as-text'],
+			'.popup-window, .popup-window .popup-window-content': ['input-bg-light'],
+			'.popup-window .menu-popup-item-text': ['main-font-color'],
+			'.popup-window .menu-popup-item:hover, .popup-window .menu-item-selected': ['input-bg-light2'],
+			'.popup-window .popup-window-content .menu-popup-item:hover .menu-popup-item-text': ['main-font-color'],
+			'.calendar-resbook-webform-block-inner .calendar-resbook-webform-block-title': ['second-font-color'],
+			'.calendar-resbook-webform-block-date-item-select .calendar-resbook-webform-block-date-item-inner': ['main-bg'],
+			'.calendar-resbook-webform-block-date-item-inner': ['input-bg', 'input-border'],
+			'.calendar-resbook-webform-block-date-item-inner:hover': ['input-border-hover'],
+			'.calendar-resbook-webform-block-date-number': ['main-font-color'],
+			'.calendar-resbook-webform-block-date-item-select .calendar-resbook-webform-block-date-number': ['button-font-color'],
+			'.calendar-resbook-webform-block-date-item-select .calendar-resbook-webform-block-date-day': ['button-font-color'],
+			'.calendar-resbook-webform-block-arrow': ['input-bg-light3', 'gradient-box-shadow'],
+			'.calendar-resbook-webform-block-col-item-inner': ['main-bg-light'],
+			'.calendar-resbook-webform-block-col-item-select .calendar-resbook-webform-block-col-item-inner': ['main-bg', 'button-font-color'],
+			'.calendar-resbook-webform-block-col-time:first-child': ['main-font-color'],
+			'.calendar-resbook-webform-block-col-item-select .calendar-resbook-webform-block-col-time:first-child': ['button-font-color'],
+			'.calendar-resbook-webform-block-result-inner, .page-theme-image .calendar-resbook-webform-block-result-inner': [
+				'input-bg', 'main-border-color', 'main-font-color'
+			],
+			'.calendar-resbook-webform-block-result-text': ['second-font-color']
 		};
 
 		this.formParams = {};
@@ -243,7 +295,7 @@
 		initFormLoader: function (w, d, u, b)
 		{
 			// if first run - init form loader
-			if (typeof(w["Bitrix24FormLoaderInitialised"]) == 'undefined' || w["Bitrix24FormLoaderInitialised"] != true)
+			if (typeof w["Bitrix24FormLoaderInitialised"] == 'undefined' || w["Bitrix24FormLoaderInitialised"] != true)
 			{
 				w['Bitrix24FormObject'] = b;
 				w[b] = w[b] || function ()
@@ -273,15 +325,26 @@
 				return;
 			}
 
+			// do nothing if domain not set
+			if (!this.domain)
+			{
+				this.createErrorDomainMessage();
+				return;
+			}
+
 			this.createFormParams();
 			// apply form options only after frame creating
 			BX.addCustomEvent('onFormFrameLoad', BX.proxy(this.onFormFrameLoad, this));
 
+			// clear container to preserve no-js alert
+			var container = document.querySelector(this.selector);
+			container.innerHTML = '';
+
 			this.addFormInLoader();
-			if (typeof(Bitrix24FormLoader) != 'undefined')
+			if (typeof Bitrix24FormLoader != 'undefined')
 			{
 				// init Bitrix24FormLoader only once!
-				if (typeof(Bitrix24FormLoader.forms) == 'undefined' || Object.keys(Bitrix24FormLoader.forms).length == 0)
+				if (typeof Bitrix24FormLoader.forms == 'undefined' || Object.keys(Bitrix24FormLoader.forms).length == 0)
 				{
 					Bitrix24FormLoader.init();
 				}
@@ -295,39 +358,67 @@
 
 		createNoFormMessage: function ()
 		{
-			// show alert only in edit mode
 			if (BX.Landing.getMode() == "view")
 			{
 				return;
 			}
 
 			var formContainer = document.querySelector(this.selector);
+			if (
+				typeof BX.data(formContainer, this.dataAttributeIsConnector) != 'undefined'
+				&& BX.data(formContainer, this.dataAttributeIsConnector) == 'Y'
+			)
+			{
+				this.createErrorMessage(BX.message('LANDING_BLOCK_WEBFORM_NO_FORM'), BX.message('LANDING_BLOCK_WEBFORM_NO_FORM_BUS_NEW'));
+			}
+			else
+			{
+				this.createErrorMessage(BX.message('LANDING_BLOCK_WEBFORM_NO_FORM'), BX.message('LANDING_BLOCK_WEBFORM_NO_FORM_CP'));
+			}
+		},
+
+
+		createErrorDomainMessage: function ()
+		{
+			this.createErrorMessage();
+		},
+
+
+		createErrorMessage: function (title, message)
+		{
+			// show alert only in edit mode
+			if (BX.Landing.getMode() == "view")
+			{
+				return;
+			}
+
+			if (title === undefined || title === null || !title)
+			{
+				title = BX.message('LANDING_BLOCK_WEBFORM_ERROR');
+			}
+
+			if (message === undefined || message === null || !message)
+			{
+				message = BX.message('LANDING_BLOCK_WEBFORM_CONNECT_SUPPORT');
+			}
+
+			var formContainer = document.querySelector(this.selector);
 			if (formContainer)
 			{
-				var alertHtml = '<h2 class="u-form-alert-title">' + '<i class="fa fa-exclamation-triangle g-mr-15"></i>'
-					+ BX.message('LANDING_BLOCK_WEBFORM_NO_FORM') + '</h2><hr class="u-form-alert-divider">';
-
-				// todo: need correctly check bus or cp, without flag
-				if (
-					typeof(BX.data(formContainer, this.dataAttributeIsConnector)) != 'undefined'
-					&& BX.data(formContainer, this.dataAttributeIsConnector) == 'Y'
-				)
+				alertHtml = '';
+				if (title != '')
 				{
-					alertHtml += '<p class="u-form-alert-text">' + BX.message('LANDING_BLOCK_WEBFORM_NO_FORM_BUS') + '</p>'
+					var alertHtml = '<h2 class="u-form-alert-title"><i class="fa fa-exclamation-triangle g-mr-15"></i>' +
+						title + '</h2><hr class="u-form-alert-divider">';
 				}
-				else
-				{
-					alertHtml += '<p class="u-form-alert-text">' + BX.message('LANDING_BLOCK_WEBFORM_NO_FORM_CP') + '</p>'
-				}
+				alertHtml += '<p class="u-form-alert-text">' + message + '</p>';
 
-				var messageNode = BX.create({
-					tag: 'div',
+				var messageNode = BX.create('div', {
 					props: {className: 'u-form-alert'},
 					html: alertHtml
 				});
 				BX.adjust(formContainer, {children: [messageNode]});
 			}
-
 		},
 
 		createFormParams: function ()
@@ -400,7 +491,7 @@
 			if (typeof window.postMessage === 'function' && !ie)
 			{
 				// prepare PARAMS
-				if (typeof(params) != 'object')
+				if (typeof params != 'object')
 				{
 					params = {};
 				}
@@ -435,7 +526,7 @@
 
 		onFormRemove: function ()
 		{
-			if (typeof(Bitrix24FormLoader) != 'undefined')
+			if (typeof Bitrix24FormLoader != 'undefined')
 			{
 				Bitrix24FormLoader.unload(this.formParams);
 			}
@@ -445,7 +536,7 @@
 		onFormReload: function ()
 		{
 			// not need reload duplicate form
-			if (typeof(Bitrix24FormLoader) != 'undefined')
+			if (typeof Bitrix24FormLoader != 'undefined')
 			{
 				Bitrix24FormLoader.unload(this.formParams);
 				Bitrix24FormLoader.preLoad(this.formParams);
@@ -457,7 +548,7 @@
 		 * To preserve overreloading when style changes
 		 * @returns {*}
 		 */
-		onFormReloadWithDebounce: function()
+		onFormReloadWithDebounce: function ()
 		{
 			return BX.debounce(this.onFormReload(), 1000, this);
 		},
@@ -504,7 +595,7 @@
 			// hide bitrix LABEL
 			this.formOptions.css.content = this.createHideBitrixLabelCss(this.formOptions.css.content);
 			// fixes to form HEIGHT
-			this.formOptions.css.content = this.createPaddingFixesCss(this.formOptions.css.content);
+			this.formOptions.css.content = this.createAdditionalCss(this.formOptions.css.content);
 		},
 
 
@@ -522,7 +613,9 @@
 		createFormOptionsCss: function ()
 		{
 			if (Object.keys(this.styles).length == 0)
+			{
 				this.readFormStyles();
+			}
 
 			var cssString = "";
 			for (var selector in this.selectors)
@@ -530,7 +623,7 @@
 				var cssStringCurrent = "";
 				this.selectors[selector].forEach(function (style)
 				{
-					if (typeof(this.styles[style]) != 'undefined')
+					if (typeof this.styles[style] != 'undefined')
 					{
 						for (var styleValue in this.styles[style])
 						{
@@ -547,6 +640,8 @@
 				}
 			}
 
+			cssString += this.fixHeightCssString;
+
 			return cssString;
 		},
 
@@ -554,16 +649,16 @@
 		// hide "zaryazheno Bitriks 24"
 		createHideBitrixLabelCss: function (string)
 		{
-			string = (typeof(string) == 'undefined') ? '' : string;
+			string = (typeof string == 'undefined') ? '' : string;
 
 			return string + this.hideBitrixLogoString;
 		},
 
-		createPaddingFixesCss: function (string)
+		createAdditionalCss: function (string)
 		{
-			string = (typeof(string) == 'undefined') ? '' : string;
+			string = (typeof string == 'undefined') ? '' : string;
 
-			return string + this.paddingFixesString;
+			return string + this.additionalCssString;
 		},
 
 		isUsingCustomStyle: function ()
@@ -571,7 +666,7 @@
 			var node = BX.findChild(this.block, {'attribute': 'data-' + this.dataAttributeUseStyle}, true, false);
 			if (
 				node
-				&& typeof(BX.data(node, this.dataAttributeUseStyle)) != 'undefined'
+				&& typeof BX.data(node, this.dataAttributeUseStyle) != 'undefined'
 				&& BX.data(node, this.dataAttributeUseStyle) == 'N'
 			)
 			{
@@ -585,12 +680,12 @@
 
 		matchShowHeader: function (string)
 		{
-			string = (typeof(string) == 'undefined') ? '' : string;
+			string = (typeof string == 'undefined') ? '' : string;
 
 			var node = BX.findChild(this.block, {'attribute': 'data-' + this.dataAttributeShowHeader}, true, false);
 			if (
 				node
-				&& typeof(BX.data(node, this.dataAttributeShowHeader)) != 'undefined'
+				&& typeof BX.data(node, this.dataAttributeShowHeader) != 'undefined'
 				&& BX.data(node, this.dataAttributeShowHeader) == 'N'
 			)
 			{
@@ -609,14 +704,14 @@
 		 * @param node
 		 * @param style
 		 */
-		readNodeStyles: function(node, style)
+		readNodeStyles: function (node, style)
 		{
 			this.styleParams[style].params.forEach(BX.delegate(function (param)
 			{
 				var value = BX.style(node, param);
 				if (value)
 				{
-					if (typeof(this.styles[style]) == 'undefined')
+					if (typeof this.styles[style] == 'undefined')
 					{
 						this.styles[style] = {};
 					}
@@ -647,14 +742,15 @@
 		 * @param node
 		 * @returns {boolean}
 		 */
-		readFormStylesFromNode: function(node)
+		readFormStylesFromNode: function (node)
 		{
 			// check if node have style attrs
 			var change = false;
 			var attrs = node.attributes;
-			for (var i = 0; i < attrs.length; i++) {
+			for (var i = 0; i < attrs.length; i++)
+			{
 				var attr = attrs[i].name.replace(this.dataAttributePrefix, '');
-				if(typeof(this.styleParams[attr]) !== 'undefined')
+				if (typeof this.styleParams[attr] !== 'undefined')
 				{
 					change = true;
 					this.readNodeStyles(node, attr);

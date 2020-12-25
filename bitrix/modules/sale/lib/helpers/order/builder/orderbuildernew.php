@@ -4,12 +4,15 @@ namespace Bitrix\Sale\Helpers\Order\Builder;
 use Bitrix\Main\Error;
 use Bitrix\Main\Localization\Loc;
 use Bitrix\Sale\Helpers\Admin\OrderEdit;
-use Bitrix\Sale\Registry;
+use Bitrix\Sale;
 use Bitrix\Sale\Shipment;
 
 final class OrderBuilderNew implements IOrderBuilderDelegate
 {
 	protected $builder = null;
+
+	/** @var array */
+	protected $deliveryCalculationErrors = [];
 
 	public function __construct(OrderBuilder $builder)
 	{
@@ -29,7 +32,7 @@ final class OrderBuilderNew implements IOrderBuilderDelegate
 			$siteId = $data['LID'];
 		}
 
-		if(strlen($siteId) <= 0)
+		if($siteId == '')
 		{
 			$this->builder->getErrorsContainer()->addError(new Error(Loc::getMessage("SALE_HLP_OBN_SITEID_ABSENT")));
 			throw new BuildingException();
@@ -72,7 +75,8 @@ final class OrderBuilderNew implements IOrderBuilderDelegate
 	{
 		if(is_array($this->builder->getFormData('PRODUCT')))
 		{
-			$this->builder->getBasketBuilder()->initBasket()
+			$this->builder->getBasketBuilder()
+				->initBasket()
 				->preliminaryDataPreparation()
 				->itemsDataPreparation()
 				->basketCodeMap()
@@ -81,7 +85,12 @@ final class OrderBuilderNew implements IOrderBuilderDelegate
 		}
 		else
 		{
-			if($basket = \Bitrix\Sale\Basket::create($this->builder->getOrder()->getSiteId()))
+			$registry = Sale\Registry::getInstance(Sale\Registry::REGISTRY_TYPE_ORDER);
+
+			/** @var Sale\Basket $basketClass */
+			$basketClass = $registry->getBasketClassName();
+
+			if($basket = $basketClass::create($this->builder->getOrder()->getSiteId()))
 			{
 				$this->builder->getOrder()->setBasket($basket);
 			}
@@ -145,7 +154,10 @@ final class OrderBuilderNew implements IOrderBuilderDelegate
 
 			if(!$calcPrice->isSuccess())
 			{
-				$this->builder->getErrorsContainer()->addErrors($calcPrice->getErrors());
+				/**
+				 * Deferred errors (see recalculateDeliveryPrice)
+				 */
+				$this->deliveryCalculationErrors = $calcPrice->getErrors();
 			}
 
 			$priceDelivery = $calcPrice->getPrice();
@@ -162,5 +174,51 @@ final class OrderBuilderNew implements IOrderBuilderDelegate
 		}
 
 		return $shipment;
+	}
+
+	/**
+	 * @inheritdoc
+	 */
+	public function recalculateDeliveryPrice(int $orderPropsCountBefore, Sale\Order $order)
+	{
+		$orderPropsCountAfter = count($order->getPropertyCollection());
+
+		$isRecalculated = false;
+		if ($orderPropsCountAfter > $orderPropsCountBefore)
+		{
+			$isRecalculated = true;
+
+			$this->builder->setProperties();
+			$shipments = $order->getShipmentCollection();
+
+			/** @var Shipment $shipment */
+			foreach ($shipments as $shipment)
+			{
+				if ($shipment->isSystem())
+				{
+					continue;
+				}
+
+				if ($shipment->getField('CUSTOM_PRICE_DELIVERY') != 'Y')
+				{
+					$calcPrice = $shipment->calculateDelivery();
+
+					if(!$calcPrice->isSuccess())
+					{
+						$this->builder->getErrorsContainer()->addErrors($calcPrice->getErrors());
+					}
+					$priceDelivery = $calcPrice->getPrice();
+
+					$shipment->setField('BASE_PRICE_DELIVERY', $priceDelivery);
+					$shipment->setField('PRICE_DELIVERY', $priceDelivery);
+				}
+			}
+		}
+
+		if (!$isRecalculated && !empty($this->deliveryCalculationErrors))
+		{
+			$this->builder->getErrorsContainer()->addErrors($this->deliveryCalculationErrors);
+			$this->deliveryCalculationErrors = [];
+		}
 	}
 }

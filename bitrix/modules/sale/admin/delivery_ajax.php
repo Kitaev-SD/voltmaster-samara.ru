@@ -29,7 +29,7 @@ require_once($_SERVER["DOCUMENT_ROOT"]."/bitrix/modules/sale/lib/delivery/inputs
 
 $saleModulePermissions = $APPLICATION->GetGroupRight("sale");
 
-if(strlen($arResult["ERROR"]) <= 0 && $saleModulePermissions >= "W" && check_bitrix_sessid())
+if($arResult["ERROR"] == '' && $saleModulePermissions >= "W" && check_bitrix_sessid())
 {
 	$action = isset($_REQUEST['action']) ? trim($_REQUEST['action']): '';
 
@@ -68,7 +68,7 @@ if(strlen($arResult["ERROR"]) <= 0 && $saleModulePermissions >= "W" && check_bit
 			foreach($paramsStructure as $name => $param)
 			{
 				$paramsField .= "<tr>".
-					"<td valign=\"top\" style=\"padding-right:20px;\">".(strlen($param["LABEL"]) > 0 ? $param["LABEL"].": " : "")."</td>".
+					"<td valign=\"top\" style=\"padding-right:20px;\">".($param["LABEL"] <> '' ? $param["LABEL"].": " : "")."</td>".
 					"<td>".\Bitrix\Sale\Internals\Input\Manager::getEditHtml("RESTRICTION[".$name."]", $param, (isset($params[$name]) ? $params[$name] : null))."</td>".
 					"</tr>";
 			}
@@ -78,7 +78,7 @@ if(strlen($arResult["ERROR"]) <= 0 && $saleModulePermissions >= "W" && check_bit
 				'<td><input type="text" name="SORT" value="'.$sort.'"></td>'.
 				'</tr>';
 
-			if(strlen($className::getClassDescription()) > 0)
+			if($className::getClassDescription() <> '')
 				$paramsField .= '<tr>'.
 				'<td>'.Loc::getMessage("SALE_DA_DESCR") .':</td>'.
 				'<td><div class="adm-sale-delivery-restriction-descr">'.$className::getClassDescription().'</div></td>'.
@@ -104,9 +104,9 @@ if(strlen($arResult["ERROR"]) <= 0 && $saleModulePermissions >= "W" && check_bit
 
 			/** @var \Bitrix\Sale\Delivery\Restrictions\Base $className*/
 
-			if(!is_subclass_of($className, 'Bitrix\Sale\Delivery\Restrictions\Base'))
+			if(!is_subclass_of($className, 'Bitrix\Sale\Services\Base\Restriction'))
 			{
-				throw new \Bitrix\Main\SystemException($className.' is not a child of Bitrix\Sale\Delivery\Restrictions\Base'.' ('.get_parent_class($className).')');
+				throw new \Bitrix\Main\SystemException($className.' is not a child of Bitrix\Sale\Services\Base\Restriction'.' ('.get_parent_class($className).')');
 			}
 
 			foreach($className::getParamsStructure() as $key => $rParams)
@@ -165,16 +165,16 @@ if(strlen($arResult["ERROR"]) <= 0 && $saleModulePermissions >= "W" && check_bit
 }
 else
 {
-	if(strlen($arResult["ERROR"]) <= 0)
+	if($arResult["ERROR"] == '')
 		$arResult["ERROR"] = "Error! Access denied";
 }
 
-if(strlen($arResult["ERROR"]) > 0)
+if($arResult["ERROR"] <> '')
 	$arResult["RESULT"] = "ERROR";
 else
 	$arResult["RESULT"] = "OK";
 
-if(strtolower(SITE_CHARSET) != 'utf-8')
+if(mb_strtolower(SITE_CHARSET) != 'utf-8')
 	$arResult = $APPLICATION->ConvertCharsetArray($arResult, SITE_CHARSET, 'utf-8');
 
 header('Content-Type: application/json');

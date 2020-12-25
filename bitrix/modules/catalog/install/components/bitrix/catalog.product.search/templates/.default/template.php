@@ -41,7 +41,7 @@ function getTreeOffsetWidth($level = 0)
 	return 30 + $level * 21;
 }
 
-function renderTree($sections, $level = 0, $tableId)
+function renderTree($sections, $level, $tableId)
 {
 	$content = '';
 	$level = (int)$level;
@@ -210,7 +210,7 @@ else
 			$arParams = array(
 				'id' => $arItems['ID'],
 				'type' => $arCatalogProduct['TYPE'],
-				'name' => htmlspecialcharsbx($arItems['NAME'])
+				'name' => $arItems['NAME']
 			);
 			$jsClick = $tableId.'_helper.SelEl('.CUtil::PhpToJSObject($arParams, false, true, true).', this);';
 			if ($arResult['CALLER'] == 'discount' || $arResult['ALLOW_SELECT_PARENT'] == 'Y')
@@ -264,7 +264,7 @@ else
 				$arParams = array(
 					'id' => $val["ID"],
 					'type' => $val["TYPE"],
-					'name' => htmlspecialcharsbx($val['NAME']),
+					'name' => $val['NAME'],
 					'full_quantity' => $val['QUANTITY'],
 					'measureRatio' => (isset($val['MEASURE_RATIO']) ? $val['MEASURE_RATIO'] : 1),
 					'measure' => (isset($val['MEASURE']['~SYMBOL_RUS']) ? htmlspecialcharsbx($val['MEASURE']['~SYMBOL_RUS']) : ''),
@@ -317,7 +317,7 @@ else
 				$arParams = array(
 					'id' => $arItems["ID"],
 					'type' => $arCatalogProduct["TYPE"],
-					'name' => htmlspecialcharsbx($arItems['NAME']),
+					'name' => $arItems['NAME'],
 					'full_quantity' => $arCatalogProduct['QUANTITY'],
 					'measureRatio' => (isset($arCatalogProduct['MEASURE_RATIO']) ? $arCatalogProduct['MEASURE_RATIO'] : 1),
 					'measure' => (isset($arCatalogProduct['MEASURE']['~SYMBOL_RUS']) ? htmlspecialcharsbx($arCatalogProduct['MEASURE']['~SYMBOL_RUS']) : ''),
@@ -337,7 +337,7 @@ else
 			else
 			{
 				$arActions[] = array(
-					"TEXT" => GetMessage("SPS_SELECT"),
+					"TEXT" => GetMessage("BX_CATALOG_CPS_TPL_MESS_APPEND_SECTION"),
 					"DEFAULT" => "Y",
 					"ACTION" => $tableId.'_helper.onSectionClick('.$arItems["ID"].');'
 				);

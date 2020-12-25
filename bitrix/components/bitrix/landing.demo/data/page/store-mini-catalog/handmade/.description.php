@@ -10,13 +10,14 @@ Loc::loadMessages(dirname(__FILE__).'/.description-nottranslate.php');
 return array(
 	'parent' => 'store-mini-catalog',
 	'code' => 'store-mini-catalog/handmade',
-	'name' => Loc::getMessage('LANDING_DEMO_STORE_MINI_CATALOG_HANDMADE_TXT_1'),
+	'name' => Loc::getMessage('LANDING_DEMO_STORE_MINI_CATALOG_HANDMADE_TXT_NEW'),
 	'description' => Loc::getMessage('LANDING_DEMO_STORE_MINI_CATALOG_HANDMADE_DESC'),
 	'type' => 'store',
 	'version' => 2,
 	'fields' => array(
 		'RULE' => null,
 		'ADDITIONAL_FIELDS' => array(
+			'THEME_CODE' => 'event',
 			'METAOG_IMAGE' => 'https://cdn.bitrix24.site/bitrix/images/demo/page/store-mini-catalog/preview.jpg',
 			'VIEW_USE' => 'N',
 			'VIEW_TYPE' => 'no',
@@ -58,16 +59,16 @@ return array(
 					0 => 'landing-block-node-text-container js-animation fadeIn container text-center g-z-index-1 animated',
 				),
 				'.landing-block-node-card-subtitle' => array(
-					0 => 'landing-block-node-card-subtitle h6 g-color-white g-mb-10 g-mb-25--md g-font-cormorant-infant g-font-size-60',
+					0 => 'landing-block-node-card-subtitle h6 g-color-white g-mb-10 g-mb-25--md g-font-size-60',
 				),
 				'.landing-block-node-card-title' => array(
-					0 => 'landing-block-node-card-title g-line-height-1_2 g-font-weight-700 g-color-white mb-0 g-mb-35--md g-text-transform-none g-font-open-sans g-font-size-18',
+					0 => 'landing-block-node-card-title g-line-height-1_2 g-font-weight-700 g-color-white mb-0 g-mb-35--md g-text-transform-none g-font-size-25',
 				),
 				'.landing-block-node-card-button' => array(
 					0 => 'landing-block-node-card-button btn btn-lg g-mt-20 g-mt-0--md text-uppercase u-btn-primary g-font-weight-700 g-font-size-12 g-py-15 g-px-40',
 				),
 				'.landing-block-node-card-img' => array(
-					0 => 'landing-block-node-card-img g-flex-centered g-bg-cover g-bg-pos-center g-bg-img-hero g-height-70vh g-bg-black-opacity-0_5--after',
+					0 => 'landing-block-node-card-img g-flex-centered g-bg-cover g-bg-pos-center g-bg-img-hero g-min-height-70vh g-bg-black-opacity-0_5--after h-100 g-pt-10 g-pb-30',
 				),
 				'.landing-block-node-card-button-container' => array(
 					0 => 'landing-block-node-card-button-container',
@@ -88,7 +89,7 @@ return array(
 				'.landing-block-node-icon' => array(
 					0 => 'landing-block-node-icon fa fa-heart g-font-size-8',
 					1 => 'landing-block-node-icon fa fa-heart g-font-size-11',
-					2 => 'landing-block-node-icon fa fa-heart g-font-size-default',
+					2 => 'landing-block-node-icon fa fa-heart',
 					3 => 'landing-block-node-icon fa fa-heart g-font-size-11',
 					4 => 'landing-block-node-icon fa fa-heart g-font-size-8',
 				),
@@ -98,15 +99,15 @@ return array(
 			),
 			'style' => array(
 				'.landing-block-node-title' => array(
-					0 => 'landing-block-node-title js-animation fadeInUp u-heading-v7__title g-font-size-60 g-font-cormorant-infant font-italic g-font-weight-600 g-mb-20 animated g-color-black-opacity-0_9',
+					0 => 'landing-block-node-title js-animation fadeInUp u-heading-v7__title g-font-size-60 font-italic g-font-weight-600 g-mb-20 animated g-color-black-opacity-0_9',
 				),
 				'.landing-block-node-text' => array(
-					0 => 'landing-block-node-text js-animation fadeInUp mb-0 g-pb-1 animated g-font-open-sans g-color-gray-dark-v4',
+					0 => 'landing-block-node-text js-animation fadeInUp mb-0 g-pb-1 animated g-color-gray-dark-v4',
 				),
 				'.landing-block-node-icon' => array(
 					0 => 'landing-block-node-icon fa fa-heart g-font-size-8',
 					1 => 'landing-block-node-icon fa fa-heart g-font-size-11',
-					2 => 'landing-block-node-icon fa fa-heart g-font-size-default',
+					2 => 'landing-block-node-icon fa fa-heart',
 				),
 				'#wrapper' => array(
 					0 => 'landing-block g-pb-20 g-pt-30',
@@ -138,13 +139,13 @@ return array(
 			),
 			'style' => array(
 				'.landing-block-node-card' => array(
-					0 => 'landing-block-node-card js-animation fadeInUp col-md-6 g-mb-40 animated landing-card col-lg-4',
+					0 => 'landing-block-node-card js-animation fadeInUp col-md-6 g-mb-40 animated col-lg-4 g-mb-0--last',
 				),
 				'.landing-block-node-card-text' => array(
-					0 => 'landing-block-node-card-text g-font-size-default g-color-gray-dark-v2 mb-0 g-font-open-sans g-font-size-14',
+					0 => 'landing-block-node-card-text g-color-gray-dark-v2 mb-0 g-font-size-14',
 				),
 				'.landing-block-node-card-title' => array(
-					0 => 'landing-block-node-card-title h5 g-font-weight-800 g-text-transform-none g-font-cormorant-infant g-font-size-25',
+					0 => 'landing-block-node-card-title h5 g-font-weight-800 g-text-transform-none g-font-size-25',
 				),
 				'#wrapper' => array(
 					0 => 'landing-block g-pt-0 g-pb-5',
@@ -162,7 +163,7 @@ return array(
 				'.landing-block-node-icon' => array(
 					0 => 'landing-block-node-icon fa fa-heart g-font-size-8',
 					1 => 'landing-block-node-icon fa fa-heart g-font-size-11',
-					2 => 'landing-block-node-icon fa fa-heart g-font-size-default',
+					2 => 'landing-block-node-icon fa fa-heart',
 					3 => 'landing-block-node-icon fa fa-heart g-font-size-11',
 					4 => 'landing-block-node-icon fa fa-heart g-font-size-8',
 				),
@@ -172,7 +173,7 @@ return array(
 			),
 			'style' => array(
 				'.landing-block-node-title' => array(
-					0 => 'landing-block-node-title js-animation fadeInUp u-heading-v7__title g-font-size-60 g-font-cormorant-infant font-italic g-font-weight-600 g-mb-20 animated g-color-gray-light-v5',
+					0 => 'landing-block-node-title js-animation fadeInUp u-heading-v7__title g-font-size-60 font-italic g-font-weight-600 g-mb-20 animated g-color-gray-light-v5',
 				),
 				'.landing-block-node-text' => array(
 					0 => 'landing-block-node-text js-animation fadeInUp g-color-gray-dark-v5 mb-0 g-pb-1 animated',
@@ -180,7 +181,7 @@ return array(
 				'.landing-block-node-icon' => array(
 					0 => 'landing-block-node-icon fa fa-heart g-font-size-8',
 					1 => 'landing-block-node-icon fa fa-heart g-font-size-11',
-					2 => 'landing-block-node-icon fa fa-heart g-font-size-default',
+					2 => 'landing-block-node-icon fa fa-heart',
 				),
 				'#wrapper' => array(
 					0 => 'landing-block g-theme-business-bg-blue-dark-v1-opacity-0_9 g-pt-35 g-pb-5',
@@ -220,7 +221,7 @@ return array(
 				'.landing-block-node-icon' => array(
 					0 => 'landing-block-node-icon fa fa-heart g-font-size-8',
 					1 => 'landing-block-node-icon fa fa-heart g-font-size-11',
-					2 => 'landing-block-node-icon fa fa-heart g-font-size-default',
+					2 => 'landing-block-node-icon fa fa-heart',
 					3 => 'landing-block-node-icon fa fa-heart g-font-size-11',
 					4 => 'landing-block-node-icon fa fa-heart g-font-size-8',
 				),
@@ -230,15 +231,15 @@ return array(
 			),
 			'style' => array(
 				'.landing-block-node-title' => array(
-					0 => 'landing-block-node-title js-animation fadeInUp u-heading-v7__title g-font-size-60 g-font-cormorant-infant font-italic g-font-weight-600 g-mb-20 animated g-color-lightblue',
+					0 => 'landing-block-node-title js-animation fadeInUp u-heading-v7__title g-font-size-60 font-italic g-font-weight-600 g-mb-20 animated g-color-lightblue',
 				),
 				'.landing-block-node-text' => array(
-					0 => 'landing-block-node-text js-animation fadeInUp mb-0 g-pb-1 animated g-font-open-sans g-color-lightblue-v1',
+					0 => 'landing-block-node-text js-animation fadeInUp mb-0 g-pb-1 animated g-color-lightblue-v1',
 				),
 				'.landing-block-node-icon' => array(
 					0 => 'landing-block-node-icon fa fa-heart g-font-size-8',
 					1 => 'landing-block-node-icon fa fa-heart g-font-size-11',
-					2 => 'landing-block-node-icon fa fa-heart g-font-size-default',
+					2 => 'landing-block-node-icon fa fa-heart',
 				),
 				'#wrapper' => array(
 					0 => 'landing-block g-theme-business-bg-blue-dark-v1-opacity-0_9 g-pr-0 g-pt-35 g-pb-25',
@@ -268,10 +269,10 @@ return array(
 					0 => 'landing-block-node-text-container js-animation slideInRight col-md-6 animated',
 				),
 				'.landing-block-node-title' => array(
-					0 => 'landing-block-node-title g-font-weight-700 mb-0 g-mb-15 g-font-cormorant-infant g-text-transform-none g-font-size-40',
+					0 => 'landing-block-node-title g-font-weight-700 mb-0 g-mb-15 g-text-transform-none g-font-size-40',
 				),
 				'.landing-block-node-text' => array(
-					0 => 'landing-block-node-text g-color-gray-dark-v4 g-font-open-sans g-font-size-16',
+					0 => 'landing-block-node-text g-color-gray-dark-v4',
 				),
 				'.landing-block-node-img' => array(
 					0 => 'landing-block-node-img js-animation slideInLeft img-fluid animated',
@@ -292,7 +293,7 @@ return array(
 				'.landing-block-node-icon' => array(
 					0 => 'landing-block-node-icon fa fa-heart g-font-size-8',
 					1 => 'landing-block-node-icon fa fa-heart g-font-size-11',
-					2 => 'landing-block-node-icon fa fa-heart g-font-size-default',
+					2 => 'landing-block-node-icon fa fa-heart',
 					3 => 'landing-block-node-icon fa fa-heart g-font-size-11',
 					4 => 'landing-block-node-icon fa fa-heart g-font-size-8',
 				),
@@ -302,7 +303,7 @@ return array(
 			),
 			'style' => array(
 				'.landing-block-node-title' => array(
-					0 => 'landing-block-node-title js-animation fadeInUp u-heading-v7__title g-font-size-60 g-font-cormorant-infant font-italic g-font-weight-600 g-mb-20 animated g-color-gray-light-v5 g-line-height-1_1',
+					0 => 'landing-block-node-title js-animation fadeInUp u-heading-v7__title g-font-size-60 font-italic g-font-weight-600 g-mb-20 animated g-color-gray-light-v5 g-line-height-1_1',
 				),
 				'.landing-block-node-text' => array(
 					0 => 'landing-block-node-text js-animation fadeInUp g-color-gray-dark-v5 mb-0 g-pb-1 animated',
@@ -310,7 +311,7 @@ return array(
 				'.landing-block-node-icon' => array(
 					0 => 'landing-block-node-icon fa fa-heart g-font-size-8',
 					1 => 'landing-block-node-icon fa fa-heart g-font-size-11',
-					2 => 'landing-block-node-icon fa fa-heart g-font-size-default',
+					2 => 'landing-block-node-icon fa fa-heart',
 				),
 				'#wrapper' => array(
 					0 => 'landing-block g-theme-business-bg-blue-dark-v1-opacity-0_9 g-pt-35 g-pb-7',
@@ -349,7 +350,7 @@ return array(
 			),
 			'style' => array(
 				'.landing-block-node-img-title' => array(
-					0 => 'landing-block-node-img-title g-flex-middle-item text-center h3 g-color-white g-line-height-1_4 g-font-size-20 g-font-open-sans g-letter-spacing-1 g-text-transform-none',
+					0 => 'landing-block-node-img-title g-flex-middle-item text-center h3 g-color-white g-line-height-1_4 g-font-size-20 g-letter-spacing-1 g-text-transform-none',
 				),
 				'.landing-block-node-img-container-leftleft' => array(
 					0 => 'landing-block-node-img-container landing-block-node-img-container-leftleft js-animation fadeInLeft h-100 g-pos-rel g-parent u-block-hover animated',
@@ -379,7 +380,7 @@ return array(
 				'.landing-block-node-icon' => array(
 					0 => 'landing-block-node-icon fa fa-heart g-font-size-8',
 					1 => 'landing-block-node-icon fa fa-heart g-font-size-11',
-					2 => 'landing-block-node-icon fa fa-heart g-font-size-default',
+					2 => 'landing-block-node-icon fa fa-heart',
 					3 => 'landing-block-node-icon fa fa-heart g-font-size-11',
 					4 => 'landing-block-node-icon fa fa-heart g-font-size-8',
 				),
@@ -389,15 +390,15 @@ return array(
 			),
 			'style' => array(
 				'.landing-block-node-title' => array(
-					0 => 'landing-block-node-title js-animation fadeInUp u-heading-v7__title g-font-size-60 g-font-cormorant-infant font-italic g-font-weight-600 g-mb-20 animated g-color-gray-light-v5',
+					0 => 'landing-block-node-title js-animation fadeInUp u-heading-v7__title g-font-size-60 font-italic g-font-weight-600 g-mb-20 animated g-color-gray-light-v5',
 				),
 				'.landing-block-node-text' => array(
-					0 => 'landing-block-node-text js-animation fadeInUp mb-0 g-pb-1 animated g-color-lightblue-v1 g-font-open-sans',
+					0 => 'landing-block-node-text js-animation fadeInUp mb-0 g-pb-1 animated g-color-lightblue-v1',
 				),
 				'.landing-block-node-icon' => array(
 					0 => 'landing-block-node-icon fa fa-heart g-font-size-8',
 					1 => 'landing-block-node-icon fa fa-heart g-font-size-11',
-					2 => 'landing-block-node-icon fa fa-heart g-font-size-default',
+					2 => 'landing-block-node-icon fa fa-heart',
 				),
 				'#wrapper' => array(
 					0 => 'landing-block g-theme-business-bg-blue-dark-v1-opacity-0_9 g-pt-40 g-pb-0',
@@ -454,9 +455,9 @@ return array(
 			),
 			'style' => array(
 				'.landing-block-card' => array(
-					0 => 'landing-block-card js-animation fadeIn landing-block-node-contact g-brd-between-cols col-sm-6 col-md-6 col-lg-4 g-brd-primary g-px-15 g-py-30 g-py-0--md g-mb-15 landing-card',
-					1 => 'landing-block-card js-animation fadeIn landing-block-node-contact g-brd-between-cols col-sm-6 col-md-6 col-lg-4 g-brd-primary g-px-15 g-py-30 g-py-0--md g-mb-15 landing-card',
-					2 => 'landing-block-card js-animation fadeIn landing-block-node-contact g-brd-between-cols col-sm-6 col-md-6 col-lg-4 g-brd-primary g-px-15 g-py-30 g-py-0--md g-mb-15 landing-card',
+					0 => 'landing-block-card js-animation fadeIn landing-block-node-contact g-brd-between-cols col-sm-6 col-md-6 col-lg-4 g-brd-primary g-px-15 g-py-30 g-py-0--md g-mb-15 ',
+					1 => 'landing-block-card js-animation fadeIn landing-block-node-contact g-brd-between-cols col-sm-6 col-md-6 col-lg-4 g-brd-primary g-px-15 g-py-30 g-py-0--md g-mb-15 ',
+					2 => 'landing-block-card js-animation fadeIn landing-block-node-contact g-brd-between-cols col-sm-6 col-md-6 col-lg-4 g-brd-primary g-px-15 g-py-30 g-py-0--md g-mb-15 ',
 				),
 				'.landing-block-node-contact-title' => array(
 					0 => 'landing-block-node-contact-title d-block text-uppercase g-font-size-14 g-color-main g-mb-5',

@@ -1,12 +1,12 @@
 <section class="landing-block g-pt-30 g-pb-20">
         <div class="container">
 
-            <div class="row no-gutters">
+            <div class="row no-gutters landing-block-inner">
 
-                <div class="landing-block-card js-animation fadeInUp col-md-4 g-mb-30 g-mb-0--md">
+                <div class="landing-block-card js-animation fadeInUp col-md-4 col-lg-4 g-mb-30 g-mb-0--md">
                     <article class="text-center g-brd-around g-color-gray g-brd-gray-light-v5 g-pa-10">
-                        <div class="landing-block-card-container g-bg-gray-light-v5 g-pa-30">
-                            <h4 class="landing-block-node-title text-uppercase h5 g-color-gray-dark-v3 g-font-weight-500 g-mb-10">Starter</h4>
+                        <div class="landing-block-card-container g-bg-gray-light-v5 g-pl-30 g-pr-30 g-pt-30 g-pb-30">
+                            <h4 class="landing-block-node-title text-uppercase h5 g-color-gray-dark-v3 g-mb-10">Starter</h4>
                             <div class="landing-block-node-subtitle g-font-style-normal">
 								<em>ed feugiat porttitor nunc, non</em>
 							</div>
@@ -28,16 +28,16 @@
                                 <li class="landing-block-node-price-list-item g-brd-bottom g-brd-gray-light-v3 g-py-12"><b>No</b> Proin laoreet accumsan nisl non</li>
                             </ul>
 							<div class="landing-block-node-price-container">
-								<a class="landing-block-node-price-button btn btn-md text-uppercase u-btn-primary rounded-0 g-px-15" href="#">Order Now</a>
+								<a class="landing-block-node-price-button btn g-btn-type-solid g-btn-size-md g-btn-px-m text-uppercase g-btn-primary rounded-0" href="#">Order Now</a>
 							</div>
                         </div>
                     </article>
                 </div>
 
-                <div class="landing-block-card js-animation fadeInUp col-md-4 g-mb-30 g-mb-0--md">
+                <div class="landing-block-card js-animation fadeInUp col-md-4 col-lg-4 g-mb-30 g-mb-0--md">
                     <article class="text-center g-brd-around g-color-gray g-brd-gray-light-v5 g-pa-10 g-mt-minus-20">
-                        <div class="landing-block-card-container g-bg-gray-light-v5 g-py-50 g-px-30">
-                            <h4 class="landing-block-node-title text-uppercase h5 g-color-gray-dark-v3 g-font-weight-500 g-mb-10">Advanced</h4>
+                        <div class="landing-block-card-container g-bg-gray-light-v5 g-pt-50 g-pb-50 g-pl-30 g-pr-30">
+                            <h4 class="landing-block-node-title text-uppercase h5 g-color-gray-dark-v3 g-mb-10">Advanced</h4>
                             <div class="landing-block-node-subtitle g-font-style-normal">
 								<em>ed feugiat porttitor nunc, non</em>
 							</div>
@@ -59,16 +59,16 @@
                                 <li class="landing-block-node-price-list-item g-brd-bottom g-brd-gray-light-v3 g-py-12"><b>YES</b> Proin laoreet accumsan nisl non</li>
                             </ul>
 							<div class="landing-block-node-price-container">
-								<a class="landing-block-node-price-button btn btn-md text-uppercase u-btn-primary rounded-0 g-px-15" href="#">Order Now</a>
+								<a class="landing-block-node-price-button btn g-btn-type-solid g-btn-size-md g-btn-px-m text-uppercase g-btn-primary rounded-0" href="#">Order Now</a>
 							</div>
                         </div>
                     </article>
                 </div>
 
-                <div class="landing-block-card js-animation fadeInUp col-md-4 g-mb-30 g-mb-0--md">
+                <div class="landing-block-card js-animation fadeInUp col-md-4 col-lg-4 g-mb-30 g-mb-0--md">
                     <article class="text-center g-brd-around g-color-gray g-brd-gray-light-v5 g-pa-10">
-                        <div class="landing-block-card-container g-bg-gray-light-v5 g-pa-30">
-                            <h4 class="landing-block-node-title text-uppercase h5 g-color-gray-dark-v3 g-font-weight-500 g-mb-10">Professional</h4>
+                        <div class="landing-block-card-container g-bg-gray-light-v5 g-pl-30 g-pr-30 g-pt-30 g-pb-30">
+                            <h4 class="landing-block-node-title text-uppercase h5 g-color-gray-dark-v3 g-mb-10">Professional</h4>
                             <div class="landing-block-node-subtitle g-font-style-normal">
 								<em>ed feugiat porttitor nunc, non</em>
 							</div>
@@ -90,7 +90,7 @@
                                 <li class="landing-block-node-price-list-item g-brd-bottom g-brd-gray-light-v3 g-py-12"><b>YES</b> Proin laoreet accumsan nisl non</li>
                             </ul>
 							<div class="landing-block-node-price-container">
-								<a class="landing-block-node-price-button btn btn-md text-uppercase u-btn-primary rounded-0 g-px-15" href="#">Order Now</a>
+								<a class="landing-block-node-price-button btn g-btn-type-solid g-btn-size-md g-btn-px-m text-uppercase g-btn-primary rounded-0" href="#">Order Now</a>
 							</div>
                         </div>
                     </article>

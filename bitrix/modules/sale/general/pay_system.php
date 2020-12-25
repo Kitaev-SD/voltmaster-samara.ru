@@ -64,7 +64,7 @@ class CAllSalePaySystem
 					foreach ($val[$deliveryId] as $v)
 						$arFilter["ID"][] = $v;
 				}
-				elseif (IntVal($val[$deliveryId]) > 0)
+				elseif (intval($val[$deliveryId]) > 0)
 					$arFilter["ID"][] = $val[$deliveryId];
 			}
 		}
@@ -136,7 +136,7 @@ class CAllSalePaySystem
 	{
 		global $DB, $USER;
 
-		if ((is_set($arFields, "NAME") || $ACTION=="ADD") && strlen($arFields["NAME"])<=0)
+		if ((is_set($arFields, "NAME") || $ACTION=="ADD") && $arFields["NAME"] == '')
 		{
 			$GLOBALS["APPLICATION"]->ThrowException(GetMessage("SKGPS_EMPTY_NAME"), "ERROR_NO_NAME");
 			return false;
@@ -144,7 +144,7 @@ class CAllSalePaySystem
 
 		if (is_set($arFields, "ACTIVE") && $arFields["ACTIVE"]!="Y")
 			$arFields["ACTIVE"] = "N";
-		if (is_set($arFields, "SORT") && IntVal($arFields["SORT"])<=0)
+		if (is_set($arFields, "SORT") && intval($arFields["SORT"])<=0)
 			$arFields["SORT"] = 100;
 
 		return True;
@@ -198,7 +198,7 @@ class CAllSalePaySystem
 					'filter' => array(
 						'SERVICE_ID' => $ps['ID'],
 						'SERVICE_TYPE' => \Bitrix\Sale\Services\PaySystem\Restrictions\Manager::SERVICE_TYPE_PAYMENT,
-						'=CLASS_NAME' => '\Bitrix\Sale\Services\PaySystem\Restrictions\PersonType'
+						'=CLASS_NAME' => '\\'.\Bitrix\Sale\Services\PaySystem\Restrictions\PersonType::class
 					)
 				));
 
@@ -223,7 +223,7 @@ class CAllSalePaySystem
 			'filter' => array(
 				'SERVICE_ID' => $paySystemId,
 				'SERVICE_TYPE' => \Bitrix\Sale\Services\PaySystem\Restrictions\Manager::SERVICE_TYPE_PAYMENT,
-				'=CLASS_NAME' => '\Bitrix\Sale\Services\PaySystem\Restrictions\PersonType'
+				'=CLASS_NAME' => '\\'.\Bitrix\Sale\Services\PaySystem\Restrictions\PersonType::class
 			)
 		));
 		while ($restriction = $dbRestriction->fetch())
@@ -365,11 +365,11 @@ class CAllSalePaySystem
 	private static function getAlias($key)
 	{
 		$prefix = '';
-		$pos = strpos($key, 'PSA_');
+		$pos = mb_strpos($key, 'PSA_');
 		if ($pos > 0)
 		{
-			$prefix = substr($key, 0, $pos);
-			$key = substr($key, $pos);
+			$prefix = mb_substr($key, 0, $pos);
+			$key = mb_substr($key, $pos);
 		}
 
 		$aliases = self::getAliases();

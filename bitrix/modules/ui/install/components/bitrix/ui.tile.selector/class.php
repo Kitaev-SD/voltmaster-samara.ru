@@ -23,10 +23,14 @@ class UiTileSelectorComponent extends CBitrixComponent
 	{
 		$this->arParams['MULTIPLE'] = isset($this->arParams['MULTIPLE']) ? (bool) $this->arParams['MULTIPLE'] : true;
 		$this->arParams['READONLY'] = isset($this->arParams['READONLY']) ? (bool) $this->arParams['READONLY'] : false;
+		$this->arParams['CAN_REMOVE_TILES'] = isset($this->arParams['CAN_REMOVE_TILES']) ? (bool) $this->arParams['CAN_REMOVE_TILES'] : true;
 		$this->arParams['INPUT_NAME'] = isset($this->arParams['INPUT_NAME']) ? $this->arParams['INPUT_NAME'] : '';
 		$this->arParams['ID'] = isset($this->arParams['ID']) ? $this->arParams['ID'] : '';
 		$this->arParams['LIST'] = isset($this->arParams['LIST']) ? $this->arParams['LIST'] : null;
 		$this->arParams['BUTTON_SELECT_CAPTION'] = isset($this->arParams['BUTTON_SELECT_CAPTION']) ? $this->arParams['BUTTON_SELECT_CAPTION'] : null;
+		$this->arParams['READONLY'] = isset($this->arParams['READONLY']) ? (bool) $this->arParams['READONLY'] : false;
+		$this->arParams['FIRE_CLICK_EVENT'] = isset($this->arParams['FIRE_CLICK_EVENT']) ? $this->arParams['FIRE_CLICK_EVENT'] : '';
+		$this->arParams['LOCK'] = isset($this->arParams['LOCK']) ? (bool) $this->arParams['LOCK'] : false;
 
 		if (isset($this->arParams['SHOW_BUTTON_ADD']))
 		{
@@ -58,8 +62,6 @@ class UiTileSelectorComponent extends CBitrixComponent
 
 	protected function prepareResult()
 	{
-		$this->arResult['ACTION_URL'] = $this->getPath() . '/ajax.php';
-
 		$this->arResult['LIST'] = array();
 		$list = is_array($this->arParams['LIST']) ? $this->arParams['LIST'] : array();
 		$tileIds = array();

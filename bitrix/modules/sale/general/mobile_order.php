@@ -7,7 +7,7 @@ class CSaleMobileOrderUtils
 	{
 		static $userCache = array();
 
-		$userId = IntVal($userId);
+		$userId = intval($userId);
 
 		if($userId > 0)
 		{
@@ -161,16 +161,16 @@ class CSaleMobileOrderUtils
 
 		$dateCChanged = false;
 
-		if(strlen($arOrder["DATE_CANCELED"]) > 0)
+		if($arOrder["DATE_CANCELED"] <> '')
 			$dateCChanged = self::getDateTime($arOrder["DATE_CANCELED"]);
 
-		if(IntVal($arOrder["EMP_CANCELED_ID"]) > 0)
+		if(intval($arOrder["EMP_CANCELED_ID"]) > 0)
 			$dateCChanged .= " ".self::GetFormatedUserName($arOrder["EMP_CANCELED_ID"]);
 
 		if($arOrder['CANCELED'] == 'Y')
 			$arSection["BOTTOM"] = array("STYLE" => "red", "VALUE" => GetMessage("SMOB_ORDER_CANCELED"));
 
-		if($arOrder['CANCELED'] == 'N' && IntVal($arOrder["EMP_CANCELED_ID"]) > 0)
+		if($arOrder['CANCELED'] == 'N' && intval($arOrder["EMP_CANCELED_ID"]) > 0)
 			$arSection["BOTTOM"] = array("STYLE" => "green", "VALUE" => GetMessage("SMOB_ORDER_CANCEL_CANCELED"));
 
 		if($dateCChanged)
@@ -195,7 +195,7 @@ class CSaleMobileOrderUtils
 						),
 					);
 
-		if(strlen(trim($arOrder['CUSTOMER_CITY']))>0)
+		if(trim($arOrder['CUSTOMER_CITY']) <> '')
 			$arSection["ROWS"][] = array("TITLE" => GetMessage("SMOB_CITY").":", "VALUE" => htmlspecialcharsbx($arOrder['CUSTOMER_CITY']));
 
 		$arSection["ROWS"][] = array("TITLE" => GetMessage("SMOB_ADDRESS").":", "VALUE" => htmlspecialcharsbx($arOrder['CUSTOMER_ADDRESS']));
@@ -204,10 +204,10 @@ class CSaleMobileOrderUtils
 
 		$dateDChange = false;
 
-		if(strlen($arOrder["DATE_ALLOW_DELIVERY"])>0)
+		if($arOrder["DATE_ALLOW_DELIVERY"] <> '')
 			$dateDChange = self::getDateTime($arOrder["DATE_ALLOW_DELIVERY"]);
 
-		if(IntVal($arOrder["EMP_ALLOW_DELIVERY_ID"]) > 0)
+		if(intval($arOrder["EMP_ALLOW_DELIVERY_ID"]) > 0)
 			$dateDChange .= " ".self::GetFormatedUserName($arOrder["EMP_ALLOW_DELIVERY_ID"]);
 
 		$arSection =array(
@@ -236,10 +236,10 @@ class CSaleMobileOrderUtils
 
 		$datePChange = false;
 
-		if(strlen($arOrder['DATE_PAYED'])>0)
+		if($arOrder['DATE_PAYED'] <> '')
 			$datePChange = self::getDateTime($arOrder['DATE_PAYED']);
 
-		if(IntVal($arOrder["EMP_PAYED_ID"]) > 0)
+		if(intval($arOrder["EMP_PAYED_ID"]) > 0)
 			$datePChange .= " ".self::GetFormatedUserName($arOrder["EMP_PAYED_ID"]);
 
 		if($arOrder['PAYED'] == 'Y')
@@ -276,9 +276,9 @@ class CSaleMobileOrderUtils
 						"OPEN" => true,
 						);
 
-			$reason = strlen($arOrder["REASON_MARKED"]) > 0 ? $arOrder["REASON_MARKED"] : GetMessage("SMOB_MARK_NO_DESCRIPTION");
+			$reason = $arOrder["REASON_MARKED"] <> '' ? $arOrder["REASON_MARKED"] : GetMessage("SMOB_MARK_NO_DESCRIPTION");
 
-			if(strlen($arOrder['DATE_MARKED']) > 0)
+			if($arOrder['DATE_MARKED'] <> '')
 				$reason .= '<br>'.self::getDateTime($arOrder['DATE_MARKED']);
 
 			if(intval($arOrder['EMP_MARKED_ID']) > 0)
@@ -298,15 +298,15 @@ class CSaleMobileOrderUtils
 
 		if($arOrder['DEDUCTED'] == 'Y')
 			$arSection["BOTTOM"] = array("STYLE" => "green", "VALUE" => GetMessage("SMOB_ORDER_DEDUCTED"));
-		elseif($arOrder['DEDUCTED'] == 'N' && strlen($arOrder["DATE_DEDUCTED"]) > 0 )
+		elseif($arOrder['DEDUCTED'] == 'N' && $arOrder["DATE_DEDUCTED"] <> '' )
 			$arSection["BOTTOM"] = array("STYLE" => "red", "VALUE" => GetMessage("SMOB_ORDER_DEDUCTED_UNDO"));
 		else
 			$arSection["ROWS"][] = array("TITLE" => GetMessage("SMOB_ORDER_NOT_DEDUCTED"), "VALUE" => "");
 
-		if(strlen($arOrder["REASON_UNDO_DEDUCTED"]) > 0)
+		if($arOrder["REASON_UNDO_DEDUCTED"] <> '')
 			$arSection["BOTTOM"]["VALUE"] .= '<br>'.$arOrder["REASON_UNDO_DEDUCTED"];
 
-		if(strlen($arOrder["DATE_DEDUCTED"]) > 0)
+		if($arOrder["DATE_DEDUCTED"] <> '')
 			$arSection["BOTTOM"]["VALUE"] .= '<br>'.self::getDateTime($arOrder["DATE_DEDUCTED"]);
 
 		if(intval($arOrder['EMP_DEDUCTED_ID']) > 0)
@@ -390,7 +390,7 @@ class CSaleMobileOrderUtils
 		$saleModulePermissions = $GLOBALS["APPLICATION"]->GetGroupRight("sale");
 
 		if ($saleModulePermissions == "D")
-			$arFilter["USER_ID"] = IntVal($GLOBALS["USER"]->GetID());
+			$arFilter["USER_ID"] = intval($GLOBALS["USER"]->GetID());
 		elseif ($saleModulePermissions != "W")
 		{
 			$arFilter["STATUS_PERMS_GROUP_ID"] = $GLOBALS["USER"]->GetUserGroupArray();
@@ -472,7 +472,7 @@ class CSaleMobileOrderUtils
 				$arVal = CSaleLocation::GetByID($pVal["VALUE"], LANG);
 
 				$arOrder["CUSTOMER_LOCATION"] = htmlspecialcharsEx($arVal["COUNTRY_NAME"].
-					((strlen($arVal["COUNTRY_NAME"])<=0 || strlen($arVal["CITY_NAME"])<=0) ? "" : " - ").
+					(($arVal["COUNTRY_NAME"] == '' || $arVal["CITY_NAME"] == '') ? "" : " - ").
 					$arVal["CITY_NAME"]);
 			}
 		}
@@ -512,51 +512,38 @@ class CSaleMobileOrderUtils
 		return $arRetCur;
 	}
 
-	public static function getDeliveriesInfo($arDeliveryIds)
+	public static function getDeliveriesInfo($deliveryCodes)
 	{
-		if(!is_array($arDeliveryIds))
+		if(!is_array($deliveryCodes))
+		{
 			return false;
+		}
 
-		static $arDeliveries = array();
+		static $result = null;
 
-		$arTmpSD = array();
-
-		foreach ($arDeliveryIds as $deliveryId)
+		if($result !== null)
 		{
-			if(!$deliveryId || is_null($deliveryId))
-				continue;
+			return $result;
+		}
 
-			if(!isset($arDeliveries[$deliveryId]))
+		foreach ($deliveryCodes as $code)
+		{
+			$id = \CAllSaleDelivery::getIdByCode($code);
+
+			if($id <= 0)
 			{
-				if (strpos($deliveryId, ":") !== false)
-				{
-					$arId = explode(":", $deliveryId);
-					$dbDelivery = CSaleDeliveryHandler::GetList(array(), array("SID" => $arId[0]));
-
-					if($arDelivery = $dbDelivery->Fetch())
-					{
-						$arDeliveries[$deliveryId] = htmlspecialcharsEx($arDelivery["NAME"]);
-
-						if(strlen($arId[1]) > 0 && isset($arDelivery["PROFILES"][$arId[1]]["TITLE"]))
-							$arDeliveries[$deliveryId] .= " / ".htmlspecialcharsEx($arDelivery["PROFILES"][$arId[1]]["TITLE"]);
-					}
-				}
-				else
-				{
-					$arTmpSD[] = $deliveryId;
-				}
+				continue;
 			}
+
+			if(!($deliveryService = \Bitrix\Sale\Delivery\Services\Manager::getObjectById($id)))
+			{
+				continue;
+			}
+
+			$result[$code] = htmlspecialcharsbx($deliveryService->getNameWithParent());
 		}
 
-		if(is_array($arTmpSD))
-		{
-			$dbDelivery = CSaleDelivery::GetList(array(), array("ID" => $arTmpSD), false, false, array("ID", "NAME"));
-
-			while($arDelivery = $dbDelivery->Fetch())
-				$arDeliveries[$arDelivery["ID"]] = htmlspecialcharsbx($arDelivery["NAME"]);
-		}
-
-		return $arDeliveries;
+		return $result;
 	}
 
 	public static function getSitesNames($arSitesIds = array())
@@ -639,6 +626,18 @@ class CSaleMobileOrderUtils
 		return FormatDateFromDB(
 			$strDate,
 			CSite::GetDateFormat('FULL', LANGUAGE_ID)
+		);
+	}
+
+	/**
+	 * @param string $strDate
+	 * @return string
+	 */
+	static function getDate($strDate)
+	{
+		return FormatDateFromDB(
+			$strDate,
+			CSite::GetDateFormat('SHORT', LANGUAGE_ID)
 		);
 	}
 
@@ -791,12 +790,12 @@ class CSaleMobileOrderFilter
 	{
 		$retStrDateTime = '';
 
-		if (strlen($strDate) <= 0)
+		if ($strDate == '')
 			return $retStrDateTime;
 
 		if ($arDate = ParseDateTime($strDate, CSite::GetDateFormat("FULL", SITE_ID)))
 		{
-			if (StrLen($strDate) < 11)
+			if (mb_strlen($strDate) < 11)
 			{
 				$arDate["HH"] = 23;
 				$arDate["MI"] = 59;
@@ -959,19 +958,22 @@ class CSaleMobileOrderPush
 		$arOldSubs = &self::getData();
 		$arTmpSubs = array();
 
-		foreach ($arOldSubs as $subId => $subItem)
-			if($subItem["U"] == $userId)
-				$arTmpSubs[$subId] = &$arOldSubs[$subId];
-
-		foreach ($arTmpSubs as $subId => &$subItem)
+		if(is_array($arOldSubs))
 		{
-			if(isset($arSubs[self::$arEvents[$subItem["E"]]]))
-			{
-				$subItem["V"] = $arSubs[self::$arEvents[$subItem["E"]]];
-				unset($arSubs[self::$arEvents[$subItem["E"]]]);
-			}
+			foreach ($arOldSubs as $subId => $subItem)
+				if($subItem["U"] == $userId)
+					$arTmpSubs[$subId] = &$arOldSubs[$subId];
 
-			unset($arTmpSubs[$subId]);
+			foreach ($arTmpSubs as $subId => &$subItem)
+			{
+				if(isset($arSubs[self::$arEvents[$subItem["E"]]]))
+				{
+					$subItem["V"] = $arSubs[self::$arEvents[$subItem["E"]]];
+					unset($arSubs[self::$arEvents[$subItem["E"]]]);
+				}
+
+				unset($arTmpSubs[$subId]);
+			}
 		}
 
 		if(!empty($arSubs))
@@ -979,7 +981,6 @@ class CSaleMobileOrderPush
 				self::addSubscription($userId, $eventId, $value);
 
 		self::saveData();
-
 		return true;
 	}
 
@@ -1005,9 +1006,25 @@ class CSaleMobileOrderPush
 
 	private static function checkRights($userId, $eventId, $arParams)
 	{
-		$orderId = $arParams["ORDER_ID"];
-		$arUserGroups = CUser::GetUserGroup($userId);
-		return CSaleOrder::CanUserViewOrder($orderId, $arUserGroups, $userId);
+		$orderId = (int)$arParams["ORDER_ID"];
+
+		if($orderId <= 0)
+		{
+			return false;
+		}
+
+		$registry = \Bitrix\Sale\Registry::getInstance(\Bitrix\Sale\Registry::REGISTRY_TYPE_ORDER);
+
+		/** @var \Bitrix\Sale\Order $orderClass */
+		$orderClass = $registry->getOrderClassName();
+
+		if(!($order = $orderClass::load($orderId)))
+		{
+			return false;
+		}
+
+		$allowedStatusesView = \Bitrix\Sale\OrderStatus::getStatusesUserCanDoOperations($userId, array('view'));
+		return(in_array($order->getField('STATUS_ID'), $allowedStatusesView));
 	}
 
 	public static function getSubscriptions($userId)

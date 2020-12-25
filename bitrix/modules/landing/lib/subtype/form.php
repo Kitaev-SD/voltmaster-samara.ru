@@ -4,24 +4,21 @@ namespace Bitrix\Landing\Subtype;
 use \Bitrix\Main\Localization\Loc;
 use \Bitrix\Landing\Manager;
 use \Bitrix\Main\Loader;
+use \Bitrix\Crm\WebForm\Internals\FormTable;
+use \Bitrix\Socialservices\ApClient;
 
 Loc::loadMessages(__FILE__);
 
 class Form
 {
 	/**
-	 * Enabled or not B24 integration module.
+	 * Check if b24 or box portal
 	 * @return bool
+	 * @throws \Bitrix\Main\LoaderException
 	 */
-	protected static function isB24Connector()
+	protected static function isCrm()
 	{
-		static $isConnector = NULL;
-		if ($isConnector === NULL)
-		{
-			$isConnector = Loader::includeModule('b24connector') &&
-						   Loader::includeModule('socialservices');
-		}
-		return $isConnector;
+		return Loader::includeModule('crm');
 	}
 	
 	/**
@@ -30,47 +27,60 @@ class Form
 	 */
 	protected static function getForms()
 	{
-		static $forms = NULL;
-		
-		if ($forms !== NULL)
+		static $forms = array();
+		if ($forms)
 		{
 			return $forms;
 		}
-
-		$forms = array();
-
-		if (\Bitrix\Main\Loader::includeModule('crm'))
+		
+		if (self::isCrm())
 		{
-			$res = \Bitrix\Crm\WebForm\Internals\FormTable::getList(array(
-				'select' => array(
-					'ID',
-					'NAME',
-					'SECURITY_CODE',
-					'IS_CALLBACK_FORM',
-				),
-				'filter' => array(
-					'ACTIVE' => 'Y',
-				),
-				'order' => array(
-					'ID' => 'DESC',
-				),
-			));
-			while ($row = $res->fetch())
-			{
-				$forms[] = $row;
-			}
-			$forms = self::prepareForms($forms);
+			$forms = self::getFormsForPortal();
 		}
-		elseif (self::isB24Connector())
+		elseif (Manager::isB24Connector())
 		{
-			$client = \Bitrix\Socialservices\ApClient::init();
-			if ($client)
+			$forms = self::getFormsViaConnector();
+		}
+		$forms = self::prepareForms($forms);
+		
+		return $forms;
+	}
+	
+	protected static function getFormsForPortal()
+	{
+		$forms = array();
+		$res = FormTable::getList(array(
+			'select' => array(
+				'ID',
+				'NAME',
+				'SECURITY_CODE',
+				'IS_CALLBACK_FORM',
+			),
+			'filter' => array(
+				'ACTIVE' => 'Y',
+			),
+			'order' => array(
+				'ID' => 'DESC',
+			),
+		));
+		while ($row = $res->fetch())
+		{
+			$forms[] = $row;
+		}
+		
+		return $forms;
+	}
+	
+	protected static function getFormsViaConnector()
+	{
+		$forms = array();
+		$client = ApClient::init();
+		if ($client)
+		{
+			$res = $client->call('crm.webform.list');
+			if (isset($res['result']) && is_array($res['result']))
 			{
-				$res = $client->call('crm.webform.list');
-				if (isset($res['result']) && is_array($res['result']))
-				{
-					$forms = self::prepareForms($res['result']);
-				}
+				$forms = $res['result'];
 			}
 		}
 		
@@ -115,16 +125,16 @@ class Form
 	 */
 	protected static function getAttrs()
 	{
-		static $attrs = NULL;
-		if ($attrs !== NULL)
+		static $attrs = [];
+		if ($attrs)
 		{
 			return $attrs;
 		}
-
+		
 		// get from CRM or via connector
 		$forms = self::getForms();
-		$attrs = array();
-
+		
+		
 		// create data-attributes list
 		if (!empty($forms))
 		{
@@ -177,7 +187,7 @@ class Form
 		else
 		{
 			// portal or SMN with b24connector
-			if (Manager::isB24() || self::isB24Connector())
+			if (Manager::isB24() || Manager::isB24Connector())
 			{
 				$attrs[] = array(
 					'name' => Loc::getMessage('LANDING_BLOCK_WEBFORM'),
@@ -191,7 +201,6 @@ class Form
 					),
 				);
 				
-				// todo:may check CP or BUS in form init script later
 				$attrs[] = array(
 					'attribute' => 'data-b24form-connector',
 					'hidden' => true,
@@ -226,7 +235,7 @@ class Form
 	 * @param array $params Additional params.
 	 * @return array
 	 */
-	public static function prepareManifest(array $manifest, \Bitrix\Landing\Block $block = NULL, array $params = array())
+	public static function prepareManifest(array $manifest, \Bitrix\Landing\Block $block = null, array $params = array())
 	{
 		// add extension
 		if (
@@ -247,7 +256,7 @@ class Form
 		{
 			$manifest['assets']['ext'][] = 'landing_form';
 		}
-
+		
 		// add settings link
 		if (
 			!isset($manifest['block']) ||
@@ -260,51 +269,63 @@ class Form
 		{
 			$link = '/crm/webform/';
 		}
-		else if (self::isB24Connector())
+		else if (Manager::isB24Connector())
 		{
 			$link = '/bitrix/admin/b24connector_crm_forms.php?lang=' . LANGUAGE_ID;
 		}
 		if (isset($link))
 		{
 			$manifest['block']['attrsFormDescription'] = '<a href="' . $link . '" target="_blank">' .
-														 	Loc::getMessage('LANDING_BLOCK_FORM_CONFIG') .
-														 '</a>';
+				Loc::getMessage('LANDING_BLOCK_FORM_CONFIG') .
+				'</a>';
 		}
 
 		// if no forms - will be show alert in javascript form init
 
 		// add callbacks
 		$manifest['callbacks'] = array(
-			'afterAdd' => function (\Bitrix\Landing\Block &$block)
+			'afterAdd' => function(\Bitrix\Landing\Block &$block)
 			{
 				$forms = self::getForms();
+				$attrsToSet = [
+					'data-b24form' => '',
+					'data-b24form-original-domain' => '',
+				];
 				if (!empty($forms))
 				{
-					$attrsToSet = array('data-b24form' => $forms[0]['value']);
+					$attrsToSet['data-b24form'] = $forms[0]['value'];
 					$attrsToSet['data-b24form-original-domain'] = self::getOriginalFormDomain();
 					
-					$block->setAttributes(array(
-						'.bitrix24forms' => $attrsToSet,
-					));
-					$block->save();
+					// When create preview sites on repo need set demo portal
+					if ((defined('LANDING_IS_REPO') && LANDING_IS_REPO === true))
+					{
+						$attrsToSet['data-b24form'] = '1|n3j8e2';
+						$attrsToSet['data-b24form-original-domain'] = 'https://landing.bitrix24.ru';
+					}
 				}
-				// todo: may check CP or BUS in form init script later
-				// if not form on BUS - set flag
-				else if (self::isB24Connector())
+				
+				// set BUS flag
+				if (!self::isCrm())
 				{
-					$block->setAttributes(array(
-						'.bitrix24forms' => array('data-b24form-connector' => 'Y'),
-					));
-					$block->save();
+					$attrsToSet["data-b24form-connector"] = 'Y';
 				}
+				
+				$block->setAttributes(array(
+					'.bitrix24forms' => $attrsToSet,
+				));
+				$block->save();
 			},
 		);
-		
-		// add attrs
-		$manifest['attrs'] = array(
-			'.bitrix24forms' => self::getAttrs(),
-		);
-		
+
+		if(
+			!array_key_exists('attrs', $manifest)
+			|| !is_array($manifest['attrs'])
+		)
+		{
+			$manifest['attrs'] = [];
+		}
+		$manifest['attrs']['.bitrix24forms'] = self::getAttrs();
+
 		return $manifest;
 	}
 
@@ -325,9 +346,9 @@ class Form
 				);
 		}
 		// if use b24 connector - need get portal url
-		else if (self::isB24Connector())
+		else if (Manager::isB24Connector())
 		{
-			if ($client = \Bitrix\Socialservices\ApClient::init())
+			if ($client = ApClient::init())
 			{
 				$connection = $client->getConnection();
 				$domain = parse_url($connection['ENDPOINT']);

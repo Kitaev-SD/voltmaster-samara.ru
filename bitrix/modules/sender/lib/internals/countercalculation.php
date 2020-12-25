@@ -11,6 +11,7 @@ namespace Bitrix\Sender\Internals;
 use Bitrix\Main\Application;
 use Bitrix\Main\Config\Option;
 use Bitrix\Sender\Runtime;
+use Bitrix\Sender\Internals\Model;
 
 class CounterCalculation
 {
@@ -221,7 +222,7 @@ class CounterCalculation
 				return true;
 			}
 
-			\Bitrix\Sender\PostingRecipientTable::update(array('ID' => $item['RECIPIENT_ID']), array('IS_' . $type => 'Y'));
+			Model\Posting\RecipientTable::update($item['RECIPIENT_ID'], ['IS_' . $type => 'Y']);
 		}
 
 		return false;
@@ -268,7 +269,7 @@ class CounterCalculation
 				$updateFields = self::getPostingStatusUpdateFields($lastPostingId, $statusList);
 				if($updateFields)
 				{
-					\Bitrix\Sender\PostingTable::update(array('ID' => $lastPostingId), $updateFields);
+					Model\PostingTable::update($lastPostingId, $updateFields);
 				}
 
 
@@ -324,7 +325,7 @@ class CounterCalculation
 				return true;
 			}
 
-			\Bitrix\Sender\PostingTable::update(array('ID' => $item['POSTING_ID']), array('COUNT_' . $type => $item['CNT']));
+			Model\PostingTable::update($item['POSTING_ID'], array('COUNT_' . $type => $item['CNT']));
 		}
 
 		return false;
@@ -364,7 +365,7 @@ class CounterCalculation
 	{
 		$query = null;
 		$connection = \Bitrix\Main\Application::getConnection();
-		switch(strtoupper($connection->getType()))
+		switch(mb_strtoupper($connection->getType()))
 		{
 			case 'MSSQL':
 				$query = "SELECT ID FROM b_sender_contact WHERE TYPE_ID=1 AND CODE LIKE '%[A-Z]%' COLLATE Latin1_General_BIN";

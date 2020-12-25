@@ -8,7 +8,13 @@ if ($arParams['SHOW_ORDER_PAGE'] !== 'Y')
 	LocalRedirect($arParams['SEF_FOLDER']);
 }
 
-if (strlen($arParams["MAIN_CHAIN_NAME"]) > 0)
+global $USER;
+if ($arParams['USE_PRIVATE_PAGE_TO_AUTH'] === 'Y' && !$USER->IsAuthorized())
+{
+	LocalRedirect($arResult['PATH_TO_AUTH_PAGE']);
+}
+
+if ($arParams["MAIN_CHAIN_NAME"] <> '')
 {
 	$APPLICATION->AddChainItem(htmlspecialcharsbx($arParams["MAIN_CHAIN_NAME"]), $arResult['SEF_FOLDER']);
 }
@@ -29,13 +35,15 @@ $arDetParams = array(
 		"CACHE_GROUPS" => $arParams["CACHE_GROUPS"],
 		"RESTRICT_CHANGE_PAYSYSTEM" => $arParams["ORDER_RESTRICT_CHANGE_PAYSYSTEM"],
 		"REFRESH_PRICES" => $arParams["ORDER_REFRESH_PRICES"],
+		"DISALLOW_CANCEL" => $arParams["ORDER_DISALLOW_CANCEL"],
 		"HIDE_USER_INFO" => $arParams["ORDER_HIDE_USER_INFO"],
 		"AUTH_FORM_IN_TEMPLATE" => 'Y',
+		"CONTEXT_SITE_ID" => $arParams["CONTEXT_SITE_ID"],
 		"CUSTOM_SELECT_PROPS" => $arParams["CUSTOM_SELECT_PROPS"]
 	);
 foreach($arParams as $key => $val)
 {
-	if(strpos($key, "PROP_") !== false)
+	if(mb_strpos($key, "PROP_") !== false)
 		$arDetParams[$key] = $val;
 }
 

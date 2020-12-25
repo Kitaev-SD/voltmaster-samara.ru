@@ -218,7 +218,7 @@
 				{
 					return;
 				}
-				
+
 				this.createItem(connectorData.ID);
 			}, this);
 		}
@@ -244,11 +244,30 @@
 		var isFilter = connectorData.IS_FILTER;
 		var html = connectorData.FORM;
 
-		var randomId = Math.floor(Math.random() * (10000 - 100 + 1)) + 100;
+		var matches;
+		var randomId;
+		var filterId = connectorData.FILTER_ID;
+		if (matches = html.match(/--filter--([^-]+)--/))
+		{
+			randomId = matches[1];
+			if (this.getItemByFilterId(connectorData.ID + '_' + randomId))
+			{
+				randomId = randomId + Math.floor(Math.random() * (10000 - 100 + 1)) + 100;
+			}
+			randomId = '--filter--' + randomId + '--';
+			html = html.replace(/--filter--([^-]+)--/g, randomId);
+			filterId = filterId.replace(/--filter--([^-]+)--/g, "%CONNECTOR_NUM%");
+		}
+		else
+		{
+			randomId = Math.floor(Math.random() * (10000 - 100 + 1)) + 100;
+		}
 		html = html.replace(new RegExp("%CONNECTOR_NUM%",'g'), randomId);
+
+
 		html = this.getConnectorForm(
 			{
-				'%CONNECTOR_FILTER_ID%': connectorData.FILTER_ID,
+				'%CONNECTOR_FILTER_ID%': filterId,
 				'%CONNECTOR_NUM%': randomId,
 				'%CONNECTOR_CODE%': connectorData.CODE,
 				'%CONNECTOR_MODULE_ID%': connectorData.MODULE_ID,
@@ -330,13 +349,17 @@
 			return;
 		}
 
-		var items = this.availableConnectors.map(function (item) {
-			return {
-				id: item.ID,
-				text: item.NAME,
-				onclick: this.onMenuAddClick.bind(this, item.ID)
-			};
-		}, this);
+		var items = this.availableConnectors
+			.filter(function (item) {
+				return item.ID !== 'sender_contact_list';
+			})
+			.map(function (item) {
+				return {
+					id: item.ID,
+					text: item.NAME,
+					onclick: this.onMenuAddClick.bind(this, item.ID)
+				};
+			}, this);
 
 		this.menuAdd = BX.PopupMenu.create(
 			'sender-segment-edit-menu-add',
@@ -402,7 +425,12 @@
 				continue;
 			}
 
-			html = html.replace(new RegExp(key,'g'), data[key]);
+			var value = data[key];
+			if (BX.type.isString(value))
+			{
+				value = value.replace(new RegExp('\\$','g'), '$$$');
+			}
+			html = html.replace(new RegExp(key,'g'), value);
 		}
 
 		return html;
@@ -510,10 +538,113 @@
 	FilterListener.prototype.onBeforeApplyFilter = function (filterId)
 	{
 		var item = this.manager.getItemByFilterId(filterId);
+		var filter = BX.Main.filterManager.getById(filterId)
+		var dealCategory = filter.getField('DEAL_CATEGORY_ID');
+		var hasValues = false;
+
+		for(var id in filter.getFilterFieldsValues())
+		{
+			if(filter.getFilterFieldsValues().hasOwnProperty(id))
+			{
+				var value = filter.getFilterFieldsValues()[id];
+				if(
+					value !== 'exact' &&
+					value !== 'NONE' &&
+					value !== ''
+				)
+				{
+					if(Array.isArray(value) && !value.length)
+					{
+						continue;
+					}
+
+					hasValues = true;
+				}
+			}
+		}
+
+		if(dealCategory && hasValues)
+		{
+			if(typeof dealCategory.options.ITEMS[0] !== 'undefined')
+			{
+				this.setDefaultValue(dealCategory, {0: dealCategory.options.ITEMS[0].VALUE});
+			}
+		}
+
 		if (item)
 		{
 			item.animateCounter(true);
 		}
+	};
+
+	FilterListener.prototype.setDefaultValue = function(field, value)
+	{
+		var container = field.parent.getFieldListContainer();
+		Object.entries(value).forEach(function (data) {
+			var fieldValue = data[1];
+
+			var fieldNode = container.querySelector(
+				"[data-name='"
+					.concat(field.id, "'] [data-name='")
+					.concat(field.id, "'], [data-name='")
+					.concat(field.id, "'] [name='")
+					.concat(field.id, "']"));
+
+			if (fieldNode) {
+				var dataValue = fieldNode.getAttribute('data-value');
+				if(dataValue !== "[]")
+				{
+					return;
+				}
+
+				if (BX.Dom.hasClass(fieldNode, 'main-ui-multi-select')) {
+					var items = BX.Dom.attr(fieldNode, 'data-items');
+
+					if (BX.Type.isArray(items)) {
+						var item = items.find(function (currentItem) {
+							return currentItem.VALUE === fieldValue;
+						});
+
+						if (BX.Type.isPlainObject(item)) {
+							BX.Dom.attr(fieldNode, 'data-value', item);
+							var nameNode = fieldNode.querySelector('.main-ui-square-container');
+
+							if (nameNode) {
+								var squareNode =
+									BX.create('span', {
+										'props': {
+											'className': 'main-ui-square'
+										},
+										'attrs': {
+											'data-item': JSON.stringify(item)
+										}
+									});
+								var squareNodeItem =
+									BX.create('span', {
+										'props': {
+											'className': 'main-ui-square-item'
+										}
+									});
+								var squareNodeRem =
+									BX.create('span', {
+										'props': {
+											'className': 'main-ui-item-icon main-ui-square-delete'
+										}
+									});
+
+								squareNodeItem.innerText = item.NAME;
+								squareNode.append(squareNodeItem);
+								squareNode.append(squareNodeRem);
+
+								nameNode.append(squareNode);
+							}
+							var value = [item];
+							fieldNode.setAttribute('data-value', JSON.stringify(value));
+						}
+					}
+				}
+			}
+		});
 	};
 	FilterListener.prototype.onFilterData = function (filterId, promise)
 	{
@@ -528,6 +659,7 @@
 	};
 	FilterListener.prototype.onApplyFilter = function (id, data, ctx, promise, params)
 	{
+		//this.clearEmptyFilterFields(ctx);
 		// disable promise auto resolving
 		params.autoResolve = false;
 		this.manager.updateFilterData(id, this.onFilterData.bind(this, id, promise));
@@ -546,7 +678,6 @@
 	};
 	FilterListener.prototype.onFilterShow = function (filter)
 	{
-		this.clearEmptyFilterFields(filter);
 		if (this.getShowedFilterFields(filter).length === 0)
 		{
 			filter.restoreDefaultFields();
@@ -554,7 +685,6 @@
 	};
 	FilterListener.prototype.onFilterBlur = function (filter)
 	{
-		this.clearEmptyFilterFields(filter);
 	};
 	FilterListener.prototype.clearEmptyFilterFields = function (filter)
 	{
@@ -588,7 +718,8 @@
 					}).length === 0;
 
 				default:
-					return (typeof (values[name]) === "undefined" || values[name] === "");
+					return (typeof (values[name]) === "undefined" || values[name] === ""  ||
+						(typeof values[name] === "object" && values[name].hasOwnProperty('length') && !values[name].length));
 			}
 		});
 

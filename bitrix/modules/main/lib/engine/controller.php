@@ -3,8 +3,11 @@
 namespace Bitrix\Main\Engine;
 
 
+use Bitrix\Main\Application;
+use Bitrix\Main\Component\ParameterSigner;
 use Bitrix\Main\Config\Configuration;
 use Bitrix\Main\Diag\ExceptionHandlerFormatter;
+use Bitrix\Main\Engine\AutoWire\Parameter;
 use Bitrix\Main\Engine\Contract\Controllerable;
 use Bitrix\Main\Engine\Response\Converter;
 use Bitrix\Main\Error;
@@ -19,6 +22,8 @@ use Bitrix\Main\EventResult;
 use Bitrix\Main\HttpResponse;
 use Bitrix\Main\Localization\Loc;
 use Bitrix\Main\Request;
+use Bitrix\Main\Response;
+use Bitrix\Main\Security\Sign\BadSignatureException;
 use Bitrix\Main\SystemException;
 use Bitrix\Main\Web\PostDecodeFilter;
 
@@ -56,6 +61,7 @@ class Controller implements Errorable, Controllerable
 	private $filePath;
 	/** @var array */
 	private $sourceParametersList;
+	private $unsignedParameters;
 
 	/**
 	 * Returns the fully qualified name of this class.
@@ -133,12 +139,60 @@ class Controller implements Errorable, Controllerable
 	 */
 	final public function getActionUri($actionName, array $params = array(), $absolute = false)
 	{
-		if (strpos($this->getFilePath(), '/components/') === false)
+		if (mb_strpos($this->getFilePath(), '/components/') === false)
 		{
 			return UrlManager::getInstance()->createByController($this, $actionName, $params, $absolute);
 		}
 
 		return UrlManager::getInstance()->createByComponentController($this, $actionName, $params, $absolute);
+	}
+
+	/**
+	 * @return mixed
+	 */
+	final public function getUnsignedParameters()
+	{
+		return $this->unsignedParameters;
+	}
+
+	final protected function processUnsignedParameters()
+	{
+		foreach ($this->getSourceParametersList() as $source)
+		{
+			if (isset($source['signedParameters']) && is_string($source['signedParameters']))
+			{
+				try
+				{
+					$this->unsignedParameters = ParameterSigner::unsignParameters(
+						$this->getSaltToUnsign(),
+						$source['signedParameters']
+					);
+				}
+				catch (BadSignatureException $exception)
+				{}
+
+
+				return;
+			}
+		}
+	}
+
+	/**
+	 * Tries to find salt from request. It's "c" (component name) in general.
+	 *
+	 * @return string|null
+	 */
+	protected function getSaltToUnsign()
+	{
+		foreach ($this->getSourceParametersList() as $source)
+		{
+			if (isset($source['c']) && is_string($source['c']))
+			{
+				return $source['c'];
+			}
+		}
+
+		return null;
 	}
 
 	/**
@@ -168,7 +222,7 @@ class Controller implements Errorable, Controllerable
 	{
 		return $this->converter->process($data);
 	}
-	
+
 	/**
 	 * Returns list of all
 	 * @return array
@@ -176,24 +230,51 @@ class Controller implements Errorable, Controllerable
 	final public function listNameActions()
 	{
 		$actions = array_keys($this->getConfigurationOfActions());
-		$lengthSuffix = strlen(self::METHOD_ACTION_SUFFIX);
+		$lengthSuffix = mb_strlen(self::METHOD_ACTION_SUFFIX);
 
 		$class = new \ReflectionClass($this);
 		foreach ($class->getMethods(\ReflectionMethod::IS_PUBLIC) as $method)
 		{
-			$probablySuffix = substr($method->getName(), -$lengthSuffix);
+			$probablySuffix = mb_substr($method->getName(), -$lengthSuffix);
 			if ($probablySuffix === self::METHOD_ACTION_SUFFIX)
 			{
-				$actions[] = strtolower(substr($method->getName(), 0, -$lengthSuffix));
+				$actions[] = mb_strtolower(mb_substr($method->getName(), 0, -$lengthSuffix));
 			}
 		}
 
 		return array_unique($actions);
 	}
 
+	/**
+	 * @return array
+	 */
 	public function configureActions()
 	{
-		return array();
+		return [];
+	}
+
+	/**
+	 * @return Parameter[]
+	 */
+	public function getAutoWiredParameters()
+	{
+		return [];
+	}
+
+	/**
+	 * @return Parameter|null
+	 */
+	public function getPrimaryAutoWiredParameter()
+	{
+		return null;
+	}
+
+	/**
+	 * @return Parameter[]
+	 */
+	final public function getDefaultAutoWiredParameters()
+	{
+		return [];
 	}
 
 	private function buildConfigurationOfActions()
@@ -238,6 +319,18 @@ class Controller implements Errorable, Controllerable
 	}
 
 	/**
+	 * @param array $sourceParametersList
+	 *
+	 * @return Controller
+	 */
+	final public function setSourceParametersList($sourceParametersList)
+	{
+		$this->sourceParametersList = $sourceParametersList;
+
+		return $this;
+	}
+
+	/**
 	 * @param       $actionName
 	 * @param array $sourceParametersList
 	 *
@@ -253,7 +346,8 @@ class Controller implements Errorable, Controllerable
 
 		try
 		{
-			$this->sourceParametersList = $sourceParametersList;
+			$this->setSourceParametersList($sourceParametersList);
+			$this->processUnsignedParameters();
 
 			$action = $this->create($actionName);
 			if (!$action)
@@ -262,6 +356,10 @@ class Controller implements Errorable, Controllerable
 			}
 
 			$this->attachFilters($action);
+			if ($this->shouldDecodePostData($action))
+			{
+				$this->decodePostData();
+			}
 
 			if ($this->prepareParams() &&
 				$this->processBeforeAction($action) === true &&
@@ -282,17 +380,10 @@ class Controller implements Errorable, Controllerable
 				$result = $probablyResult;
 			}
 		}
-		catch (\Exception $e)
-		{
-			$this->runProcessingException($e);
-		}
-		catch (\Error $e)
-		{
-			$this->runProcessingError($e);
-		}
-		finally
+		catch (\Throwable $e)
 		{
 			$this->processExceptionInDebug($e);
+			$this->runProcessingThrowable($e);
 		}
 
 		$this->logDebugInfo();
@@ -300,10 +391,18 @@ class Controller implements Errorable, Controllerable
 		return $result;
 	}
 
-	private function processExceptionInDebug($e)
+	protected function writeToLogException(\Throwable $e)
 	{
+		$exceptionHandler = Application::getInstance()->getExceptionHandler();
+		$exceptionHandler->writeToLog($e);
+	}
+
+	private function processExceptionInDebug(\Throwable $e)
+	{
+		$this->writeToLogException($e);
+
 		$exceptionHandling = Configuration::getValue('exception_handling');
-		if (!empty($exceptionHandling['debug']) && ($e instanceof \Throwable || $e instanceof \Exception))
+		if (!empty($exceptionHandling['debug']))
 		{
 			$this->addError(new Error(ExceptionHandlerFormatter::format($e)));
 			if ($e->getPrevious())
@@ -313,9 +412,9 @@ class Controller implements Errorable, Controllerable
 		}
 	}
 
-	final public function getFullEventName($eventName)
+	final public static function getFullEventName($eventName)
 	{
-		return $this::className() . '::' . $eventName;
+		return get_called_class() . '::' . $eventName;
 	}
 
 	/**
@@ -353,13 +452,18 @@ class Controller implements Errorable, Controllerable
 	 */
 	protected function processBeforeAction(Action $action)
 	{
-		if ($this->request->isPost())
-		{
-			\CUtil::jSPostUnescape();
-			$this->request->addFilter(new PostDecodeFilter);
-		}
-
 		return true;
+	}
+
+	protected function shouldDecodePostData(Action $action): bool
+	{
+		return $this->request->isPost();
+	}
+
+	final protected function decodePostData(): void
+	{
+		\CUtil::jSPostUnescape();
+		$this->request->addFilter(new PostDecodeFilter);
 	}
 
 	/**
@@ -375,7 +479,7 @@ class Controller implements Errorable, Controllerable
 	{
 		$event = new Event(
 			'main',
-			$this->getFullEventName(static::EVENT_ON_BEFORE_ACTION),
+			static::getFullEventName(static::EVENT_ON_BEFORE_ACTION),
 			array(
 				'action' => $action,
 				'controller' => $this,
@@ -413,11 +517,22 @@ class Controller implements Errorable, Controllerable
 	protected function processAfterAction(Action $action, $result)
 	{}
 
+	/**
+	 * Finalizes response.
+	 * The method will be invoked when HttpApplication will be ready to send response to client.
+	 * It's a final place where Controller can interact with response.
+	 *
+	 * @param Response $response
+	 * @return void
+	 */
+	public function finalizeResponse(Response $response)
+	{}
+
 	final protected function triggerOnAfterAction(Action $action, $result)
 	{
 		$event = new Event(
 			'main',
-			$this->getFullEventName(static::EVENT_ON_AFTER_ACTION),
+			static::getFullEventName(static::EVENT_ON_AFTER_ACTION),
 			array(
 				'result' => $result,
 				'action' => $action,
@@ -442,7 +557,7 @@ class Controller implements Errorable, Controllerable
 		if (method_exists($this, $methodName))
 		{
 			$method = new \ReflectionMethod($this, $methodName);
-			if ($method->isPublic() && strtolower($method->getName()) === strtolower($methodName))
+			if ($method->isPublic() && mb_strtolower($method->getName()) === mb_strtolower($methodName))
 			{
 				return new InlineAction($actionName, $this, $config);
 			}
@@ -649,7 +764,7 @@ class Controller implements Errorable, Controllerable
 
 			$eventManager->addEventHandler(
 				'main',
-				$this->getFullEventName(static::EVENT_ON_BEFORE_ACTION),
+				static::getFullEventName(static::EVENT_ON_BEFORE_ACTION),
 				array($filter, 'onBeforeAction')
 			);
 
@@ -668,7 +783,7 @@ class Controller implements Errorable, Controllerable
 
 			$eventManager->addEventHandler(
 				'main',
-				$this->getFullEventName(static::EVENT_ON_AFTER_ACTION),
+				static::getFullEventName(static::EVENT_ON_AFTER_ACTION),
 				array($filter, 'onAfterAction')
 			);
 		}
@@ -677,7 +792,7 @@ class Controller implements Errorable, Controllerable
 	final protected function getActionConfig($actionName)
 	{
 		$listOfActions = array_change_key_case($this->configurationOfActions, CASE_LOWER);
-		$actionName = strtolower($actionName);
+		$actionName = mb_strtolower($actionName);
 
 		if (!isset($listOfActions[$actionName]))
 		{
@@ -692,6 +807,18 @@ class Controller implements Errorable, Controllerable
 		$this->configurationOfActions[$actionName] = $config;
 
 		return $this;
+	}
+
+	protected function runProcessingThrowable(\Throwable $throwable)
+	{
+		if ($throwable instanceof \Exception)
+		{
+			$this->runProcessingException($throwable);
+		}
+		elseif ($throwable instanceof \Error)
+		{
+			$this->runProcessingError($throwable);
+		}
 	}
 
 	/**

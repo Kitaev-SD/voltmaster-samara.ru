@@ -12,6 +12,8 @@ return array(
 	'description' => Loc::getMessage('LANDING_DEMO_EVENTS_DESCRIPTION'),
 	'fields' => array(
 		'ADDITIONAL_FIELDS' => array(
+			'THEME_CODE' => 'events',
+
 			'METAOG_IMAGE' => 'https://cdn.bitrix24.site/bitrix/images/demo/page/events/preview.jpg',
 			'METAOG_TITLE' => Loc::getMessage('LANDING_DEMO_EVENTS_TITLE'),
 			'METAOG_DESCRIPTION' => Loc::getMessage('LANDING_DEMO_EVENTS_DESCRIPTION'),
@@ -24,9 +26,9 @@ return array(
 			array (
 				'CODE' => '0.menu_11_event',
 				'SORT' => '-100',
-				'CONTENT' => '<header class="landing-block landing-block u-header landing-ui-pattern-transparent u-header--floating g-z-index-9999">
+				'CONTENT' => '<header class="landing-block landing-block u-header u-header--sticky u-header--float g-z-index-9999">
 	<div class="u-header__section g-bg-darkblue-opacity-0_7 g-transition-0_3 g-py-10" data-header-fix-moment-exclude="g-bg-darkblue-opacity-0_7" data-header-fix-moment-classes="u-header__section--light g-bg-white-opacity-0_9">
-		<nav class="navbar navbar-expand-lg g-py-0">
+		<nav class="navbar navbar-expand-lg g-py-0 g-px-10">
 			<div class="container">
 				<!-- Logo -->
 				<a href="#" class="landing-block-node-menu-logo-link navbar-brand u-header__logo p-0">
@@ -123,7 +125,7 @@ return array(
 					</div>
 
 					<div class="col-md-3 text-md-right g-px-5">
-						<a class="landing-block-node-button btn btn-lg text-uppercase u-btn-white g-font-weight-700 g-font-size-11 g-color-white--hover g-bg-primary--hover g-brd-none rounded-0 g-py-18" href="#">Register Now</a>
+						<a class="landing-block-node-button btn g-btn-type-solid g-btn-size-sm g-btn-px-l text-uppercase g-btn-white rounded-0 g-py-18" href="#">Register Now</a>
 					</div>
 				</div>
 			</div>
@@ -131,7 +133,7 @@ return array(
 			<div class="container u-bg-overlay__inner g-bottom-minus-70 px-0 g-z-index-2">
 				<div class="row u-shadow-v23 g-theme-event-bg-blue-dark-v2 mx-0">
 					<div class="col-md-6 px-0">
-						<div class="js-carousel text-center u-carousel-v5 g-overflow-hidden h-100 g-max-height-50vh" data-infinite="true" data-arrows-classes="u-arrow-v1 g-absolute-centered--y g-width-40 g-height-40 g-font-size-20 g-color-white g-color-primary--hover g-bg-primary g-bg-white--hover g-transition-0_2 g-transition--ease-in" data-arrow-left-classes="fa fa-angle-left g-left-0" data-arrow-right-classes="fa fa-angle-right g-right-0">
+						<div class="js-carousel text-center u-carousel-v5 g-overflow-hidden h-100" data-infinite="true" data-arrows-classes="u-arrow-v1 g-absolute-centered--y g-width-40 g-height-40 g-font-size-20 g-color-white g-color-primary--hover g-bg-primary g-bg-white--hover g-transition-0_2 g-transition--ease-in" data-arrow-left-classes="fa fa-angle-left g-left-0" data-arrow-right-classes="fa fa-angle-right g-right-0">
 							<div class="landing-block-node-card landing-block-node-card-img js-slide g-bg-img-hero g-min-height-50vh" style="background-image: url(https://cdn.bitrix24.site/bitrix/images/landing/business/1000x667/img1.jpg);"></div>
 
 							<div class="landing-block-node-card landing-block-node-card-img js-slide g-bg-img-hero g-min-height-50vh" style="background-image: url(https://cdn.bitrix24.site/bitrix/images/landing/business/1000x667/img2.jpg);"></div>
@@ -177,16 +179,16 @@ return array(
 					</div>
 
 					<div class="row mx-0">
-						<div class="col-md-5 g-order-2 g-order-1--sm d-flex align-items-center flex-wrap flex-sm-nowrap px-0">
+						<div class="col-md-5 order-2 order-sm-1 d-flex align-items-center flex-wrap flex-sm-nowrap px-0">
 							<div class="u-heading-v1-4 g-brd-gray-light-v2 w-100 g-mb-20 g-mb-0--sm">
 								<div class="landing-block-node-card-time text-center g-pos-rel g-width-110 g-line-height-1_6 g-font-weight-600 g-color-white g-font-size-14 g-bg-gray-dark-v1 g-bg-primary--parent-hover g-py-5 g-px-10 mx-auto g-ml-0--md g-transition-0_2 g-transition--ease-in">15:30 - 17:30</div>
 							</div>
-							<div class="landing-block-node-card-img-container d-md-flex px-0 u-bg-overlay g-width-120 g-width-170--md g-height-120 g-height-170--md g-bg-black-opacity-0_3--after g-bg-white-opacity-0--after--parent-hover g-overflow-hidden g-rounded-50x g-mr-30--md mx-auto g-mb-15 g-mb-0--md g-transition-0_2 g-transition--ease-in col-auto">
+							<div class="landing-block-node-card-img-container d-md-flex px-0 u-bg-overlay g-width-120 g-width-170--md g-height-120 g-height-170--md g-bg-black-opacity-0_3--after g-bg-white-opacity-0--after--parent-hover g-overflow-hidden g-rounded-50x g-mr-30--md mx-auto g-mb-15 g-mb-0--md g-transition-0_2 g-transition--ease-in col-auto g-pointer-events-before-after-none">
 									<img class="landing-block-node-card-img img-fluid g-rounded-50x" src="https://cdn.bitrix24.site/bitrix/images/landing/business/200x200/img1.jpg" alt="" />
 								</div>
 						</div>
 
-						<div class="col-md-7 g-order-1 g-order-2--sm px-0 g-mb-15 g-mb-0--md">
+						<div class="col-md-7 order-1 order-sm-2 px-0 g-mb-15 g-mb-0--md">
 							<div class="media d-block d-md-flex">
 								<div class="media-body align-self-center">
 									<h4 class="landing-block-node-card-subtitle text-uppercase g-font-weight-700 g-font-size-12 g-color-primary g-mb-5">
@@ -215,16 +217,16 @@ return array(
 					</div>
 
 					<div class="row mx-0">
-						<div class="col-md-5 g-order-2 g-order-1--sm d-flex align-items-center flex-wrap flex-sm-nowrap px-0">
+						<div class="col-md-5 order-2 order-sm-1 d-flex align-items-center flex-wrap flex-sm-nowrap px-0">
 							<div class="u-heading-v1-4 g-brd-gray-light-v2 w-100 g-mb-20 g-mb-0--sm">
 								<div class="landing-block-node-card-time text-center g-pos-rel g-width-110 g-line-height-1_6 g-font-weight-600 g-color-white g-font-size-14 g-bg-gray-dark-v1 g-bg-primary--parent-hover g-py-5 g-px-10 mx-auto g-ml-0--md g-transition-0_2 g-transition--ease-in">17:45 - 18:45</div>
 							</div>
-							<div class="landing-block-node-card-img-container d-md-flex px-0 u-bg-overlay g-width-120 g-width-170--md g-height-120 g-height-170--md g-bg-black-opacity-0_3--after g-bg-white-opacity-0--after--parent-hover g-overflow-hidden g-rounded-50x g-mr-30--md mx-auto g-mb-15 g-mb-0--md g-transition-0_2 g-transition--ease-in col-auto">
+							<div class="landing-block-node-card-img-container d-md-flex px-0 u-bg-overlay g-width-120 g-width-170--md g-height-120 g-height-170--md g-bg-black-opacity-0_3--after g-bg-white-opacity-0--after--parent-hover g-overflow-hidden g-rounded-50x g-mr-30--md mx-auto g-mb-15 g-mb-0--md g-transition-0_2 g-transition--ease-in col-auto g-pointer-events-before-after-none">
 									<img class="landing-block-node-card-img img-fluid g-rounded-50x" src="https://cdn.bitrix24.site/bitrix/images/landing/business/200x200/img2.jpg" alt="" />
 								</div>
 						</div>
 
-						<div class="col-md-7 g-order-1 g-order-2--sm px-0 g-mb-15 g-mb-0--md">
+						<div class="col-md-7 order-1 order-sm-2 px-0 g-mb-15 g-mb-0--md">
 							<div class="media d-block d-md-flex">
 								
 
@@ -254,16 +256,16 @@ return array(
 					</div>
 
 					<div class="row mx-0">
-						<div class="col-md-5 g-order-2 g-order-1--sm d-flex align-items-center flex-wrap flex-sm-nowrap px-0">
+						<div class="col-md-5 order-2 order-sm-1 d-flex align-items-center flex-wrap flex-sm-nowrap px-0">
 							<div class="u-heading-v1-4 g-brd-gray-light-v2 w-100 g-mb-20 g-mb-0--sm">
 								<div class="landing-block-node-card-time text-center g-pos-rel g-width-110 g-line-height-1_6 g-font-weight-600 g-color-white g-font-size-14 g-bg-gray-dark-v1 g-bg-primary--parent-hover g-py-5 g-px-10 mx-auto g-ml-0--md g-transition-0_2 g-transition--ease-in">19:00 - 21:00</div>
 							</div>
-							<div class="landing-block-node-card-img-container d-md-flex px-0 u-bg-overlay g-width-120 g-width-170--md g-height-120 g-height-170--md g-bg-black-opacity-0_3--after g-bg-white-opacity-0--after--parent-hover g-overflow-hidden g-rounded-50x g-mr-30--md mx-auto g-mb-15 g-mb-0--md g-transition-0_2 g-transition--ease-in col-auto">
+							<div class="landing-block-node-card-img-container d-md-flex px-0 u-bg-overlay g-width-120 g-width-170--md g-height-120 g-height-170--md g-bg-black-opacity-0_3--after g-bg-white-opacity-0--after--parent-hover g-overflow-hidden g-rounded-50x g-mr-30--md mx-auto g-mb-15 g-mb-0--md g-transition-0_2 g-transition--ease-in col-auto g-pointer-events-before-after-none">
 									<img class="landing-block-node-card-img img-fluid g-rounded-50x" src="https://cdn.bitrix24.site/bitrix/images/landing/business/200x200/img3.jpg" alt="" />
 								</div>
 						</div>
 
-						<div class="col-md-7 g-order-1 g-order-2--sm px-0 g-mb-15 g-mb-0--md">
+						<div class="col-md-7 order-1 order-sm-2 px-0 g-mb-15 g-mb-0--md">
 							<div class="media d-block d-md-flex">
 								
 
@@ -293,16 +295,16 @@ return array(
 					</div>
 
 					<div class="row mx-0">
-						<div class="col-md-5 g-order-2 g-order-1--sm d-flex align-items-center flex-wrap flex-sm-nowrap px-0">
+						<div class="col-md-5 order-2 order-sm-1 d-flex align-items-center flex-wrap flex-sm-nowrap px-0">
 							<div class="u-heading-v1-4 g-brd-gray-light-v2 w-100 g-mb-20 g-mb-0--sm">
 								<div class="landing-block-node-card-time text-center g-pos-rel g-width-110 g-line-height-1_6 g-font-weight-600 g-color-white g-font-size-14 g-bg-gray-dark-v1 g-bg-primary--parent-hover g-py-5 g-px-10 mx-auto g-ml-0--md g-transition-0_2 g-transition--ease-in">21:15 - 22:00</div>
 							</div>
-							<div class="landing-block-node-card-img-container d-md-flex px-0 u-bg-overlay g-width-120 g-width-170--md g-height-120 g-height-170--md g-bg-black-opacity-0_3--after g-bg-white-opacity-0--after--parent-hover g-overflow-hidden g-rounded-50x g-mr-30--md mx-auto g-mb-15 g-mb-0--md g-transition-0_2 g-transition--ease-in col-auto">
+							<div class="landing-block-node-card-img-container d-md-flex px-0 u-bg-overlay g-width-120 g-width-170--md g-height-120 g-height-170--md g-bg-black-opacity-0_3--after g-bg-white-opacity-0--after--parent-hover g-overflow-hidden g-rounded-50x g-mr-30--md mx-auto g-mb-15 g-mb-0--md g-transition-0_2 g-transition--ease-in col-auto g-pointer-events-before-after-none">
 									<img class="landing-block-node-card-img img-fluid g-rounded-50x" src="https://cdn.bitrix24.site/bitrix/images/landing/business/200x200/img4.jpg" alt="" />
 								</div>
 						</div>
 
-						<div class="col-md-7 g-order-1 g-order-2--sm px-0 g-mb-15 g-mb-0--md">
+						<div class="col-md-7 order-1 order-sm-2 px-0 g-mb-15 g-mb-0--md">
 							<div class="media d-block d-md-flex">
 								
 
@@ -349,13 +351,13 @@ return array(
 			array (
 				'CODE' => '01.big_with_text_3',
 				'SORT' => '2000',
-				'CONTENT' => '<section class="landing-block landing-block-node-img u-bg-overlay g-flex-centered g-height-100vh g-height-70vh g-bg-img-hero g-bg-black-opacity-0_5--after g-py-80" style="background-image: url(\'https://cdn.bitrix24.site/bitrix/images/landing/business/1920x1080/img8.jpg\');" data-fileid="-1" data-filehash="9eef207add73028ae50f74a9033c20cb">
+				'CONTENT' => '<section class="landing-block landing-block-node-img u-bg-overlay g-flex-centered g-min-height-70vh g-bg-img-hero g-bg-black-opacity-0_5--after g-py-80" style="background-image: url(\'https://cdn.bitrix24.site/bitrix/images/landing/business/1920x1080/img8.jpg\');" data-fileid="-1" data-filehash="9eef207add73028ae50f74a9033c20cb">
 	<div class="container g-max-width-800 text-center u-bg-overlay__inner g-mx-1 js-animation landing-block-node-container fadeInDown animated">
 		<h2 class="landing-block-node-title text-uppercase g-line-height-1 g-font-weight-700 g-font-size-30 g-color-white g-mb-20">PROMO | <span style="color: rgb(247, 56, 89);">VIDEO</span></h2>
 
 		<div class="landing-block-node-text g-color-white-opacity-0_7 g-mb-35">Nam sed erat aliquet libero aliquet commodo. Donec euismod augue non quam finibus, nec iaculis tellus gravida. Integer <p>efficitur eros ut dui laoreet, ut blandit turpis tincidunt.</p></div>
 		<div class="landing-block-node-button-container">
-			<a href="//www.youtube.com/watch?v=q4d8g9Dn3ww" class="landing-block-node-button btn btn-xl u-btn-primary text-uppercase g-font-weight-700 g-font-size-12 g-rounded-50 g-py-15 g-px-40 g-mb-15" target="_popup" data-url="//www.youtube.com/embed/q4d8g9Dn3ww?autoplay=1&amp;controls=1&amp;loop=0&amp;rel=0&amp;start=0&amp;html5=1&amp;v=q4d8g9Dn3ww">WATCH VIDEO</a>
+			<a href="//www.youtube.com/watch?v=q4d8g9Dn3ww" class="landing-block-node-button btn g-btn-primary g-btn-type-solid g-btn-px-l g-btn-size-md g-btn-primary text-uppercase g-rounded-50 g-py-15 g-mb-15" target="_popup" data-url="//www.youtube.com/embed/q4d8g9Dn3ww?autoplay=1&amp;controls=1&amp;loop=0&amp;rel=0&amp;start=0&amp;html5=1&amp;v=q4d8g9Dn3ww">WATCH VIDEO</a>
 		</div>
 	</div>
 </section>',
@@ -381,7 +383,7 @@ return array(
 				'SORT' => '3000',
 				'CONTENT' => '<section class="landing-block g-pt-10 g-pb-20">
 	<div class="container">
-		<div class="row">
+		<div class="row landing-block-inner">
 
 			<div class="landing-block-card landing-block-node-block col-md-4 g-mb-30 g-mb-0--md g-pt-10 js-animation fadeIn">
 				<img class="landing-block-node-img img-fluid g-mb-30" src="https://cdn.bitrix24.site/bitrix/images/landing/business/1000x667/img1.jpg" alt="" data-fileid="-1" data-filehash="9eef207add73028ae50f74a9033c20cb" />
@@ -433,18 +435,18 @@ return array(
 			array (
 				'CODE' => '30.2.three_cols_fix_img_and_links',
 				'SORT' => '4000',
-				'CONTENT' => '<section class="landing-block g-bg-gray-light-v5">
+				'CONTENT' => '<section class="landing-block g-bg-gray-light-v5 g-pt-30 g-pb-20">
 
-        <div class="container g-pt-30 g-pb-20">
-            <div class="row">
+        <div class="container">
+            <div class="row landing-block-inner">
 
-                <div class="landing-block-card col-sm-6 col-md-4 g-mb-20 js-animation fadeIn">
+                <div class="landing-block-card col-sm-6 col-md-4 js-animation fadeIn">
                     <article class="u-shadow-v28 g-bg-white">
                         <img class="landing-block-node-img img-fluid w-100" src="https://cdn.bitrix24.site/bitrix/images/landing/business/800x496/img9.jpg" alt="" data-fileid="-1" data-filehash="9eef207add73028ae50f74a9033c20cb" />
 
                         <div class="g-pos-rel">
                             <!-- SVG Background -->
-                            <svg class="g-pos-abs g-left-0 g-right-0" version="1.1" preserveaspectratio="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100%" height="140px" viewbox="20 -20 300 100" style="top: -70%;">
+                            <svg class="g-hidden-col-1 g-hidden-col-2 g-pos-abs g-left-0 g-right-0" version="1.1" preserveaspectratio="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100%" height="140px" viewbox="20 -20 300 100" style="top: -70%;">
                                 <path d="M30.913,43.944c0,0,42.911-34.464,87.51-14.191c77.31,35.14,113.304-1.952,146.638-4.729
               c48.654-4.056,69.94,16.218,69.94,16.218v54.396H30.913V43.944z" opacity="0.4" fill="#f0f1f3" />
                                 <path d="M-35.667,44.628c0,0,42.91-34.463,87.51-14.191c77.31,35.141,113.304-1.952,146.639-4.729
@@ -466,13 +468,13 @@ return array(
                     </article>
                 </div>
 
-                <div class="landing-block-card col-sm-6 col-md-4 g-mb-30 js-animation fadeIn">
+                <div class="landing-block-card col-sm-6 col-md-4 js-animation fadeIn">
                     <article class="u-shadow-v28 g-bg-white">
                         <img class="landing-block-node-img img-fluid w-100" src="https://cdn.bitrix24.site/bitrix/images/landing/business/800x496/img11.jpg" alt="" data-fileid="-1" data-filehash="9eef207add73028ae50f74a9033c20cb" />
 
                         <div class="g-pos-rel">
                             <!-- SVG Background -->
-                            <svg class="g-pos-abs g-left-0 g-right-0" version="1.1" preserveaspectratio="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100%" height="140px" viewbox="20 -20 300 100" style="top: -70%;">
+                            <svg class="g-hidden-col-1 g-hidden-col-2 g-pos-abs g-left-0 g-right-0" version="1.1" preserveaspectratio="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100%" height="140px" viewbox="20 -20 300 100" style="top: -70%;">
                                 <path d="M30.913,43.944c0,0,42.911-34.464,87.51-14.191c77.31,35.14,113.304-1.952,146.638-4.729
               c48.654-4.056,69.94,16.218,69.94,16.218v54.396H30.913V43.944z" opacity="0.4" fill="#f0f1f3" />
                                 <path d="M-35.667,44.628c0,0,42.91-34.463,87.51-14.191c77.31,35.141,113.304-1.952,146.639-4.729
@@ -495,13 +497,13 @@ return array(
                 </div>
 
 
-				<div class="landing-block-card col-sm-6 col-md-4 g-mb-30 js-animation fadeIn">
+				<div class="landing-block-card col-sm-6 col-md-4 js-animation fadeIn">
 					<article class="u-shadow-v28 g-bg-white">
 						<img class="landing-block-node-img img-fluid w-100" src="https://cdn.bitrix24.site/bitrix/images/landing/business/800x496/img10.jpg" alt="" data-fileid="-1" data-filehash="9eef207add73028ae50f74a9033c20cb" />
 
 						<div class="g-pos-rel">
 							<!-- SVG Background -->
-							<svg class="g-pos-abs g-left-0 g-right-0" version="1.1" preserveaspectratio="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100%" height="140px" viewbox="20 -20 300 100" style="top: -70%;">
+							<svg class="g-hidden-col-1 g-hidden-col-2 g-pos-abs g-left-0 g-right-0" version="1.1" preserveaspectratio="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100%" height="140px" viewbox="20 -20 300 100" style="top: -70%;">
 								<path d="M30.913,43.944c0,0,42.911-34.464,87.51-14.191c77.31,35.14,113.304-1.952,146.638-4.729
               c48.654-4.056,69.94,16.218,69.94,16.218v54.396H30.913V43.944z" opacity="0.4" fill="#f0f1f3" />
 								<path d="M-35.667,44.628c0,0,42.91-34.463,87.51-14.191c77.31,35.141,113.304-1.952,146.639-4.729
@@ -532,18 +534,18 @@ return array(
 			array (
 				'CODE' => '30.2.three_cols_fix_img_and_links',
 				'SORT' => '4500',
-				'CONTENT' => '<section class="landing-block g-bg-gray-light-v5">
+				'CONTENT' => '<section class="landing-block g-bg-gray-light-v5 g-pt-30 g-pb-20">
 
-        <div class="container g-pt-30 g-pb-20">
-            <div class="row">
+        <div class="container">
+            <div class="row landing-block-inner">
 
-                <div class="landing-block-card col-sm-6 col-md-4 g-mb-20 js-animation fadeIn">
+                <div class="landing-block-card col-sm-6 col-md-4 js-animation fadeIn">
                     <article class="u-shadow-v28 g-bg-white">
                         <img class="landing-block-node-img img-fluid w-100" src="https://cdn.bitrix24.site/bitrix/images/landing/business/1200x960/img8.jpg" alt="" data-fileid="-1" data-filehash="9eef207add73028ae50f74a9033c20cb" />
 
                         <div class="g-pos-rel">
                             <!-- SVG Background -->
-                            <svg class="g-pos-abs g-left-0 g-right-0" version="1.1" preserveaspectratio="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100%" height="140px" viewbox="20 -20 300 100" style="top: -70%;">
+                            <svg class="g-hidden-col-1 g-hidden-col-2 g-pos-abs g-left-0 g-right-0" version="1.1" preserveaspectratio="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100%" height="140px" viewbox="20 -20 300 100" style="top: -70%;">
                                 <path d="M30.913,43.944c0,0,42.911-34.464,87.51-14.191c77.31,35.14,113.304-1.952,146.638-4.729
               c48.654-4.056,69.94,16.218,69.94,16.218v54.396H30.913V43.944z" opacity="0.4" fill="#f0f1f3" />
                                 <path d="M-35.667,44.628c0,0,42.91-34.463,87.51-14.191c77.31,35.141,113.304-1.952,146.639-4.729
@@ -565,13 +567,13 @@ return array(
                     </article>
                 </div>
 
-                <div class="landing-block-card col-sm-6 col-md-4 g-mb-30 js-animation fadeIn">
+                <div class="landing-block-card col-sm-6 col-md-4 js-animation fadeIn">
                     <article class="u-shadow-v28 g-bg-white">
                         <img class="landing-block-node-img img-fluid w-100" src="https://cdn.bitrix24.site/bitrix/images/landing/business/1200x960/img7.jpg" alt="" data-fileid="-1" data-filehash="9eef207add73028ae50f74a9033c20cb" />
 
                         <div class="g-pos-rel">
                             <!-- SVG Background -->
-                            <svg class="g-pos-abs g-left-0 g-right-0" version="1.1" preserveaspectratio="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100%" height="140px" viewbox="20 -20 300 100" style="top: -70%;">
+                            <svg class="g-hidden-col-1 g-hidden-col-2 g-pos-abs g-left-0 g-right-0" version="1.1" preserveaspectratio="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100%" height="140px" viewbox="20 -20 300 100" style="top: -70%;">
                                 <path d="M30.913,43.944c0,0,42.911-34.464,87.51-14.191c77.31,35.14,113.304-1.952,146.638-4.729
               c48.654-4.056,69.94,16.218,69.94,16.218v54.396H30.913V43.944z" opacity="0.4" fill="#f0f1f3" />
                                 <path d="M-35.667,44.628c0,0,42.91-34.463,87.51-14.191c77.31,35.141,113.304-1.952,146.639-4.729
@@ -594,13 +596,13 @@ return array(
                 </div>
 
 
-				<div class="landing-block-card col-sm-6 col-md-4 g-mb-30 js-animation fadeIn">
+				<div class="landing-block-card col-sm-6 col-md-4 js-animation fadeIn">
 					<article class="u-shadow-v28 g-bg-white">
 						<img class="landing-block-node-img img-fluid w-100" src="https://cdn.bitrix24.site/bitrix/images/landing/business/1200x960/img9.jpg" alt="" data-fileid="-1" data-filehash="9eef207add73028ae50f74a9033c20cb" />
 
 						<div class="g-pos-rel">
 							<!-- SVG Background -->
-							<svg class="g-pos-abs g-left-0 g-right-0" version="1.1" preserveaspectratio="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100%" height="140px" viewbox="20 -20 300 100" style="top: -70%;">
+							<svg class="g-hidden-col-1 g-hidden-col-2 g-pos-abs g-left-0 g-right-0" version="1.1" preserveaspectratio="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100%" height="140px" viewbox="20 -20 300 100" style="top: -70%;">
 								<path d="M30.913,43.944c0,0,42.911-34.464,87.51-14.191c77.31,35.14,113.304-1.952,146.638-4.729
               c48.654-4.056,69.94,16.218,69.94,16.218v54.396H30.913V43.944z" opacity="0.4" fill="#f0f1f3" />
 								<path d="M-35.667,44.628c0,0,42.91-34.463,87.51-14.191c77.31,35.141,113.304-1.952,146.639-4.729
@@ -649,7 +651,7 @@ return array(
 				'CONTENT' => '<section class="landing-block g-pt-30 g-pb-20">
         <div class="container">
 
-            <div class="row no-gutters">
+            <div class="row no-gutters landing-block-inner">
 
                 <div class="landing-block-card js-animation col-md-4 g-mb-30 g-mb-0--md fadeInUp">
                     <article class="text-center g-brd-around g-color-gray g-brd-gray-light-v5 g-pa-10">
@@ -668,7 +670,7 @@ return array(
 
                             <ul class="landing-block-node-price-list list-unstyled g-mb-25"><li class="landing-block-node-price-list-item g-brd-bottom g-brd-gray-light-v3 g-py-12">Sed arcu erat, facilisis at tortor vel, blandit tristique enim. Donec dapibus neque consectetur tellus pretium, eget lacinia velit ullamcorper.</li></ul>
                             <div class="landing-block-node-price-container">
-                            	<a class="landing-block-node-price-button btn btn-md text-uppercase u-btn-primary rounded-0 g-px-15" href="#" target="_self">REGISTER NOW</a>
+                            	<a class="landing-block-node-price-button btn g-btn-type-solid g-btn-size-md g-btn-px-m text-uppercase g-btn-primary rounded-0" href="#" target="_self">REGISTER NOW</a>
                         	</div>
                         </div>
                     </article>
@@ -691,7 +693,7 @@ return array(
 
                             <ul class="landing-block-node-price-list list-unstyled g-mb-25"><li class="landing-block-node-price-list-item g-brd-bottom g-brd-gray-light-v3 g-py-12">Sed arcu erat, facilisis at tortor vel, blandit tristique enim. Donec dapibus neque consectetur tellus pretium, eget lacinia velit ullamcorper.</li></ul>
                             <div class="landing-block-node-price-container">
-                            	<a class="landing-block-node-price-button btn btn-md text-uppercase u-btn-primary rounded-0 g-px-15" href="#" target="_self">REGISTER NOW</a>
+                            	<a class="landing-block-node-price-button btn g-btn-type-solid g-btn-size-md g-btn-px-m text-uppercase g-btn-primary rounded-0" href="#" target="_self">REGISTER NOW</a>
                         	</div>
                         </div>
                     </article>
@@ -715,7 +717,7 @@ return array(
                             <ul class="landing-block-node-price-list list-unstyled g-mb-25"><li class="landing-block-node-price-list-item g-brd-bottom g-brd-gray-light-v3 g-py-12">Sed arcu erat, facilisis at tortor vel, blandit tristique enim. Donec dapibus neque consectetur tellus pretium, eget lacinia velit ullamcorper.</li></ul>
 
                             <div class="landing-block-node-price-container">
-                            	<a class="landing-block-node-price-button btn btn-md text-uppercase u-btn-primary rounded-0 g-px-15" href="#" target="_self">REGISTER NOW</a>
+                            	<a class="landing-block-node-price-button btn g-btn-type-solid g-btn-size-md g-btn-px-m text-uppercase g-btn-primary rounded-0" href="#" target="_self">REGISTER NOW</a>
                         	</div>
                         </div>
                     </article>
@@ -804,7 +806,7 @@ return array(
 					<h3 class="h4 g-color-white mb-4 landing-block-node-title" data-form-style-main-font-color="1" data-form-style-main-font-family="1">Contact Info</h3>
 
 					<!-- Icon Block -->
-				<div class="landing-block-node-card-contact">
+				<div class="landing-block-node-card-contact" data-card-preset="text">
 					<div class="media align-items-center mb-4">
 						<div class="d-flex">
 								<span class="landing-block-card-contact-icon-container u-icon-v1 u-icon-size--sm g-color-white mr-2">
@@ -826,7 +828,7 @@ return array(
 				<!-- End Icon Block -->
 
 				<!-- Icon Block -->
-				<div class="landing-block-node-card-contact">
+				<div class="landing-block-node-card-contact" data-card-preset="link">
 					<div class="media align-items-center mb-4">
 						<div class="d-flex">
 								<span class="landing-block-card-contact-icon-container u-icon-v1 u-icon-size--sm g-color-white mr-2">
@@ -834,79 +836,69 @@ return array(
 								</span>
 						</div>
 						<div class="media-body">
-							<div class="landing-block-node-contact-text g-color-white-opacity-0_6"
-								 data-form-style-main-font-weight="1"
+							<a href="tel:+32(0)333444555" class="landing-block-card-linkcontact-link g-color-white-opacity-0_6"
+								data-form-style-main-font-weight="1"
 								 data-form-style-header-text-font-size="1"
 								 data-form-style-label-font-weight="1"
 								 data-form-style-label-font-size="1"
-								 data-form-style-second-font-color="1"
-							>
-								<a href="tel:+32(0)333444555">+32 (0) 333 444 555</a>
-							</div>
+								 data-form-style-second-font-color="1">
+							+32 (0) 333 444 555</a>
 						</div>
 					</div>
 				</div>
 				<!-- End Icon Block -->
 
 				<!-- Icon Block -->
-				<div class="landing-block-node-card-contact">
+				<div class="landing-block-node-card-contact" data-card-preset="link">
 					<div class="media align-items-center mb-4">
 						<div class="d-flex">
 								<span class="landing-block-card-contact-icon-container u-icon-v1 u-icon-size--sm g-color-white mr-2">
 								  <i class="landing-block-card-contact-icon icon-communication-033 u-line-icon-pro"></i>
 								</span>
 						</div>
-						<div class="landing-block-node-contact-text g-color-white-opacity-0_6"
-							 data-form-style-main-font-weight="1"
+							<a href="tel:+32(0)333444666" class="landing-block-card-linkcontact-link g-color-white-opacity-0_6"
+							data-form-style-main-font-weight="1"
 							 data-form-style-header-text-font-size="1"
 							 data-form-style-label-font-weight="1"
 							 data-form-style-label-font-size="1"
 							 data-form-style-second-font-color="1"
-						>
-							<a href="tel:+32(0)333444666">+32 (0) 333 444 666</a>
-						</div>
+							 >+32 (0) 333 444 666</a>
 					</div>
 				</div>
 				<!-- End Icon Block -->
 
 				<!-- Icon Block -->
-				<div class="landing-block-node-card-contact">
+				<div class="landing-block-node-card-contact" data-card-preset="link">
 					<div class="media align-items-center mb-4">
 						<div class="d-flex">
 								<span class="landing-block-card-contact-icon-container u-icon-v1 u-icon-size--sm g-color-white mr-2">
 								  <i class="landing-block-card-contact-icon icon-communication-033 u-line-icon-pro"></i>
 								</span>
 						</div>
-						<div class="landing-block-node-contact-text g-color-white-opacity-0_6"
-							 data-form-style-main-font-weight="1"
+							<a href="tel:+32(0)333444777" class="landing-block-card-linkcontact-link g-color-white-opacity-0_6"
+							data-form-style-main-font-weight="1"
 							 data-form-style-header-text-font-size="1"
 							 data-form-style-label-font-weight="1"
 							 data-form-style-label-font-size="1"
-							 data-form-style-second-font-color="1"
-						>
-							<a href="tel:+32(0)333444777">+32 (0) 333 444 777</a>
-						</div>
+							 data-form-style-second-font-color="1">+32 (0) 333 444 777</a>
 					</div>
 				</div>
 				<!-- End Icon Block -->
 
 				<!-- Icon Block -->
-				<div class="landing-block-node-card-contact">
+				<div class="landing-block-node-card-contact" data-card-preset="link">
 					<div class="media align-items-center mb-4">
 						<div class="d-flex">
 								<span class="landing-block-card-contact-icon-container u-icon-v1 u-icon-size--sm g-color-white mr-2">
 								  <i class="landing-block-card-contact-icon icon-communication-062 u-line-icon-pro"></i>
 								</span>
 						</div>
-						<div class="landing-block-node-contact-text g-color-white-opacity-0_6"
-							 data-form-style-main-font-weight="1"
-							 data-form-style-header-text-font-size="1"
-							 data-form-style-label-font-weight="1"
-							 data-form-style-label-font-size="1"
-							 data-form-style-second-font-color="1"
-						>
-							<a href="mailto:info@company24.com">info@company24.com</a>
-						</div>
+						<a href="mailto:info@company24.com" class="landing-block-card-linkcontact-link g-color-white-opacity-0_6"
+						data-form-style-main-font-weight="1"
+						 data-form-style-header-text-font-size="1"
+						 data-form-style-label-font-weight="1"
+						 data-form-style-label-font-size="1"
+						 data-form-style-second-font-color="1">info@company24.com</a>
 					</div>
 				</div>
 				<!-- End Icon Block -->

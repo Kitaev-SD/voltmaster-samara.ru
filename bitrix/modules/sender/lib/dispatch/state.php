@@ -13,14 +13,12 @@ use Bitrix\Main\Localization\Loc;
 use Bitrix\Main\NotImplementedException;
 use Bitrix\Main\Type\Date;
 use Bitrix\Main\Type\DateTime;
-
-use Bitrix\Sender\Posting;
 use Bitrix\Sender\Dispatch;
 use Bitrix\Sender\Entity;
-use Bitrix\Sender\PostingTable;
-use Bitrix\Sender\PostingRecipientTable;
-use Bitrix\Sender\Internals\Model\LetterTable;
 use Bitrix\Sender\Integration;
+use Bitrix\Sender\Internals\Model;
+use Bitrix\Sender\Posting;
+use Bitrix\Sender\PostingRecipientTable;
 
 Loc::loadMessages(__FILE__);
 
@@ -292,7 +290,7 @@ class State
 	public function updatePlannedDateSend(Date $date)
 	{
 		\CTimeZone::disable();
-		$result = LetterTable::update($this->letter->getId(), array('AUTO_SEND_TIME' => $date));
+		$result = Model\LetterTable::update($this->letter->getId(), array('AUTO_SEND_TIME' => $date));
 		\CTimeZone::enable();
 		if ($result->isSuccess())
 		{
@@ -346,8 +344,8 @@ class State
 			return false;
 		}
 		\CTimeZone::disable();
-		$result = PostingTable::update(
-			array('ID' => $this->letter->get('POSTING_ID')),
+		$result = Model\PostingTable::update(
+			$this->letter->get('POSTING_ID'),
 			array(
 				$name => ($date ?: new DateTime())
 			)
@@ -394,7 +392,7 @@ class State
 
 	protected static function getStateName($code)
 	{
-		$code = $code === self::NEWISH ? self::READY : $code;
+//		$code = $code === self::NEWISH ? self::READY : $code;
 		return Loc::getMessage('SENDER_DISPATCH_STATE1_' . $code) ?: Loc::getMessage('SENDER_DISPATCH_STATE_' . $code);
 	}
 
@@ -477,7 +475,7 @@ class State
 		Application::getConnection()->query($updateSql);
 		Posting\Sender::updateActualStatus($this->letter->get('POSTING_ID'));
 
-		return $this->updateStatus(LetterTable::STATUS_SEND, self::SENDING);
+		return $this->updateStatus(Model\LetterTable::STATUS_SEND, self::SENDING);
 	}
 
 	/**
@@ -818,6 +816,11 @@ class State
 	 */
 	private function changeState($state, Date $sendDate = null)
 	{
+		if (!$this->isCampaignActive() && in_array($state, [self::SENDING, self::PLANNED]))
+		{
+			throw new InvalidOperationException(Loc::getMessage('SENDER_DISPATCH_STATE_ERROR_CAMPAIGN_INACTIVE'));
+		}
+
 		if (!$this->canChangeState($state))
 		{
 			$messageText = Loc::getMessage('SENDER_DISPATCH_STATE_ERROR_CHANGE', array(
@@ -887,8 +890,12 @@ class State
 			$fields['AUTO_SEND_TIME'] = $sendDate;
 		}
 
+		if ($updatedBy = $this->letter->get('UPDATED_BY'))
+		{
+			$fields['UPDATED_BY'] = $updatedBy;
+		}
 		\CTimeZone::disable();
-		$result = LetterTable::update($this->letter->getId(), $fields);
+		$result = Model\LetterTable::update($this->letter->getId(), $fields);
 		\CTimeZone::enable();
 
 		if ($result->isSuccess())
@@ -915,7 +922,7 @@ class State
 	private static function getStateMap()
 	{
 		$map = array_flip(self::getStatusMap());
-		$map[self::INIT] = LetterTable::STATUS_NEW; // for init-operation
+		$map[self::INIT] = Model\LetterTable::STATUS_NEW; // for init-operation
 
 		return $map;
 	}
@@ -928,15 +935,20 @@ class State
 	private static function getStatusMap()
 	{
 		return array(
-			LetterTable::STATUS_NEW => self::NEWISH,
-			LetterTable::STATUS_PLAN => self::PLANNED,
-			LetterTable::STATUS_READY => self::READY,
-			LetterTable::STATUS_SEND => self::SENDING,
-			LetterTable::STATUS_WAIT => self::WAITING,
-			LetterTable::STATUS_HALT => self::HALTED,
-			LetterTable::STATUS_PAUSE => self::PAUSED,
-			LetterTable::STATUS_END => self::SENT,
-			LetterTable::STATUS_CANCEL => self::STOPPED,
+			Model\LetterTable::STATUS_NEW => self::NEWISH,
+			Model\LetterTable::STATUS_PLAN => self::PLANNED,
+			Model\LetterTable::STATUS_READY => self::READY,
+			Model\LetterTable::STATUS_SEND => self::SENDING,
+			Model\LetterTable::STATUS_WAIT => self::WAITING,
+			Model\LetterTable::STATUS_HALT => self::HALTED,
+			Model\LetterTable::STATUS_PAUSE => self::PAUSED,
+			Model\LetterTable::STATUS_END => self::SENT,
+			Model\LetterTable::STATUS_CANCEL => self::STOPPED,
 		);
+	}
+
+	private function isCampaignActive()
+	{
+		return $this->letter->get('CAMPAIGN_ACTIVE', 'Y') === 'Y';
 	}
 }

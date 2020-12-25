@@ -1,25 +1,19 @@
 <?php
 namespace Bitrix\Landing\Hook\Page;
 
+use \Bitrix\Crm\SiteButton;
 use \Bitrix\Landing\Field;
+use \Bitrix\Landing\Manager;
+use \Bitrix\Main\Loader;
 use \Bitrix\Main\Localization\Loc;
+use \Bitrix\Socialservices\ApClient;
 
 Loc::loadMessages(__FILE__);
 
 class B24button extends \Bitrix\Landing\Hook\Page
 {
 	/**
-	 * Exec or not hook in edit mode.
-	 * @return true
-	 */
-	public function enabledInEditMode()
-	{
-		$request = \Bitrix\Main\Application::getInstance()->getContext()->getRequest();
-		return $request->get('landing_mode') == 'preview';
-	}
-	
-	/**
-	 * Get script url fromscript-code.
+	 * Get script url from script-code.
 	 * @param string $script Script code.
 	 * @return string
 	 */
@@ -37,59 +31,104 @@ class B24button extends \Bitrix\Landing\Hook\Page
 	 * Get b24 buttons.
 	 * @return array
 	 */
-	public static function getButtons()
+	public static function getButtons(): array
 	{
-		static $items = null;
-
-		if ($items !== null)
+		static $buttons = null;
+		if ($buttons !== null)
 		{
-			return $items;
+			return $buttons;
 		}
 
-		$items = array();
-
-		// b24 crm
-		if (\Bitrix\Main\Loader::includeModule('crm'))
+		$buttons = [];
+		foreach (self::getButtonsData() as $button)
 		{
-			$buttonList = \Bitrix\Crm\SiteButton\Manager::getList(array(
-				'select' => array(
-					'ID', 'SECURITY_CODE', 'NAME'
-				),
-				'order' => array(
-					'ID' => 'DESC'
-				)
-			));
-			foreach ($buttonList as $button)
+			$key = self::getScriptUrl($button['SCRIPT']);
+			if ($key)
 			{
-				$key = self::getScriptUrl($button['SCRIPT']);
-				$items[$key] = $button['NAME'];
+				$buttons[$key] = \htmlspecialcharsbx($button['NAME']);
 			}
 		}
-		// site manager
-		elseif (
-			\Bitrix\Main\Loader::includeModule('b24connector') &&
-			\Bitrix\Main\Loader::includeModule('socialservices')
-		)
+
+		return $buttons;
+	}
+
+	/**
+	 * Get raw data of b24 buttons
+	 *
+	 * @return array|null
+	 * @throws \Bitrix\Main\ArgumentException
+	 * @throws \Bitrix\Main\ArgumentNullException
+	 * @throws \Bitrix\Main\LoaderException
+	 * @throws \Bitrix\Main\SystemException
+	 */
+	public static function getButtonsData(): ?array
+	{
+		static $buttonsData = null;
+
+		if ($buttonsData !== null)
 		{
-			$client = \Bitrix\Socialservices\ApClient::init();
+			return $buttonsData;
+		}
+
+		$buttonsData = [];
+
+		// b24 crm
+		if (Loader::includeModule('crm'))
+		{
+			// if buttons not exist (new portal) - create before
+			if (SiteButton\Preset::checkVersion())
+			{
+				$preset = new SiteButton\Preset();
+				$preset->install();
+			}
+
+			$buttonsData = SiteButton\Manager::getList([
+				'filter' => ['=ACTIVE' => 'Y'],
+				'select' => [
+					'ID', 'SECURITY_CODE', 'NAME'
+				],
+				'order' => [
+					'ID' => 'DESC'
+				]
+			]);
+		}
+		// site manager
+		elseif (Manager::isB24Connector())
+		{
+			$client = ApClient::init();
 			if ($client)
 			{
 				$res = $client->call('crm.button.list');
 				if (isset($res['result']) && is_array($res['result']))
 				{
-					foreach ($res['result'] as $button)
-					{
-						$key = self::getScriptUrl($button['SCRIPT']);
-						if ($key)
-						{
-							$items[$key] = \htmlspecialcharsbx($button['NAME']);
-						}
-					}
+					$buttonsData = $res['result'];
 				}
 			}
 		}
 
-		return $items;
+		return $buttonsData;
+	}
+
+	/**
+	 * Find button ID by script code
+	 * @param $code - script for button
+	 * @return bool|string
+	 * @throws \Bitrix\Main\ArgumentException
+	 * @throws \Bitrix\Main\ArgumentNullException
+	 * @throws \Bitrix\Main\LoaderException
+	 * @throws \Bitrix\Main\SystemException
+	 */
+	public static function getButtonIdByCode($code)
+	{
+		foreach (self::getButtonsData() as $button)
+		{
+			if ($code === self::getScriptUrl($button['SCRIPT']))
+			{
+				return $button['ID'];
+			}
+		}
+
+		return false;
 	}
 
 	/**
@@ -132,7 +171,21 @@ class B24button extends \Bitrix\Landing\Hook\Page
 	 */
 	public function enabled()
 	{
+		if ($this->issetCustomExec())
+		{
+			return true;
+		}
+
 		return trim($this->fields['CODE']) != '';
+	}
+
+	/**
+	 * Exec or not hook in edit mode.
+	 * @return boolean
+	 */
+	public function enabledInEditMode()
+	{
+		return false;
 	}
 
 	/**
@@ -141,10 +194,16 @@ class B24button extends \Bitrix\Landing\Hook\Page
 	 */
 	public function exec()
 	{
+		if ($this->execCustom())
+		{
+			return;
+		}
+
 		$code = \htmlspecialcharsbx(trim($this->fields['CODE']));
 		if ($code != 'N')
 		{
-			\Bitrix\Main\Page\Asset::getInstance()->addString(
+			\Bitrix\Landing\Manager::setPageView(
+				'BeforeBodyClose',
 				'<script data-skip-moving="true">
 					(function(w,d,u,b){ \'use strict\';
 					var s=d.createElement(\'script\');var r=(Date.now()/1000|0);s.async=1;s.src=u+\'?\'+r;
@@ -154,9 +213,9 @@ class B24button extends \Bitrix\Landing\Hook\Page
 			);
 			if ($this->fields['COLOR'] != 'button')
 			{
-				\Bitrix\Landing\Manager::setPageClass(
-					"BodyClass",
-					"landing-b24button-use-style"
+				\Bitrix\Landing\Manager::setPageView(
+					'BodyClass',
+					'landing-b24button-use-style'
 				);
 			}
 		}

@@ -9,12 +9,10 @@ namespace Bitrix\Sender\Entity;
 
 use Bitrix\Main\Error;
 use Bitrix\Main\Localization\Loc;
-
-use Bitrix\Sender\Internals\Model\MessageTable;
 use Bitrix\Sender\Internals\Model\MessageFieldTable;
-
-use Bitrix\Sender\Message\Result;
+use Bitrix\Sender\Internals\Model\MessageTable;
 use Bitrix\Sender\Message\Configuration;
+use Bitrix\Sender\Message\Result;
 
 Loc::loadMessages(__FILE__);
 
@@ -47,7 +45,7 @@ class Message extends Base
 				$value = isset($data[$key]) ? $data[$key] : null;
 				if ($option->getType() === $option::TYPE_FILE)
 				{
-					$value = (strlen($value) > 0) ? explode(',', $value) : $value;
+					$value = ($value <> '') ? explode(',', $value) : $value;
 				}
 
 				$configuration->set($key, $value);
@@ -239,6 +237,11 @@ class Message extends Base
 		return $data;
 	}
 
+	protected function parsePersonalizeList($text)
+	{
+
+	}
+
 	/**
 	 * Save data.
 	 *
@@ -263,9 +266,33 @@ class Message extends Base
 			return $id;
 		}
 
-		MessageFieldTable::delete(array('MESSAGE_ID' => $id));
+		MessageFieldTable::deleteByMessageId($id);
 		foreach ($fields as $field)
 		{
+			if(in_array($field['CODE'], ['MESSAGE_PERSONALIZE', 'SUBJECT_PERSONALIZE']))
+			{
+				continue;
+			}
+
+			if(in_array($field['CODE'], ['MESSAGE', 'SUBJECT']))
+			{
+
+				preg_match_all("/#([0-9a-zA-Z_.|]+?)#/", $field['VALUE'], $matchesFindPlaceHolders);
+				$matchesFindPlaceHoldersCount = count($matchesFindPlaceHolders[1]);
+				if($matchesFindPlaceHoldersCount > 0)
+				{
+					$list = json_encode($matchesFindPlaceHolders);
+					MessageFieldTable::add(
+						[
+							'MESSAGE_ID' => $id,
+							'TYPE'       => $field['TYPE'],
+							'CODE'       => $field['CODE'].'_PERSONALIZE',
+							'VALUE'      => $list
+						]
+					);
+
+				}
+			}
 			MessageFieldTable::add(array(
 				'MESSAGE_ID' => $id,
 				'TYPE' => $field['TYPE'],

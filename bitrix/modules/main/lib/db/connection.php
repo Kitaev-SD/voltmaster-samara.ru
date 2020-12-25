@@ -457,6 +457,69 @@ abstract class Connection extends Data\Connection
 	}
 
 	/**
+	 * @param string $tableName
+	 * @param array  $rows
+	 * @param string $identity
+	 *
+	 * @return int
+	 * @throws Main\ArgumentTypeException
+	 * @throws SqlQueryException
+	 */
+	public function addMulti($tableName, $rows, $identity = "ID")
+	{
+		$uniqueColumns = [];
+		$inserts = [];
+
+		// prepare data
+		foreach ($rows as $data)
+		{
+			$insert = $this->getSqlHelper()->prepareInsert($tableName, $data, true);
+			$inserts[] = $insert;
+
+			// and get unique column names
+			foreach ($insert[0] as $column)
+			{
+				$uniqueColumns[$column] = true;
+			}
+		}
+
+		// prepare sql
+		$sqlValues = [];
+
+		foreach ($inserts as $insert)
+		{
+
+			$columns = array_flip($insert[0]);
+			$values = $insert[1];
+
+			$finalValues = [];
+
+			foreach (array_keys($uniqueColumns) as $column)
+			{
+				if (array_key_exists($column, $columns))
+				{
+					// set real value
+					$finalValues[] = $values[$columns[$column]];
+				}
+				else
+				{
+					// set default
+					$finalValues[] = 'DEFAULT';
+				}
+			}
+
+			$sqlValues[] = '('.join(', ', $finalValues).')';
+		}
+
+		$sql = "INSERT INTO {$this->getSqlHelper()->quote($tableName)} (".join(', ', array_keys($uniqueColumns)).") ".
+				"VALUES ".join(', ', $sqlValues);
+
+		$this->queryExecute($sql);
+
+		return $this->getInsertedId();
+	}
+
+	/**
 	 * @return integer
 	 */
 	abstract public function getInsertedId();
@@ -487,12 +550,12 @@ abstract class Connection extends Data\Connection
 				//Found string start
 				if ($match[2] == "\"" || $match[2] == "'" || $match[2] == "`")
 				{
-					$sqlBatch = substr($sqlBatch, strlen($match[0]));
+					$sqlBatch = mb_substr($sqlBatch, mb_strlen($match[0]));
 					$sql .= $match[0];
 					//find a quote not preceded by \
 					if (preg_match("%^(.*?)(?<!\\\\)".$match[2]."%s", $sqlBatch, $stringMatch))
 					{
-						$sqlBatch = substr($sqlBatch, strlen($stringMatch[0]));
+						$sqlBatch = mb_substr($sqlBatch, mb_strlen($stringMatch[0]));
 						$sql .= $stringMatch[0];
 					}
 					else
@@ -506,28 +569,28 @@ abstract class Connection extends Data\Connection
 				elseif ($match[2] == "#" || $match[2] == "--")
 				{
 					//Take that was before comment as part of sql
-					$sqlBatch = substr($sqlBatch, strlen($match[1]));
+					$sqlBatch = mb_substr($sqlBatch, mb_strlen($match[1]));
 					$sql .= $match[1];
 					//And cut the rest
-					$p = strpos($sqlBatch, "\n");
+					$p = mb_strpos($sqlBatch, "\n");
 					if ($p === false)
 					{
-						$p1 = strpos($sqlBatch, "\r");
+						$p1 = mb_strpos($sqlBatch, "\r");
 						if ($p1 === false)
 							$sqlBatch = "";
 						elseif ($p < $p1)
-							$sqlBatch = substr($sqlBatch, $p);
+							$sqlBatch = mb_substr($sqlBatch, $p);
 						else
-							$sqlBatch = substr($sqlBatch, $p1);
+							$sqlBatch = mb_substr($sqlBatch, $p1);
 					}
 					else
-						$sqlBatch = substr($sqlBatch, $p);
+						$sqlBatch = mb_substr($sqlBatch, $p);
 				}
 				//Delimiter!
 				else
 				{
 					//Take that was before delimiter as part of sql
-					$sqlBatch = substr($sqlBatch, strlen($match[0]));
+					$sqlBatch = mb_substr($sqlBatch, mb_strlen($match[0]));
 					$sql .= $match[1];
 					//Delimiter must be followed by whitespace
 					if (preg_match("%^[\n\r\t ]%", $sqlBatch))
@@ -793,6 +856,30 @@ abstract class Connection extends Data\Connection
 	 */
 	abstract public function rollbackTransaction();
 
+	/*********************************************************
+	 * Global named lock
+	 *********************************************************/
+
+	/**
+	 * Sets a global named lock. Currently only Mysql is supported.
+	 * @param string $name The lock name.
+	 * @param int $timeout
+	 * @return bool
+	 */
+	public function lock($name, $timeout = 0)
+	{
+		return true;
+	}
+
+	/**
+	 * Releases a global named lock. Currently only Mysql is supported.
+	 * @param string $name The lock name.
+	 * @return bool
+	 */
+	public function unlock($name)
+	{
+		return true;
+	}
 
 	/*********************************************************
 	 * Tracker

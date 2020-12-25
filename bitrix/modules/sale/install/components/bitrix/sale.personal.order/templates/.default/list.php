@@ -21,12 +21,13 @@ $arChildParams = array(
 	"CACHE_TIME" => $arParams["CACHE_TIME"],
 	"CACHE_GROUPS" => $arParams["CACHE_GROUPS"],
 	"DEFAULT_SORT" => $arParams["ORDER_DEFAULT_SORT"],
+	"DISALLOW_CANCEL" => $arParams["DISALLOW_CANCEL"],
 	"RESTRICT_CHANGE_PAYSYSTEM" => $arParams["RESTRICT_CHANGE_PAYSYSTEM"],
 	"REFRESH_PRICES" => $arParams["REFRESH_PRICES"]
 );
 
 foreach ($arParams as $key => $val)
-	if(strpos($key, "STATUS_COLOR_") !== false && strpos($key, "~") !== 0)
+	if(mb_strpos($key, "STATUS_COLOR_") !== false && mb_strpos($key, "~") !== 0)
 		$arChildParams[$key] = $val;
 
 $APPLICATION->IncludeComponent(

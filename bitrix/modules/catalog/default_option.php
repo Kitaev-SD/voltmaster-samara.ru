@@ -35,6 +35,7 @@ $catalog_default_option = array(
 	'1C_TRANSLIT_ON_UPDATE' => 'Y',
 	'1C_TRANSLIT_REPLACE_CHAR' => '_',
 	'1C_DISABLE_CHANGE_PRICE_NAME' => 'Y',
+	'1C_IBLOCK_CACHE_MODE' => 'N',
 	'do_use_discount_product' => 'Y',
 	'do_use_discount_cat_group' => 'Y',
 	'do_use_discount_section' => 'Y',
@@ -70,5 +71,6 @@ $catalog_default_option = array(
 	'default_product_vat_included' => 'N',
 	'subscribe_repeated_notify' => 'Y',
 	'enable_processing_deprecated_events' => 'N',
-	'landing_product_limit' => 0
+	'landing_product_limit' => 0,
+	'product_card_slider_enabled' => 'N'
 );

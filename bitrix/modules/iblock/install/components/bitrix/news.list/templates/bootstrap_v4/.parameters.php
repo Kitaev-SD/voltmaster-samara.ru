@@ -118,7 +118,7 @@ if ($arCurrentValues["USE_SHARE"] == "Y")
 		"REFRESH"=> "Y",
 	);
 
-	if (strlen(trim($arCurrentValues["SHARE_TEMPLATE"])) <= 0)
+	if (trim($arCurrentValues["SHARE_TEMPLATE"]) == '')
 		$shareComponentTemplate = false;
 	else
 		$shareComponentTemplate = trim($arCurrentValues["SHARE_TEMPLATE"]);
@@ -164,7 +164,7 @@ $arTemplateParameters['TEMPLATE_THEME'] = array(
 	'PARENT' => 'VISUAL',
 	'NAME' => GetMessage("TP_BND_TEMPLATE_THEME"),
 	'TYPE' => 'LIST',
-	'VALUES' => $arThemes,
+	'VALUES' => $arThemesList,
 	'DEFAULT' => 'blue',
 	'ADDITIONAL_VALUES' => 'Y'
 );

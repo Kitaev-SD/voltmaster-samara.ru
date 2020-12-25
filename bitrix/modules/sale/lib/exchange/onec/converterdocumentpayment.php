@@ -94,35 +94,8 @@ class ConverterDocumentPayment extends Converter
 						$fields[$k] = $params['REK_VALUES']['1C_RETURN_REASON'];
 					break;
 				case 'PAY_SYSTEM_ID':
-					$paySystemId = 0;
-					if(isset($params['REK_VALUES']['PAY_SYSTEM_ID']))
-					{
-						$paySystemId = $params['REK_VALUES']['PAY_SYSTEM_ID'];
-					}
-
-					if($paySystemId<=0)
-					{
-						if(isset($params['REK_VALUES']['PAY_SYSTEM_ID_DEFAULT']))
-						{
-							$paySystemId = $params['REK_VALUES']['PAY_SYSTEM_ID_DEFAULT'];
-						}
-					}
-					/** @var ImportSettings $settings */
-					$settings = $this->getSettings();
-
-					if($paySystemId<=0)
-					{
-						$paySystemId = $settings->paySystemIdFor($this->getEntityTypeId());
-					}
-
-					if($paySystemId<=0)
-					{
-						$paySystemId = $settings->paySystemIdDefaultFor($this->getEntityTypeId());
-					}
-
-					$fields[$k] = $paySystemId;
+					$fields[$k] = $this->getPaySystemId($params['REK_VALUES']);
 					break;
-
 				case 'CASH_BOX_CHECKS':
 					if(is_array($params[$k]))
 					{
@@ -152,6 +125,41 @@ class ConverterDocumentPayment extends Converter
 		$result['CASH_BOX_CHECKS'] = isset($cashBoxChecks)? $cashBoxChecks:array();
 
 		return $result;
+	}
+
+	/**
+	 * @param $fields
+	 * @return int
+	 */
+	public function getPaySystemId($fields)
+	{
+		$paySystemId = 0;
+		if(isset($fields['PAY_SYSTEM_ID']))
+		{
+			$paySystemId = $fields['PAY_SYSTEM_ID'];
+		}
+
+		if($paySystemId<=0)
+		{
+			if(isset($fields['PAY_SYSTEM_ID_DEFAULT']))
+			{
+				$paySystemId = $fields['PAY_SYSTEM_ID_DEFAULT'];
+			}
+		}
+		/** @var ImportSettings $settings */
+		$settings = $this->getSettings();
+
+		if($paySystemId<=0)
+		{
+			$paySystemId = $settings->paySystemIdFor($this->getEntityTypeId());
+		}
+
+		if($paySystemId<=0)
+		{
+			$paySystemId = $settings->paySystemIdDefaultFor($this->getEntityTypeId());
+		}
+
+		return $paySystemId;
 	}
 
 	/**
@@ -225,7 +233,7 @@ class ConverterDocumentPayment extends Converter
 					break;
 				case 'CURRENCY':
 					$replaceCurrency = $settings->getReplaceCurrency();
-					$value = substr($replaceCurrency<>'' ? $replaceCurrency:$traits[$k], 0, 3);
+					$value = mb_substr($replaceCurrency <> ''? $replaceCurrency : $traits[$k], 0, 3);
 					break;
 				case 'CURRENCY_RATE':
 					$value = self::CURRENCY_RATE_DEFAULT;
@@ -260,6 +268,9 @@ class ConverterDocumentPayment extends Converter
 						{
 							case '1C_PAYED_DATE':
 								$valueRV = $traits['DATE_PAID'];
+								break;
+							case '1C_PAYED_NUM':
+								$valueRV = $traits['PAY_VOUCHER_NUM'];
 								break;
 							case 'CANCEL':
 								$valueRV = 'N';

@@ -43,6 +43,14 @@ elseif (!CModule::IncludeModule('clouds'))
 	$strBXError = GetMessage('ERR_NO_CLOUDS');
 }
 
+
+if($bBitrixCloud)
+{
+	$backup = CBitrixCloudBackup::getInstance();
+	$arFiles = $backup->listFiles();
+	$backup->saveToOptions();
+}
+
 if (function_exists('mb_internal_encoding'))
 	mb_internal_encoding('ISO-8859-1');
 
@@ -136,7 +144,6 @@ elseif($_REQUEST['process'] == "Y")
 			COption::SetOptionInt("main", "dump_base_skip_stat", 0);
 			COption::SetOptionInt("main", "dump_base_skip_search", 0);
 			COption::SetOptionInt("main", "dump_base_skip_log", 0);
-			COption::SetOptionInt("main", "skip_symlinks", 0);
 
 			if ($arAllBucket)
 			{
@@ -151,7 +158,6 @@ elseif($_REQUEST['process'] == "Y")
 		}
 		else
 		{
-			COption::SetOptionInt("main", "skip_symlinks", $_REQUEST['skip_symlinks'] == 'Y');
 			COption::SetOptionInt("main", "dump_max_exec_time", intval($_REQUEST['dump_max_exec_time']) < 5 ? 5 : $_REQUEST['dump_max_exec_time']);
 			COption::SetOptionInt("main", "dump_max_exec_time_sleep", $_REQUEST['dump_max_exec_time_sleep']);
 			$dump_archive_size_limit = intval($_REQUEST['dump_archive_size_limit']);
@@ -239,7 +245,7 @@ elseif($_REQUEST['process'] == "Y")
 			else
 				$prefix = str_replace('/', '', COption::GetOptionString("main", "server_name", ""));
 
-			$arc_name = CBackup::GetArcName(preg_match('#^[a-z0-9\.\-]+$#i', $prefix) ? substr($prefix, 0, 20).'_' : '');
+			$arc_name = CBackup::GetArcName(preg_match('#^[a-z0-9\.\-]+$#i', $prefix) ? mb_substr($prefix, 0, 20).'_' : '');
 			$NS['dump_name'] = $arc_name.".sql";
 			$NS['arc_name'] = $arc_name.($NS['dump_encrypt_key'] ? ".enc" : ".tar").($bUseCompression ? ".gz" : '');
 		}
@@ -600,7 +606,7 @@ elseif($_REQUEST['process'] == "Y")
 					RaiseErrorAndDie(GetMessage("MAIN_DUMP_NO_CLOUDS_MODULE"));
 
 				$file_size = filesize($NS["arc_name"]);
-				$file_name = $NS['BUCKET_ID'] == -1 ? basename($NS['arc_name']) : substr($NS['arc_name'],strlen(DOCUMENT_ROOT));
+				$file_name = $NS['BUCKET_ID'] == -1? basename($NS['arc_name']) : mb_substr($NS['arc_name'], mb_strlen(DOCUMENT_ROOT));
 				$obUpload = new CCloudStorageUpload($file_name);
 
 				if (!$NS['upload_start_time'])
@@ -982,7 +988,6 @@ function CheckActiveStart()
 		start = document.fd1.dump_file_public.checked || document.fd1.dump_file_kernel.checked;
 
 		document.fd1.max_file_size.disabled = !start;
-		document.fd1.skip_symlinks.disabled = !start;
 		document.fd1.skip_mask.disabled = !start;
 
 		var mask = start && document.fd1.skip_mask.checked;
@@ -1154,9 +1159,6 @@ function DoDump()
 		if(document.fd1.dump_file_kernel.checked)
 			queryString+='&dump_file_kernel=Y';
 
-		if(document.fd1.skip_symlinks.checked)
-			queryString+='&skip_symlinks=Y';
-
 		if(document.fd1.skip_mask.checked)
 		{
 			queryString+='&skip_mask=Y';
@@ -1277,9 +1279,8 @@ function getTableSize()
 		<td class="adm-detail-valign-top" width="40%"><?=GetMessage('DUMP_MAIN_BITRIX_CLOUD_DESC')?><span class="required"><sup>1</sup></span>:</td>
 		<td width="60%">
 		<?
-			$backup = CBitrixCloudBackup::getInstance();
-			$arFiles = $backup->listFiles();
-			$backup->saveToOptions();
+		if(is_object($backup))
+		{
 			CAdminMessage::ShowMessage(array(
 				"TYPE" => "PROGRESS",
 				"DETAILS" => GetMessage("BCL_BACKUP_USAGE", array(
@@ -1290,6 +1291,7 @@ function getTableSize()
 				"PROGRESS_TOTAL" => $quota,
 				"PROGRESS_VALUE" => $usage,
 			));
+		}
 		?>
 		</td>
 	</tr>
@@ -1336,7 +1338,8 @@ function getTableSize()
 				foreach($arSitePath as $path => $val)
 				{
 					$path = rtrim(str_replace('\\','/',$path),'/');
-					list($k,$v) = each($val);
+					$k = key($val);
+					$v = current($val);
 					echo '<div><input type=checkbox id="dump_site_id'.$i.'" value="'.htmlspecialcharsbx($k).'" '.(in_array($k, $dump_site_id) ? ' checked' : '').'> <label for="dump_site_id'.$i.'">'.htmlspecialcharsbx($v).'</label></div>';
 					$i++;
 				}
@@ -1439,10 +1442,6 @@ if ($arAllBucket)
 		<td><?echo GetMessage("MAIN_DUMP_FILE_MAX_SIZE")?></td>
 		<td><input type="text" name="max_file_size" size="10" value="<?=IntOption("dump_max_file_size", 0)?>" <?=CBackup::CheckDumpFiles() ? '' : "disabled"?>>
 		<?echo GetMessage("MAIN_DUMP_FILE_MAX_SIZE_kb")?></td>
-	</tr>
-	<tr>
-		<td><?echo GetMessage("MAIN_DUMP_SKIP_SYMLINKS")?></td>
-		<td><input type="checkbox" name="skip_symlinks" value="Y" <?=IntOption("skip_symlinks", 0) ? "checked" : ''?>></td>
 	</tr>
 
 

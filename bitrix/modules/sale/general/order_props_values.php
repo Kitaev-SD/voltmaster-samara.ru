@@ -7,8 +7,7 @@ use	Bitrix\Sale\Compatible,
 
 Loc::loadMessages(__FILE__);
 
-/** @deprecated */
-class CSaleOrderPropsValue
+class CAllSaleOrderPropsValue
 {
 	function GetList($arOrder = array(), $arFilter = array(), $arGroupBy = false, $arNavStartParams = false, $arSelectFields = array())
 	{
@@ -18,7 +17,7 @@ class CSaleOrderPropsValue
 		{
 			$arOrder = strval($arOrder);
 			$arFilter = strval($arFilter);
-			if (strlen($arOrder) > 0 && strlen($arFilter) > 0)
+			if ($arOrder <> '' && $arFilter <> '')
 				$arOrder = array($arOrder => $arFilter);
 			else
 				$arOrder = array();
@@ -36,10 +35,10 @@ class CSaleOrderPropsValue
 
 		// add aliases
 
-		$query = new Compatible\OrderQueryLocation(Internals\OrderPropsValueTable::getEntity());
-		$query->addLocationRuntimeField('VALUE', 'PROPERTY');
+		$query = new Compatible\OrderPropertyValuesQuery(Internals\OrderPropsValueTable::getEntity());
 		$query->addAliases(array(
 			// for GetList
+			'VALUE_ORIG'           => 'VALUE',
 			'PROP_ID'              => 'PROPERTY.ID',
 			'PROP_PERSON_TYPE_ID'  => 'PROPERTY.PERSON_TYPE_ID',
 			'PROP_NAME'            => 'PROPERTY.NAME',
@@ -178,13 +177,13 @@ class CSaleOrderPropsValue
 
 	function CheckFields($ACTION, &$arFields, $ID = 0)
 	{
-		if ((is_set($arFields, "ORDER_ID") || $ACTION=="ADD") && IntVal($arFields["ORDER_ID"]) <= 0)
+		if ((is_set($arFields, "ORDER_ID") || $ACTION=="ADD") && intval($arFields["ORDER_ID"]) <= 0)
 		{
 			$GLOBALS["APPLICATION"]->ThrowException(GetMessage("SKGOPV_EMPTY_ORDER_ID"), "EMPTY_ORDER_ID");
 			return false;
 		}
 		
-		if ((is_set($arFields, "ORDER_PROPS_ID") || $ACTION=="ADD") && IntVal($arFields["ORDER_PROPS_ID"]) <= 0)
+		if ((is_set($arFields, "ORDER_PROPS_ID") || $ACTION=="ADD") && intval($arFields["ORDER_PROPS_ID"]) <= 0)
 		{
 			$GLOBALS["APPLICATION"]->ThrowException(GetMessage("SKGOPV_EMPTY_PROP_ID"), "EMPTY_ORDER_PROPS_ID");
 			return false;
@@ -213,7 +212,7 @@ class CSaleOrderPropsValue
 						"ORDER_ID" => $arFields["ORDER_ID"],
 						"ORDER_PROPS_ID" => $arFields["ORDER_PROPS_ID"],
 					);
-				if(IntVal($ID) > 0)
+				if(intval($ID) > 0)
 					$arFilter["!ID"] = $ID;
 				$dbP = CSaleOrderPropsValue::GetList(Array(), $arFilter);
 				if($arP = $dbP->Fetch())
@@ -345,7 +344,7 @@ class CSaleOrderPropsValue
 	function Delete($ID)
 	{
 		global $DB;
-		$ID = IntVal($ID);
+		$ID = intval($ID);
 
 		$strSql = "DELETE FROM b_sale_order_props_value WHERE ID = ".$ID." ";
 		return $DB->Query($strSql, True);
@@ -354,7 +353,7 @@ class CSaleOrderPropsValue
 	function DeleteByOrder($orderID)
 	{
 		global $DB;
-		$orderID = IntVal($orderID);
+		$orderID = intval($orderID);
 
 		$strSql = "DELETE FROM b_sale_order_props_value WHERE ORDER_ID = ".$orderID." ";
 		return $DB->Query($strSql, True);

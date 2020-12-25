@@ -32,7 +32,11 @@ class ConditionTree
 	 * @var string and|or
 	 * @see ConditionTree::logic()
 	 */
-	protected $logic = 'and';
+	protected $logic;
+
+	const LOGIC_OR = 'or';
+
+	const LOGIC_AND = 'and';
 
 	/**
 	 * Whether to set NOT before all the conditions.
@@ -41,7 +45,15 @@ class ConditionTree
 	protected $isNegative = false;
 
 	/**
-	 * All conditions will be imploded by this logic.
+	 * ConditionTree constructor.
+	 */
+	public function __construct()
+	{
+		$this->logic = static::LOGIC_AND;
+	}
+
+	/**
+	 * All conditions will be imploded by this logic: static::LOGIC_AND or static::LOGIC_OR
 	 *
 	 * @param string $logic and|or
 	 *
@@ -55,12 +67,12 @@ class ConditionTree
 			return $this->logic;
 		}
 
-		if (!in_array(strtolower($logic), array('and', 'or'), true))
+		if (!in_array(mb_strtolower($logic), [static::LOGIC_AND, static::LOGIC_OR], true))
 		{
 			throw new ArgumentException("Unknown logic");
 		}
 
-		$this->logic = strtolower($logic);
+		$this->logic = mb_strtolower($logic);
 
 		return $this;
 	}
@@ -491,7 +503,7 @@ class ConditionTree
 		}
 
 		// concat with $this->logic
-		$sql = join(" ".strtoupper($this->logic)." ", $finalSql);
+		$sql = join(" ".mb_strtoupper($this->logic)." ", $finalSql);
 
 		// and put NOT if negative
 		if ($this->isNegative)
@@ -561,6 +573,35 @@ class ConditionTree
 		}
 
 		return false;
+	}
+
+	/**
+	 * Removes one condition
+	 *
+	 * @param $condition
+	 *
+	 * @return bool
+	 */
+	public function removeCondition($condition)
+	{
+		foreach ($this->conditions as $k => $_condition)
+		{
+			if ($condition === $_condition)
+			{
+				unset($this->conditions[$k]);
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Removes all conditions
+	 */
+	public function removeAllConditions()
+	{
+		$this->conditions = [];
 	}
 
 	/**

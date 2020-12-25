@@ -31,11 +31,20 @@ abstract class BaseObject
 	/** @var  ErrorCollection */
 	protected $errorCollection;
 
-	public function __construct($forumId, $entity, $userId = 0)
+	public function __construct($forumId, $entity, $userId = null)
 	{
 		global $USER;
 		$this->errorCollection = new ErrorCollection();
-		$this->setUser($userId ?: $USER->getId());
+		if (is_null($userId))
+		{
+			$userId = ($USER instanceof \CUser ? $USER->getId() : 0);
+		}
+		else
+		{
+			$userId = intval($userId);
+		}
+		$this->setUser($userId);
+
 		$this->setForum($forumId);
 		$this->setEntity($entity);
 		$this->setTopic();
@@ -67,7 +76,7 @@ abstract class BaseObject
 		{
 			$protoEntity = Entity::getEntityByType("default");
 			if (!array_key_exists('xml_id', $id) || empty($id["xml_id"]))
-				$id['xml_id'] = strtoupper($id["type"]."_".$id['id']);
+				$id['xml_id'] = mb_strtoupper($id["type"]."_".$id['id']);
 		}
 		elseif (!array_key_exists('xml_id', $id) || empty($id["xml_id"]))
 			$id['xml_id'] = $protoEntity["xmlIdPrefix"]."_".$id['id'];
@@ -110,7 +119,7 @@ abstract class BaseObject
 		$event = new Event("forum", "OnCommentTopicAdd", array($this->getEntity()->getType(), $this->getEntity()->getId(), $post, &$topic));
 		$event->send();
 
-		if (strlen($topic["AUTHOR_NAME"]) <= 0)
+		if ($topic["AUTHOR_NAME"] == '')
 			$topic["AUTHOR_NAME"] = ($topic["AUTHOR_ID"] <= 0 ? Loc::getMessage("FORUM_USER_SYSTEM") : self::getUserName($topic["AUTHOR_ID"]));
 
 		$topic = array_merge($topic, array(

@@ -6,6 +6,7 @@ namespace Bitrix\Sale;
 
 use Bitrix\Main;
 use Bitrix\Sale\Internals;
+use Bitrix\Sale;
 
 Main\Localization\Loc::loadMessages(__FILE__);
 
@@ -363,7 +364,7 @@ class EntityMarker
 							'COMMENT' => $values['COMMENT'],
 						);
 
-						if ($USER && $USER->IsAuthorized())
+						if (is_object($USER) && $USER->IsAuthorized())
 						{
 							$fields['USER_ID'] = $USER->GetID();
 						}
@@ -731,6 +732,10 @@ class EntityMarker
 		$orderSaveList = array();
 		$lastOrderId = null;
 
+		$registry = Sale\Registry::getInstance(Sale\Registry::REGISTRY_TYPE_ORDER);
+		/** @var Sale\Order $orderClass */
+		$orderClass = $registry->getOrderClassName();
+
 		$result = new Result();
 		$res = static::getList(array(
 			'filter' => array(
@@ -748,7 +753,7 @@ class EntityMarker
 			}
 			else
 			{
-				$order = Order::load($data['ORDER_ID']);
+				$order = $orderClass::load($data['ORDER_ID']);
 				$orderList[$data['ORDER_ID']] = $order;
 			}
 

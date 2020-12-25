@@ -256,6 +256,7 @@ BX.Fileman.Player = function(id, params)
 {
 	this.inited = false;
 	this.id = id;
+	this.hasStarted = false;
 	this.fillParameters(params);
 	BX.Fileman.PlayerManager.addPlayer(this);
 	this.fireEvent('onCreate');
@@ -310,6 +311,7 @@ BX.Fileman.Player.prototype.isReady = function()
 BX.Fileman.Player.prototype.play = function()
 {
 	this.setPlayedState();
+	this.hasStarted = true;
 	try
 	{
 		this.vjsPlayer.play();
@@ -365,11 +367,12 @@ BX.Fileman.Player.prototype.createElement = function()
 		return null;
 	}
 	var tagName = 'video';
+	var className = 'video-js vjs-big-play-centered';
 	if(this.isAudio)
 	{
 		tagName = 'audio';
+		className = 'video-js vjs-has-started';
 	}
-	var className = 'video-js vjs-big-play-centered';
 	if(this.skin)
 	{
 		className += ' ' + this.skin;
@@ -441,18 +444,21 @@ BX.Fileman.Player.prototype.fillParameters = function(params)
 	this.onInit = params.onInit;
 	this.lazyload = params.lazyload;
 	this.skin = params.skin || '';
-	this.params = params;
-	this.active = this.isPlayed();
-	this.width = params.width || 400;
 	this.isAudio = params.isAudio || false;
+	params.width = params.width || 400;
 	if(this.isAudio)
 	{
-		this.height = params.height || 30;
+		params.height = params.height || 30;
 	}
 	else
 	{
-		this.height = params.height || 300;
+		params.height = params.height || 300;
 	}
+	this.width = params.width;
+	this.height = params.height;
+	this.duration = params.duration || null;
+	this.params = params;
+	this.active = this.isPlayed();
 };
 
 BX.Fileman.Player.prototype.onKeyDown = function(event)
@@ -500,6 +506,26 @@ BX.Fileman.Player.prototype.init = function()
 	this.vjsPlayer = videojs(this.id, this.params);
 	this.vjsPlayer.on('error', BX.proxy(function()
 	{
+		// try to play next source if there is any
+		if(BX.type.isArray(this.params.sources) && this.params.sources.length > 1)
+		{
+			for(var i in this.params.sources)
+			{
+				if(this.params.sources.hasOwnProperty(i))
+				{
+					if(
+						this.getAbsoluteURL(this.params.sources[i].src) === this.getSource() &&
+						this.params.sources.length > i + 1 &&
+						this.previousTrack !== this.getSource()
+					)
+					{
+						this.previousTrack = this.getSource();
+						this.setSource(this.params.sources[parseInt(i + 1)]);
+						return;
+					}
+				}
+			}
+		}
 		this.fireEvent('onError');
 		if(!this.isFlashErrrorShown && this.hasFlash)
 		{
@@ -530,6 +556,13 @@ BX.Fileman.Player.prototype.init = function()
 			playButton.addEventListener('click', BX.proxy(this.onClick, this));
 		}
 		this.vjsPlayer.volume(this.volume);
+		if(this.duration > 0)
+		{
+			this.vjsPlayer.one('loadedmetadata', BX.proxy(function()
+			{
+				this.vjsPlayer.duration(this.duration);
+			}, this));
+		}
 		this.vjsPlayer.one('play', BX.proxy(function()
 		{
 			if(this.playbackRate != 1)
@@ -561,6 +594,10 @@ BX.Fileman.Player.prototype.init = function()
 
 				}
 			}
+			this.vjsPlayer.on('volumechange', BX.proxy(function()
+			{
+				this.active = true;
+			}, this));
 		}, this));
 		if(this.playlistParams)
 		{
@@ -577,7 +614,17 @@ BX.Fileman.Player.prototype.init = function()
 		}
 		this.fireEvent('onAfterInit');
 		this.proxyEvents();
-	}, this));
+		if(this.autostart && !this.lazyload)
+		{
+			setTimeout(BX.proxy(function()
+			{
+				if(!this.hasStarted)
+				{
+					this.play();
+				}
+			}, this), 200);
+		}
+	}, this), true);
 };
 
 BX.Fileman.Player.prototype.getEventList = function()
@@ -625,9 +672,23 @@ BX.Fileman.Player.prototype.proxyEvents = function()
 	{
 		return;
 	}
-	this.vjsPlayer.on('play', BX.proxy(function(){this.fireEvent('onPlay');}, this));
+	this.vjsPlayer.on('play', BX.proxy(function(){this.fireEvent('onPlay'); this.hasStarted = true;}, this));
 	this.vjsPlayer.on('pause', BX.proxy(function(){this.fireEvent('onPause');}, this));
 	this.vjsPlayer.on('ended', BX.proxy(function(){this.fireEvent('onEnded');}, this));
-}
+};
+
+BX.Fileman.Player.prototype.getAbsoluteURL = function(url)
+{
+	// Check if absolute URL
+	if (!url.match(/^https?:\/\//)) {
+		// Convert to absolute URL. Flash hosted off-site needs an absolute URL.
+		var div = document.createElement('div');
+
+		div.innerHTML = '<a href="' + url + '">x</a>';
+		url = div.firstChild.href;
+	}
+
+	return url;
+};
 
 })(window);

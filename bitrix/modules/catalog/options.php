@@ -32,6 +32,8 @@ $applyDiscSaveModeList = CCatalogDiscountSave::GetApplyModeList(true);
 
 $saleSettingsUrl = 'settings.php?lang='.LANGUAGE_ID.'&mid=sale&mid_menu=1';
 
+$enabledCommonCatalog = Catalog\Config\Feature::isCommonProductProcessingEnabled();
+
 if ($_SERVER['REQUEST_METHOD'] == 'GET' && !empty($_REQUEST['RestoreDefaults']) && !$bReadOnly && check_bitrix_sessid())
 {
 	$strValTmp = '';
@@ -53,7 +55,7 @@ $arAllOptions = array(
 	array("export_default_path", Loc::getMessage("CAT_EXPORT_DEFAULT_PATH"), "/bitrix/catalog_export/", array("text", 30)),
 	array("default_catalog_1c", Loc::getMessage("CAT_DEF_IBLOCK"), "", array("text", 30)),
 	array("deactivate_1c_no_price", Loc::getMessage("CAT_DEACT_NOPRICE"), "N", array("checkbox")),
-	array("yandex_xml_period", Loc::getMessage("CAT_YANDEX_XML_PERIOD"), "24", array("text", 5)),
+	array("yandex_xml_period", Loc::getMessage("CAT_YANDEX_MARKET_XML_PERIOD"), "24", array("text", 5)),
 );
 
 $strWarning = "";
@@ -126,7 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && !empty($_POST['Update']) && !$bReadO
 		$strYandexAgent = Rel2Abs('/', $strYandexAgent);
 		if (preg_match(BX_CATALOG_FILENAME_REG, $strYandexAgent) || (!file_exists($_SERVER['DOCUMENT_ROOT'].$strYandexAgent) || !is_file($_SERVER['DOCUMENT_ROOT'].$strYandexAgent)))
 		{
-			$strWarning .= Loc::getMessage('CAT_PATH_ERR_YANDEX_AGENT').'<br />';
+			$strWarning .= Loc::getMessage('CAT_YANDEX_CUSTOM_AGENT_FILE_NOT_FOUND').'<br />';
 			$strYandexAgent = '';
 		}
 	}
@@ -252,6 +254,10 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && !empty($_POST['Update']) && !$bReadO
 		'product_form_show_offer_name',
 		'enable_processing_deprecated_events'
 	);
+	if ($enabledCommonCatalog)
+	{
+		$checkboxFields[] = 'product_card_slider_enabled';
+	}
 
 	foreach ($checkboxFields as $oneCheckbox)
 	{
@@ -1175,11 +1181,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && !empty($_POST['agent_start']) && !$b
 	if ($intCount > 0)
 	{
 		CAgent::AddAgent('CCatalog::PreGenerateXML("yandex");', 'catalog', 'N', (int)Option::get('catalog', 'yandex_xml_period') * 3600);
-		$strOK .= Loc::getMessage('CAT_AGENT_ADD_SUCCESS').'. ';
+		$strOK .= Loc::getMessage('CAT_YANDEX_AGENT_ADD_SUCCESS').'. ';
 	}
 	else
 	{
-		$strWarning .= Loc::getMessage('CAT_AGENT_ADD_NO_EXPORT').'. ';
+		$strWarning .= Loc::getMessage('CAT_YANDEX_AGENT_ADD_NO_EXPORT').'. ';
 	}
 }
 
@@ -1210,6 +1216,7 @@ $currentSettings['get_discount_percent_from_base_price'] = (string)Option::get((
 $currentSettings['save_product_with_empty_price_range'] = (string)Option::get('catalog', 'save_product_with_empty_price_range');
 $currentSettings['default_product_vat_included'] = (string)Option::get('catalog', 'default_product_vat_included');
 $currentSettings['enable_processing_deprecated_events'] = (string)Option::get('catalog', 'enable_processing_deprecated_events');
+$currentSettings['product_card_slider_enabled'] = (string)Option::get('catalog', 'product_card_slider_enabled');
 
 $strShowCatalogTab = Option::get('catalog', 'show_catalog_tab_with_offers');
 $strSaveProductWithoutPrice = Option::get('catalog', 'save_product_without_price');
@@ -1298,6 +1305,20 @@ function RestoreDefaults()
 <tr class="heading">
 	<td colspan="2"><? echo Loc::getMessage("CAT_PRODUCT_CARD") ?></td>
 </tr>
+<?php
+if ($enabledCommonCatalog)
+{
+	?>
+	<tr>
+		<td width="40%"><label for="product_card_slider_enabled"><? echo Loc::getMessage("CAT_PRODUCT_CARD_SLIDER_ENABLED"); ?></label></td>
+		<td width="60%">
+			<input type="hidden" name="product_card_slider_enabled" id="product_card_slider_enabled_n" value="N">
+			<input type="checkbox" name="product_card_slider_enabled" id="product_card_slider_enabled_y" value="Y"<?=($currentSettings['product_card_slider_enabled'] == 'Y') ? ' checked' : ''?>>
+		</td>
+	</tr>
+	<?
+}
+?>
 <tr>
 	<td width="40%"><label for="save_product_without_price_y"><? echo Loc::getMessage("CAT_SAVE_PRODUCTS_WITHOUT_PRICE"); ?></label></td>
 	<td width="60%">
@@ -1581,7 +1602,7 @@ for ($i = 0, $intCount = count($arAllOptions); $i < $intCount; $i++)
 	<td width="60%">
 		<?$default_outfile_action = Option::get('catalog', 'default_outfile_action');?>
 		<select name="default_outfile_action">
-			<option value="D" <?if ($default_outfile_action=="D" || strlen($default_outfile_action)<=0) echo "selected" ?>><?echo Loc::getMessage("CAT_DEF_OUTFILE_D") ?></option>
+			<option value="D" <?if ($default_outfile_action=="D" || $default_outfile_action == '') echo "selected" ?>><?echo Loc::getMessage("CAT_DEF_OUTFILE_D") ?></option>
 			<option value="H" <?if ($default_outfile_action=="H") echo "selected" ?>><?=Loc::getMessage("CAT_DEF_OUTFILE_H")?></option>
 			<option value="F" <?if ($default_outfile_action=="F") echo "selected" ?>><?=Loc::getMessage("CAT_DEF_OUTFILE_F")?></option>
 		</select>
@@ -1607,7 +1628,7 @@ for ($i = 0, $intCount = count($arAllOptions); $i < $intCount; $i++)
 		)
 	);
 	?>
-	<?echo Loc::getMessage("CAT_AGENT_FILE")?></td>
+	<?echo Loc::getMessage("CAT_YANDEX_CUSTOM_AGENT_FILE")?></td>
 	<td width="60%"><input type="text" name="yandex_agent_file" size="50" maxlength="255" value="<?echo $yandex_agent_file?>">&nbsp;<input type="button" name="browse" value="..." onClick="BtnClick()"></td>
 </tr>
 <tr class="heading">
@@ -1910,7 +1931,7 @@ function change_offers_ibtype(obj,ID)
 		{
 			?><td><?=Loc::getMessage("CO_SALE_CONTENT") ?></td><?
 		}
-		?><td><?=Loc::getMessage("CAT_IBLOCK_SELECT_YAND")?></td>
+		?><td><?=Loc::getMessage("CAT_IBLOCK_SELECT_YANDEX_EXPORT")?></td>
 		<td><?=Loc::getMessage("CAT_IBLOCK_SELECT_VAT")?></td>
 	</tr>
 	<?
@@ -2055,9 +2076,9 @@ unset($catalogData);
 $aTabs = [];
 $aTabs[] = [
 	"DIV" => "fedit2",
-	"TAB" => Loc::getMessage("COP_TAB2_AGENT"),
+	"TAB" => Loc::getMessage("COP_TAB2_YANDEX_AGENT"),
 	"ICON" => "catalog_settings",
-	"TITLE" => Loc::getMessage("COP_TAB2_AGENT_TITLE")
+	"TITLE" => Loc::getMessage("COP_TAB2_YANDEX_AGENT_TITLE")
 ];
 if (!$useSaleDiscountOnly || $catalogCount > 0)
 {
@@ -2246,9 +2267,9 @@ if (!$useSaleDiscountOnly || $catalogCount > 0)
 			unset($userListID[0]);
 		if (!empty($userListID))
 		{
-			$strClearQuantityDate = Option::get('catalog', 'clear_quantity_date');
-			$strClearQuantityReservedDate = Option::get('catalog', 'clear_reserved_quantity_date');
-			$strClearStoreDate = Option::get('catalog', 'clear_store_date');
+			$strClearQuantityDate = (string)Option::get('catalog', 'clear_quantity_date');
+			$strClearQuantityReservedDate = (string)Option::get('catalog', 'clear_reserved_quantity_date');
+			$strClearStoreDate = (string)Option::get('catalog', 'clear_store_date');
 
 			$arUserList = array();
 			$strNameFormat = CSite::GetNameFormat(true);
@@ -2267,13 +2288,14 @@ if (!$useSaleDiscountOnly || $catalogCount > 0)
 			{
 				$arOneUser['ID'] = (int)$arOneUser['ID'];
 				if ($canViewUserList)
-					$arUserList[$arOneUser['ID']] = '<a href="/bitrix/admin/user_edit.php?lang='.LANGUAGE_ID.'&ID='.$arOneUser['ID'].'">'.CUser::FormatName($strNameFormat, $arOneUser).'</a>';
+					$arUserList[$arOneUser['ID']] = '['.$arOneUser['ID'].'] <a href="/bitrix/admin/user_edit.php?lang='.LANGUAGE_ID.'&ID='.$arOneUser['ID'].'">'.CUser::FormatName($strNameFormat, $arOneUser).'</a>';
 				else
-					$arUserList[$arOneUser['ID']] = CUser::FormatName($strNameFormat, $arOneUser);
+					$arUserList[$arOneUser['ID']] = '['.$arOneUser['ID'].'] '.CUser::FormatName($strNameFormat, $arOneUser);
 			}
 			unset($arOneUser, $userIterator, $canViewUserList);
 			if (isset($arUserList[$clearQuantityUser]))
 				$strQuantityUser = $arUserList[$clearQuantityUser];
+
 			if (isset($arUserList[$clearQuantityReservedUser]))
 				$strQuantityReservedUser = $arUserList[$clearQuantityReservedUser];
 			if (isset($arUserList[$clearStoreUser]))
@@ -2330,7 +2352,7 @@ if (!$useSaleDiscountOnly || $catalogCount > 0)
 		<td>
 			<input type="button" value="<? echo Loc::getMessage("CAT_CLEAR_ACTION"); ?>" id="cat_clear_reserved_quantity_btn" onclick="catClearQuantity(this, 'clearReservedQuantity')">
 			<?
-			if (0 < $clearQuantityUser)
+			if (0 < $clearQuantityReservedUser)
 			{
 				?><span style="font-size: smaller;"><?=$strQuantityReservedUser;?>&nbsp;<?=$strClearQuantityReservedDate;?></span><?
 			}

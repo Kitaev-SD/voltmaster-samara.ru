@@ -11,12 +11,14 @@
 	{
 		this.height = options.height || 'auto';
 		this.color = options.color || 'inherit';
+		this.previewImageUri = options.previewImageUri || '';
 		this.errors = options.errors || [];
 		this.data = options.data || {};
 		this.rendered = false;
 		this.widget = options.widget || null;
 		this.layout = {
-			container: null
+			container: null,
+			previewContainer: null
 		}
 	};
 
@@ -60,6 +62,26 @@
 		render: function ()
 		{
 			return BX.create('div', {html: 'parent render'});
+		},
+		renderPreview: function ()
+		{
+			if (this.layout.previewContainer)
+			{
+				return this.layout.previewContainer;
+			}
+
+			if (this.previewImageUri)
+			{
+				this.layout.previewContainer = BX.create('img', {
+					attrs: {
+						'src': this.previewImageUri,
+						'height': '390px',
+						'width': '100%'
+					}
+				});
+			}
+
+			return this.layout.previewContainer;
 		}
 	};
 
@@ -101,42 +123,31 @@
 		constructor: BX.Report.Dashboard.Content.Html,
 		loadAssets: function()
 		{
-			if (this.css.length)
+			var js = this.js.length ? this.js : [];
+			var css = this.css.length ? this.css : [];
+			var assets = js.concat(css);
+			if(assets.length)
 			{
-				BX.load(this.css, BX.delegate(function() {
-					if (this.js.length)
-					{
-						BX.load(this.js, BX.delegate(function() {
-							this.fillHtmlContentWrapper()
-						}, this));
-					}
-					else
-					{
-						this.fillHtmlContentWrapper()
-					}
-				}, this));
-
-			}
-			else if (this.js.length)
-			{
-				BX.load(this.js, BX.delegate(function() {
-					this.fillHtmlContentWrapper()
-				}, this));
+				BX.load(assets, this.fillHtmlContentWrapper.bind(this));
 			}
 			else
 			{
-				this.fillHtmlContentWrapper()
+				this.fillHtmlContentWrapper();
 			}
 		},
 		fillHtmlContentWrapper: function()
 		{
 			BX.Report.Dashboard.Content.Html.counter++;
-			BX.html(this.htmlContentWrapper, this.html, {
-				callback: function()
-				{
-					BX.Report.Dashboard.Content.Html.callCallbackInContext(BX.Report.Dashboard.Content.Html.counter, this.htmlContentWrapper);
-				}.bind(this)
-			});
+
+
+			var html = BX.processHTML(this.html);
+			this.htmlContentWrapper.innerHTML = html.HTML;
+
+			BX.ajax.processScripts(html.SCRIPT, false, function ()
+			{
+				BX.Report.Dashboard.Content.Html.callCallbackInContext(BX.Report.Dashboard.Content.Html.counter, this.htmlContentWrapper);
+			}.bind(this));
+
 			this.htmlContentWrapper.style.minHeight = this.getHeight() + 'px';
 			this.htmlContentWrapper.style.overflow = 'hidden';
 		},
@@ -148,13 +159,13 @@
 			}
 			else
 			{
-				BX.addCustomEvent(this.widget, 'Dashboard.Board.Widget:onAfterRender', BX.delegate(function ()
+				BX.addCustomEvent(this.widget, 'Dashboard.Board.Widget:onAfterRender', function ()
 				{
 					if (this.htmlContentWrapper.parentNode)
 					{
 						this.loadAssets();
 					}
-				}, this));
+				}.bind(this));
 
 				this.setRenderStatus(true);
 				return this.htmlContentWrapper;

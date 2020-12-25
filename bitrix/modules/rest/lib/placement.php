@@ -26,6 +26,7 @@ class PlacementTable extends Main\Entity\DataManager
 	const PLACEMENT_DEFAULT = 'DEFAULT';
 
 	const ERROR_PLACEMENT_NOT_FOUND = 'ERROR_PLACEMENT_NOT_FOUND';
+	const ERROR_PLACEMENT_MAX_COUNT = 'ERROR_PLACEMENT_MAX_COUNT';
 
 	const CACHE_TTL = 86400;
 	const CACHE_DIR = 'rest/placement';
@@ -66,6 +67,9 @@ class PlacementTable extends Main\Entity\DataManager
 				'data_type' => 'string',
 				'required' => true,
 			),
+			'GROUP_NAME' => array(
+				'data_type' => 'string',
+			),
 			'TITLE' => array(
 				'data_type' => 'string',
 			),
@@ -100,7 +104,7 @@ class PlacementTable extends Main\Entity\DataManager
 				'=REST_APP.ACTIVE' => AppTable::ACTIVE,
 			),
 			'select' => array(
-				'ID', 'TITLE', 'COMMENT', 'APP_ID', 'ADDITIONAL',
+				'ID', 'TITLE', 'GROUP_NAME', 'COMMENT', 'APP_ID', 'ADDITIONAL',
 				'INSTALLED' => 'REST_APP.INSTALLED',
 				'APP_NAME' => 'REST_APP.APP_NAME',
 				'APP_ACCESS' => 'REST_APP.ACCESS',

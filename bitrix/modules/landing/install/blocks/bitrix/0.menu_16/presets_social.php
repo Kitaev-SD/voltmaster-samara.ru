@@ -5,8 +5,9 @@ if (!defined('B_PROLOG_INCLUDED') || B_PROLOG_INCLUDED !== true)
 }
 
 use \Bitrix\Main\Localization\Loc;
+use Bitrix\Landing\Manager;
 
-return [
+$result = [
 	'facebook' => [
 		'name' => '<i class="fa fa-facebook"></i> Facebook',
 		'html' => '
@@ -17,6 +18,7 @@ return [
 					<i class="landing-block-card-social-icon fa fa-facebook"></i>
 				</a>
 			</li>',
+		'disallow' => ['.landing-block-card-social-icon'],
 		'values' => [
 			'.landing-block-card-social-icon-link' => [
 				'href' => 'https://facebook.com',
@@ -26,7 +28,6 @@ return [
 				'classList' => ['fa','fa-facebook'],
 			],
 		],
-		'disallow' => '.landing-block-card-social-icon',
 	],
 	
 	'instagram' => [
@@ -39,6 +40,7 @@ return [
 					<i class="landing-block-card-social-icon fa fa-instagram"></i>
 				</a>
 			</li>',
+		'disallow' => ['.landing-block-card-social-icon'],
 		'values' => [
 			'.landing-block-card-social-icon-link' => [
 				'href' => 'https://instagram.com',
@@ -48,7 +50,6 @@ return [
 				'classList' => ['fa','fa-instagram'],
 			],
 		],
-		'disallow' => '.landing-block-card-social-icon',
 	],
 	
 	'twitter' => [
@@ -61,6 +62,7 @@ return [
 					<i class="landing-block-card-social-icon fa fa-twitter"></i>
 				</a>
 			</li>',
+		'disallow' => ['.landing-block-card-social-icon'],
 		'values' => [
 			'.landing-block-card-social-icon-link' => [
 				'href' => 'https://twitter.com',
@@ -70,7 +72,6 @@ return [
 				'classList' => ['fa','fa-twitter'],
 			],
 		],
-		'disallow' => '.landing-block-card-social-icon',
 	],
 	
 	'youtube' => [
@@ -83,6 +84,7 @@ return [
 					<i class="landing-block-card-social-icon fa fa-youtube"></i>
 				</a>
 			</li>',
+		'disallow' => ['.landing-block-card-social-icon'],
 		'values' => [
 			'.landing-block-card-social-icon-link' => [
 				'href' => 'https://youtube.com',
@@ -92,7 +94,6 @@ return [
 				'classList' => ['fa','fa-youtube'],
 			],
 		],
-		'disallow' => '.landing-block-card-social-icon',
 	],
 	
 	'telegram' => [
@@ -105,6 +106,7 @@ return [
 					<i class="landing-block-card-social-icon fa fa-telegram"></i>
 				</a>
 			</li>',
+		'disallow' => ['.landing-block-card-social-icon'],
 		'values' => [
 			'.landing-block-card-social-icon-link' => [
 				'href' => 'https://telegram.com',
@@ -114,7 +116,6 @@ return [
 				'classList' => ['fa','fa-telegram'],
 			],
 		],
-		'disallow' => '.landing-block-card-social-icon',
 	],
 	
 	'pinterest' => [
@@ -127,6 +128,7 @@ return [
 					<i class="landing-block-card-social-icon fa fa-pinterest"></i>
 				</a>
 			</li>',
+		'disallow' => ['.landing-block-card-social-icon'],
 		'values' => [
 			'.landing-block-card-social-icon-link' => [
 				'href' => 'https://pinterest.com',
@@ -136,7 +138,6 @@ return [
 				'classList' => ['fa','fa-pinterest'],
 			],
 		],
-		'disallow' => '.landing-block-card-social-icon',
 	],
 	
 	'skype' => [
@@ -149,6 +150,7 @@ return [
 					<i class="landing-block-card-social-icon fa fa-skype"></i>
 				</a>
 			</li>',
+		'disallow' => ['.landing-block-card-social-icon'],
 		'values' => [
 			'.landing-block-card-social-icon-link' => [
 				'href' => 'https://skype.com',
@@ -158,51 +160,6 @@ return [
 				'classList' => ['fa','fa-skype'],
 			],
 		],
-		'disallow' => '.landing-block-card-social-icon',
-	],
-	
-	'vine' => [
-		'name' => '<i class="fa fa-vine"></i> Vine',
-		'html' => '
-			<li class="landing-block-card-social list-inline-item g-valign-middle g-mx-3 g-mb-6"
-				data-card-preset="vine">
-				<a class="landing-block-card-social-icon-link d-block u-icon-v3 u-icon-size--sm g-rounded-50x g-bg-gray-light-v4 g-color-gray-light-v1 g-bg-primary--hover g-color-white--hover g-font-size-14"
-				   href="https://vine.com">
-					<i class="landing-block-card-social-icon fa fa-vine"></i>
-				</a>
-			</li>',
-		'values' => [
-			'.landing-block-card-social-icon-link' => [
-				'href' => 'https://vine.com',
-			],
-			'.landing-block-card-social-icon' => [
-				'type' => 'icon',
-				'classList' => ['fa','fa-vine'],
-			],
-		],
-		'disallow' => '.landing-block-card-social-icon',
-	],
-	
-	'google-plus' => [
-		'name' => '<i class="fa fa-google-plus"></i> Google-plus',
-		'html' => '
-			<li class="landing-block-card-social list-inline-item g-valign-middle g-mx-3 g-mb-6"
-				data-card-preset="google-plus">
-				<a class="landing-block-card-social-icon-link d-block u-icon-v3 u-icon-size--sm g-rounded-50x g-bg-gray-light-v4 g-color-gray-light-v1 g-bg-primary--hover g-color-white--hover g-font-size-14"
-				   href="https://google-plus.com">
-					<i class="landing-block-card-social-icon fa fa-google-plus"></i>
-				</a>
-			</li>',
-		'values' => [
-			'.landing-block-card-social-icon-link' => [
-				'href' => 'https://google-plus.com',
-			],
-			'.landing-block-card-social-icon' => [
-				'type' => 'icon',
-				'classList' => ['fa','fa-google-plus'],
-			],
-		],
-		'disallow' => '.landing-block-card-social-icon',
 	],
 	
 	'dribbble' => [
@@ -215,6 +172,7 @@ return [
 					<i class="landing-block-card-social-icon fa fa-dribbble"></i>
 				</a>
 			</li>',
+		'disallow' => ['.landing-block-card-social-icon'],
 		'values' => [
 			'.landing-block-card-social-icon-link' => [
 				'href' => 'https://dribbble.com',
@@ -224,7 +182,6 @@ return [
 				'classList' => ['fa','fa-dribbble'],
 			],
 		],
-		'disallow' => '.landing-block-card-social-icon',
 	],
 	
 	'linkedin' => [
@@ -237,6 +194,7 @@ return [
 					<i class="landing-block-card-social-icon fa fa-linkedin"></i>
 				</a>
 			</li>',
+		'disallow' => ['.landing-block-card-social-icon'],
 		'values' => [
 			'.landing-block-card-social-icon-link' => [
 				'href' => 'https://linkedin.com',
@@ -246,11 +204,10 @@ return [
 				'classList' => ['fa','fa-linkedin'],
 			],
 		],
-		'disallow' => '.landing-block-card-social-icon',
 	],
 	
 	'vk' => [
-		'name' => '<i class="fa fa-vk"></i> Vk',
+		'name' => '<i class="fa fa-vk"></i> '.Loc::getMessage('LANDING_BLOCK_MENU16__SOCIALS__PRESET_VK'),
 		'html' => '
 			<li class="landing-block-card-social list-inline-item g-valign-middle g-mx-3 g-mb-6"
 				data-card-preset="vk">
@@ -259,6 +216,7 @@ return [
 					<i class="landing-block-card-social-icon fa fa-vk"></i>
 				</a>
 			</li>',
+		'disallow' => ['.landing-block-card-social-icon'],
 		'values' => [
 			'.landing-block-card-social-icon-link' => [
 				'href' => 'https://vk.com',
@@ -268,11 +226,10 @@ return [
 				'classList' => ['fa','fa-vk'],
 			],
 		],
-		'disallow' => '.landing-block-card-social-icon',
 	],
 	
 	'odnoklassniki' => [
-		'name' => '<i class="fa fa-odnoklassniki"></i> Odnoklassniki',
+		'name' => '<i class="fa fa-odnoklassniki"></i> '.Loc::getMessage('LANDING_BLOCK_MENU16__SOCIALS__PRESET_OK'),
 		'html' => '
 			<li class="landing-block-card-social list-inline-item g-valign-middle g-mx-3 g-mb-6"
 				data-card-preset="odnoklassniki">
@@ -281,6 +238,7 @@ return [
 					<i class="landing-block-card-social-icon fa fa-odnoklassniki"></i>
 				</a>
 			</li>',
+		'disallow' => ['.landing-block-card-social-icon'],
 		'values' => [
 			'.landing-block-card-social-icon-link' => [
 				'href' => 'https://odnoklassniki.com',
@@ -290,6 +248,13 @@ return [
 				'classList' => ['fa','fa-odnoklassniki'],
 			],
 		],
-		'disallow' => '.landing-block-card-social-icon',
 	],
 ];
+
+
+if (!in_array(Manager::getZone(), ['ru', 'kz', 'by']))
+{
+	unset($result['vk'], $result['odnoklassniki']);
+}
+
+return $result;

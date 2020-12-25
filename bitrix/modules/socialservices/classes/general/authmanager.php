@@ -111,13 +111,13 @@ class CSocServAuthManager
 		{
 			if(!is_array($arService))
 			{
-				$dbSocservUser = \CSocServAuthDB::getList(
-					array(),
-					array(
-						'USER_ID' => $this->userId,
-						'EXTERNAL_AUTH_ID' => $service,
-					)
-				);
+				$dbSocservUser = UserTable::getList([
+					'filter' => [
+						'=USER_ID' => $this->userId,
+						'=EXTERNAL_AUTH_ID' => $service,
+					],
+					'select' => ['ID']
+				]);
 				$arService = $dbSocservUser->fetch();
 			}
 
@@ -143,13 +143,13 @@ class CSocServAuthManager
 	{
 		if(isset(self::$arAuthServices[$service]))
 		{
-			$dbSocservUser = \CSocServAuthDB::getList(
-				array(),
-				array(
-					'USER_ID' => $this->userId,
-					'EXTERNAL_AUTH_ID' => $service,
-				)
-			);
+			$dbSocservUser = UserTable::getList([
+				'filter' => [
+					'=USER_ID' => $this->userId,
+					'=EXTERNAL_AUTH_ID' => $service,
+				],
+				'select' => ['ID']
+			]);
 			$arService = $dbSocservUser->fetch();
 			if(
 				is_array($arService)
@@ -319,8 +319,13 @@ class CSocServAuthManager
 		$userId = intval($userId);
 		if($userId > 0)
 		{
-			$dbSocservUser = CSocServAuthDB::GetList(array(), array('USER_ID' => $userId), false, false, array("ID", "EXTERNAL_AUTH_ID", "OATOKEN"));
-			while($arOauth = $dbSocservUser->Fetch())
+			$dbSocservUser = UserTable::getList([
+				'filter' => [
+					'=USER_ID' => $userId
+				],
+				'select' => ["ID", "EXTERNAL_AUTH_ID", "OATOKEN"]
+			]);
+			while($arOauth = $dbSocservUser->fetch())
 			{
 				if($arOauth["OATOKEN"] <> '' && ($arOauth["EXTERNAL_AUTH_ID"] == "Twitter" || $arOauth["EXTERNAL_AUTH_ID"] == "Facebook"))
 					$arUserOauth[$arOauth["ID"]] = $arOauth["EXTERNAL_AUTH_ID"];
@@ -778,8 +783,15 @@ class CSocServAuthManager
 		else
 		{
 			$arUserXmlId = $arOaToken = $arOaSecret = $arSiteId = array();
-			$dbSocUser = CSocServAuthDB::GetList(array(), array('EXTERNAL_AUTH_ID' => $authId, "ACTIVE" => 'Y'), false, false, array("XML_ID", "USER_ID", "OATOKEN", "OASECRET", "SITE_ID"));
-			while($arSocUser = $dbSocUser->Fetch())
+			$dbSocUser = UserTable::getList([
+				'filter' => [
+					'=EXTERNAL_AUTH_ID' => $authId,
+					"=USER.ACTIVE" => 'Y'
+				],
+				'select' => ["XML_ID", "USER_ID", "OATOKEN", "OASECRET", "SITE_ID"]
+			]);
+
+			while($arSocUser = $dbSocUser->fetch())
 			{
 				$arUserXmlId[$arSocUser["USER_ID"]] = $arSocUser["XML_ID"];
 				$arOaToken[$arSocUser["USER_ID"]] = $arSocUser["OATOKEN"];
@@ -939,8 +951,14 @@ class CSocServAuth
 				$arFields["USER_ID"] = $USER->GetID();
 			}
 
-			$dbCheck = CSocServAuthDB::GetList(array(), array("USER_ID" => $arFields["USER_ID"], "EXTERNAL_AUTH_ID" => $arFields["EXTERNAL_AUTH_ID"]), false, false, array("ID"));
-			if($dbCheck->Fetch())
+			$dbCheck = UserTable::getList([
+				'filter' => [
+					'=USER_ID' => $arFields["USER_ID"],
+					'=EXTERNAL_AUTH_ID' => $arFields["EXTERNAL_AUTH_ID"],
+				],
+				'select' => ["ID"]
+			]);
+			if($dbCheck->fetch())
 			{
 				return false;
 			}
@@ -981,12 +999,32 @@ class CSocServAuth
 			}
 		}
 
+		if (is_set($arFields, "PERSONAL_PHOTO"))
+		{
+			if (strlen($arFields["PERSONAL_PHOTO"]["name"])<=0 && strlen($arFields["PERSONAL_PHOTO"]["del"])<=0)
+			{
+				unset($arFields["PERSONAL_PHOTO"]);
+			}
+			else
+			{
+				$rsPersonalPhoto = $DB->Query("SELECT PERSONAL_PHOTO FROM b_socialservices_user WHERE ID=".$id);
+				if ($personalPhoto = $rsPersonalPhoto->Fetch())
+				{
+					$arFields["PERSONAL_PHOTO"]["old_file"] = $personalPhoto["PERSONAL_PHOTO"];
+				}
+			}
+		}
+
 		if(!self::CheckFields('UPDATE', $arFields))
 		{
 			return false;
 		}
 
-		$strUpdate = $DB->PrepareUpdate("b_socialservices_user", $arFields);
+		$arDbFields = $arFields;
+		if (static::hasEncryptedFields(array_keys($arDbFields)))
+			static::encryptFields($arDbFields);
+
+		$strUpdate = $DB->PrepareUpdate("b_socialservices_user", $arDbFields);
 
 		$strSql = "UPDATE b_socialservices_user SET ".$strUpdate." WHERE ID = ".$id." ";
 		$DB->Query($strSql, false, "File: ".__FILE__."<br>Line: ".__LINE__);
@@ -1003,25 +1041,33 @@ class CSocServAuth
 		return $id;
 	}
 
-	public static  function Delete($id)
+	public static function Delete($id)
 	{
 		global $DB;
 		$id = intval($id);
 		if ($id > 0)
 		{
-			$rsUser = $DB->Query("SELECT ID FROM b_socialservices_user WHERE ID=".$id);
+			$rsUser = $DB->Query("SELECT ID, PERSONAL_PHOTO FROM b_socialservices_user WHERE ID=".$id);
 			$arUser = $rsUser->Fetch();
-			if(!$arUser)
+			if (!$arUser)
+			{
 				return false;
+			}
 
-			foreach(GetModuleEvents("socialservices", "OnBeforeSocServUserDelete", true) as $arEvent)
+			foreach (GetModuleEvents("socialservices", "OnBeforeSocServUserDelete", true) as $arEvent)
+			{
 				ExecuteModuleEventEx($arEvent, array($id));
+			}
+
+			CFile::Delete($arUser["PERSONAL_PHOTO"]);
 
 			$DB->Query("DELETE FROM b_socialservices_user WHERE ID = ".$id." ", true);
+
 			$cache_id = 'socserv_ar_user';
 			$obCache = new CPHPCache;
 			$cache_dir = '/bx/socserv_ar_user';
 			$obCache->Clean($cache_id, $cache_dir);
+
 			return true;
 		}
 		return false;
@@ -1033,7 +1079,11 @@ class CSocServAuth
 		$id = intval($id);
 		if ($id > 0)
 		{
-			$DB->Query("DELETE FROM b_socialservices_user WHERE USER_ID = ".$id." ", true);
+			$rsUsers = $DB->Query("SELECT ID FROM b_socialservices_user WHERE USER_ID = ".$id." ", true);
+			while ($arUserLink = $rsUsers->Fetch())
+			{
+				self::Delete($arUserLink["ID"]);
+			}
 			return true;
 		}
 		return false;
@@ -1222,6 +1272,15 @@ class CSocServAuth
 	{
 		global $USER, $APPLICATION;
 
+		foreach(GetModuleEvents("socialservices", "OnBeforeSocServUserAuthorize", true) as $arEvent)
+		{
+			$errorCode = SOCSERV_AUTHORISATION_ERROR;
+			if(ExecuteModuleEventEx($arEvent, array($this, &$socservUserFields, &$errorCode)) === false)
+			{
+				return $errorCode;
+			}
+		}
+
 		if(!isset($socservUserFields['XML_ID']) || $socservUserFields['XML_ID'] == '')
 		{
 			return false;
@@ -1253,7 +1312,7 @@ class CSocServAuth
 				'=XML_ID'=>$socservUserFields['XML_ID'],
 				'=EXTERNAL_AUTH_ID'=>$socservUserFields['EXTERNAL_AUTH_ID']
 			),
-			'select' => array("ID", "USER_ID", "ACTIVE" => "USER.ACTIVE"),
+			'select' => array("ID", "USER_ID", "ACTIVE" => "USER.ACTIVE", "PERSONAL_PHOTO"),
 		));
 		$socservUser = $dbSocUser->fetch();
 
@@ -1413,7 +1472,7 @@ class CSocServAuth
 
 				if($entryId > 0)
 				{
-					UserTable::update($entryId, UserTable::filterFields($socservUserFields));
+					UserTable::update($entryId, UserTable::filterFields($socservUserFields, $socservUser));
 				}
 				else
 				{
@@ -1468,6 +1527,34 @@ WHERE bsu.LOGIN='".$DB->ForSql($login)."' AND bu.ACTIVE='Y'
 	public function setAllowChangeOwner($value)
 	{
 		$this->allowChangeOwner = (bool)$value;
+	}
+
+	protected static function hasEncryptedFields($arFields)
+	{
+		if (!\Bitrix\Socialservices\EncryptedToken\CryptoField::cryptoAvailable())
+			return false;
+
+		return (
+			!$arFields
+			|| in_array('*', $arFields)
+			|| in_array('OATOKEN', $arFields)
+			|| in_array('OASECRET', $arFields)
+			|| in_array('REFRESH_TOKEN', $arFields)
+		);
+	}
+
+	protected static function encryptFields(&$arFields)
+	{
+		$cryptoField = new \Bitrix\Socialservices\EncryptedToken\CryptoField('OATOKEN');
+
+		if (array_key_exists('OATOKEN', $arFields))
+			$arFields['OATOKEN'] = $cryptoField->encrypt($arFields['OATOKEN']);
+
+		if (array_key_exists('OASECRET', $arFields))
+			$arFields['OASECRET'] = $cryptoField->encrypt($arFields['OASECRET']);
+
+		if (array_key_exists('REFRESH_TOKEN', $arFields))
+			$arFields['REFRESH_TOKEN'] = $cryptoField->encrypt($arFields['REFRESH_TOKEN']);
 	}
 }
 

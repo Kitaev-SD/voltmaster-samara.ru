@@ -2,7 +2,8 @@
 use Bitrix\Main\localization\Loc,
 	Bitrix\Main,
 	Bitrix\Iblock,
-	Bitrix\Catalog;
+	Bitrix\Catalog,
+	Bitrix\Currency;
 
 Loc::loadMessages(__FILE__);
 
@@ -303,9 +304,16 @@ class CCatalogProductAvailable extends CCatalogStepOperations
 	private $offersMap = array();
 	private $offersIds = array();
 	private $prices = array();
+	private $calculatePrices = array();
 	private $existPriceIds = array();
 	private $existIdsByType = array();
 	private $measureRatios = array();
+	private $currencyReference = array();
+	private $measureIds = [
+		'DEFAULT' => null,
+		'BASE' => null
+	];
+
 	/** @deprecated  */
 	protected $useSets = false;
 	/** @deprecated  */
@@ -322,6 +330,7 @@ class CCatalogProductAvailable extends CCatalogStepOperations
 		$this->preloadTooLong = false;
 		$this->initConfig();
 		$this->setOldConfig();
+		$this->initReferences();
 	}
 
 	public function isUseSets()
@@ -362,13 +371,17 @@ class CCatalogProductAvailable extends CCatalogStepOperations
 			switch ($this->iblockData['CATALOG_TYPE'])
 			{
 				case CCatalogSku::TYPE_CATALOG:
+					$this->loadProductPrices();
 					break;
 				case CCatalogSku::TYPE_OFFERS:
 					$this->loadOffersData();
+					$this->loadProductPrices();
 					break;
 				case CCatalogSku::TYPE_FULL:
 				case CCatalogSku::TYPE_PRODUCT:
 					$this->loadSkuData();
+					$this->loadProductPrices();
+					$this->loadSkuPrices();
 					break;
 			}
 			$this->loadProductSets();
@@ -545,8 +558,10 @@ class CCatalogProductAvailable extends CCatalogStepOperations
 			'SEPARATE_SKU_MODE' => (string)Main\Config\Option::get('catalog', 'show_catalog_tab_with_offers') == 'Y',
 			'CHECK_AVAILABLE' => true,
 			'CHECK_SKU_PRICES' => true,
+			'CHECK_PRICES' => false,
 			'CHECK_SETS' => Catalog\Config\Feature::isProductSetsEnabled(),
 			'CHECK_MEASURE_RATIO' => false,
+			'CHECK_MEASURE' => false,
 			'UPDATE_ONLY' => false
 		);
 	}
@@ -556,6 +571,49 @@ class CCatalogProductAvailable extends CCatalogStepOperations
 		$this->useSets = $this->config['CHECK_SETS'];
 		$this->separateSkuMode = $this->config['SEPARATE_SKU_MODE'];
 		$this->extendedMode = false;
+	}
+
+	protected function initReferences()
+	{
+		$this->initCurrencyReference();
+		$this->initMeasures();
+	}
+
+	private function initCurrencyReference()
+	{
+		$this->currencyReference = [];
+		if (!$this->config['CHECK_PRICES'])
+			return;
+		$iterator = Currency\CurrencyTable::getList([
+			'select' => ['CURRENCY', 'CURRENT_BASE_RATE']
+		]);
+		while ($row = $iterator->fetch())
+			$this->currencyReference[$row['CURRENCY']] = (float)$row['CURRENT_BASE_RATE'];
+		unset($row, $iterator);
+	}
+
+	private function initMeasures()
+	{
+		$measure = CCatalogMeasure::getDefaultMeasure();
+		if (!empty($measure))
+		{
+			if ($measure['ID'] > 0)
+				$this->measureIds['DEFAULT'] = $measure['ID'];
+		}
+		$iterator = CCatalogMeasure::getList(
+			array(),
+			array('=CODE' => CCatalogMeasure::DEFAULT_MEASURE_CODE),
+			false,
+			false,
+			array('ID', 'CODE')
+		);
+		$measure = $iterator->Fetch();
+		unset($iterator);
+		if (!empty($measure))
+		{
+			$this->measureIds['BASE'] = $measure['ID'];
+		}
+		unset($measure);
 	}
 
 	/** @deprecated */
@@ -583,11 +641,13 @@ class CCatalogProductAvailable extends CCatalogStepOperations
 		$select[] = 'ID';
 		$select[] = 'IBLOCK_ID';
 		$select[] = 'ACTIVE';
+		$select[] = 'NAME';
 		$select['PRODUCT_ID'] = 'PRODUCT.ID';
 		$select['QUANTITY'] = 'PRODUCT.QUANTITY';
 		$select['QUANTITY_TRACE'] = 'PRODUCT.QUANTITY_TRACE';
 		$select['CAN_BUY_ZERO'] = 'PRODUCT.CAN_BUY_ZERO';
 		$select['TYPE'] = 'PRODUCT.TYPE';
+		$select['MEASURE'] = 'PRODUCT.MEASURE';
 
 		if ($this->lastID > 0)
 			$filter['>ID'] = $this->lastID;
@@ -630,12 +690,11 @@ class CCatalogProductAvailable extends CCatalogStepOperations
 	{
 		if (empty($this->currentList))
 			return;
-		//TODO: change CATALOG_AVAILABLE to PRODUCT.AVAILABLE
 		$offers = \CCatalogSku::getOffersList(
 			$this->currentIdsList,
 			$this->params['IBLOCK_ID'],
 			array(),
-			array('ID', 'ACTIVE', 'CATALOG_AVAILABLE')
+			array('ID', 'ACTIVE', 'AVAILABLE')
 		);
 		foreach ($this->currentIdsList as $id)
 		{
@@ -651,14 +710,13 @@ class CCatalogProductAvailable extends CCatalogStepOperations
 			foreach ($offers[$id] as $offerId => $row)
 			{
 				$allOffers[] = $offerId;
-				//TODO: change CATALOG_AVAILABLE to PRODUCT.AVAILABLE
-				if ($row['ACTIVE'] != 'Y' || $row['CATALOG_AVAILABLE'] != 'Y')
+				if ($row['ACTIVE'] != 'Y' || $row['AVAILABLE'] != 'Y')
 					continue;
 				$this->currentList[$id]['SKU_STATE'] = Catalog\Product\Sku::OFFERS_AVAILABLE;
 				$availableOffers[] = $offerId;
 			}
 
-			$this->prices[$id] = array();
+			$this->calculatePrices[$id] = [];
 			if ($this->config['CHECK_SKU_PRICES'] && !$this->config['SEPARATE_SKU_MODE'])
 			{
 				if ($this->currentList[$id]['SKU_STATE'] == Catalog\Product\Sku::OFFERS_AVAILABLE)
@@ -680,19 +738,66 @@ class CCatalogProductAvailable extends CCatalogStepOperations
 			}
 		}
 		unset($offerId, $availableOffers, $allOffers, $id);
+	}
 
-		$this->loadSkuPrices();
+	private function loadProductPrices()
+	{
+		if (empty($this->currentList))
+			return;
+
+		$this->prices = [];
+		$this->existPriceIds = [];
+		$this->existIdsByType = [];
+
+		if (!$this->config['CHECK_PRICES'] && !$this->config['CHECK_SKU_PRICES'])
+			return;
+
+		foreach (array_chunk($this->currentIdsList, 500) as $pageIds)
+		{
+			$iterator = Catalog\PriceTable::getList([
+				'select' => ['ID', 'PRODUCT_ID', 'CATALOG_GROUP_ID', 'PRICE', 'CURRENCY', 'PRICE_SCALE'],
+				'filter' => ['@PRODUCT_ID' => $pageIds],
+				'order' => ['PRODUCT_ID' => 'ASC', 'CATALOG_GROUP_ID' => 'ASC']
+			]);
+			while ($row = $iterator->fetch())
+			{
+				$id = (int)$row['ID'];
+				$row['PRICE'] = (float)$row['PRICE'];
+				$row['PRICE_SCALE'] = (float)$row['PRICE_SCALE'];
+				$productId = (int)$row['PRODUCT_ID'];
+				$priceTypeId = (int)$row['CATALOG_GROUP_ID'];
+
+				if (!isset($this->prices[$productId]))
+					$this->prices[$productId] = [];
+				$this->prices[$productId][$id] = $row;
+
+				if (!isset($this->existPriceIds[$productId]))
+					$this->existPriceIds[$productId] = [];
+				$this->existPriceIds[$productId][$id] = $id;
+
+				if (!isset($this->existIdsByType[$productId]))
+					$this->existIdsByType[$productId] = [];
+				if (!isset($this->existIdsByType[$productId][$priceTypeId]))
+					$this->existIdsByType[$productId][$priceTypeId] = [];
+				$this->existIdsByType[$productId][$priceTypeId][] = $id;
+			}
+			unset($priceTypeId, $productId, $id, $row, $iterator);
+		}
+		unset($pageIds);
 	}
 
 	private function loadSkuPrices()
 	{
-		$this->existPriceIds = array();
-		$this->existIdsByType = array();
+		if (empty($this->currentList))
+			return;
+
+/*		$this->existPriceIds = array();
+		$this->existIdsByType = array(); */
 
 		if (!$this->config['CHECK_SKU_PRICES'] || $this->config['SEPARATE_SKU_MODE'])
 			return;
 
-		foreach (array_chunk($this->currentIdsList, 500) as $pageIds)
+/*		foreach (array_chunk($this->currentIdsList, 500) as $pageIds)
 		{
 			$iterator = Catalog\PriceTable::getList(array(
 				'select' => array('ID', 'CATALOG_GROUP_ID', 'PRODUCT_ID'),
@@ -715,7 +820,7 @@ class CCatalogProductAvailable extends CCatalogStepOperations
 			}
 			unset($row, $iterator);
 		}
-		unset($pageIds);
+		unset($pageIds); */
 
 		if (empty($this->offersIds))
 			return;
@@ -743,10 +848,10 @@ class CCatalogProductAvailable extends CCatalogStepOperations
 				$productId = $this->offersMap[$offerId];
 				unset($row['PRODUCT_ID']);
 
-				if (!isset($this->prices[$productId][$typeId]))
-					$this->prices[$productId][$typeId] = $row;
-				elseif ($this->prices[$productId][$typeId]['PRICE_SCALE'] > $row['PRICE_SCALE'])
-					$this->prices[$productId][$typeId] = $row;
+				if (!isset($this->calculatePrices[$productId][$typeId]))
+					$this->calculatePrices[$productId][$typeId] = $row;
+				elseif ($this->calculatePrices[$productId][$typeId]['PRICE_SCALE'] > $row['PRICE_SCALE'])
+					$this->calculatePrices[$productId][$typeId] = $row;
 			}
 			unset($row, $iterator);
 			unset($filter);
@@ -855,6 +960,12 @@ class CCatalogProductAvailable extends CCatalogStepOperations
 		if (empty($this->currentIdsList))
 			return;
 
+		$checkMeasure = (
+			$this->config['CHECK_MEASURE']
+			&& $this->iblockData['CATALOG_TYPE'] != CCatalogSku::TYPE_PRODUCT
+			&& (isset($this->iblockData['SUBSCRIPTION']) && $this->iblockData['SUBSCRIPTION'] != 'Y')
+		);
+
 		foreach ($this->currentIdsList as $id)
 		{
 			$product = $this->currentList[$id];
@@ -887,6 +998,23 @@ class CCatalogProductAvailable extends CCatalogStepOperations
 						: Catalog\ProductTable::STATUS_NO
 					);
 				}
+				if ($checkMeasure)
+				{
+					if ($fields['TYPE'] == Catalog\ProductTable::TYPE_SET)
+					{
+						if ($this->measureIds['BASE'] !== null)
+						{
+							$fields['MEASURE'] = $this->measureIds['BASE'];
+						}
+					}
+					else
+					{
+						if ((int)$product['MEASURE'] <= 0 && $this->measureIds['DEFAULT'] !== null)
+						{
+							$fields['MEASURE'] = $this->measureIds['DEFAULT'];
+						}
+					}
+				}
 
 				if ($product['PRODUCT_EXISTS'])
 				{
@@ -907,47 +1035,37 @@ class CCatalogProductAvailable extends CCatalogStepOperations
 				else
 				{
 					$product['SUCCESS'] = false;
-					$errors = $productResult->getErrorMessages();
-					if (empty($errors))
-					{
-						if ($product['PRODUCT_EXISTS'])
-						{
-
-						}
-						else
-						{
-
-						}
-					}
-					else
-					{
-						if ($product['PRODUCT_EXISTS'])
-						{
-
-						}
-						else
-						{
-
-						}
-					}
-					unset($errors);
+					$errorId = 'BX_CATALOG_REINDEX_ERR_PRODUCT_UPDATE_FAIL_EXT';
+					if (
+						$product['TYPE'] == Catalog\ProductTable::TYPE_OFFER
+						|| $product['TYPE'] == Catalog\ProductTable::TYPE_FREE_OFFER
+					)
+						$errorId = 'BX_CATALOG_REINDEX_ERR_OFFER_UPDATE_FAIL_EXT';
+					$this->addError(Loc::getMessage(
+						$errorId,
+						[
+							'#ID#' => $id,
+							'#NAME#' => $product['NAME'],
+							'#ERROR#' => implode('; ', $productResult->getErrorMessages())
+						]
+					));
+					unset($errorId);
 				}
-				unset($fields);
+				unset($productResult, $fields);
 			}
 
 			if ($product['SUCCESS'])
 			{
-				if ($this->config['CHECK_SKU_PRICES'] && $product['TYPE'] == Catalog\ProductTable::TYPE_SKU)
-					$this->updateProductPrices($id);
+				if ($this->config['CHECK_PRICES'])
+					$this->updateProductPrices($id, $product);
+				if ($this->config['CHECK_SKU_PRICES'])
+				{
+					$this->updateSkuPrices($id, $product);
+					if ($product['TYPE'] == Catalog\ProductTable::TYPE_SKU)
+						Iblock\PropertyIndex\Manager::updateElementIndex($this->params['IBLOCK_ID'], $id);
+				}
 				if ($this->config['CHECK_MEASURE_RATIO'])
 					$this->updateMeasureRatios($id, $product);
-				if ($this->config['CHECK_SKU_PRICES'] && $product['TYPE'] == Catalog\ProductTable::TYPE_SKU)
-				{
-					Iblock\PropertyIndex\Manager::updateElementIndex(
-						$this->params['IBLOCK_ID'],
-						$id
-					);
-				}
 			}
 
 			unset($product);
@@ -958,22 +1076,100 @@ class CCatalogProductAvailable extends CCatalogStepOperations
 		unset($id);
 	}
 
-	private function updateProductPrices($id)
+	private function updateProductPrices($id, array $product)
 	{
+		if (!$this->config['CHECK_PRICES'])
+			return;
+
+		if ($product['TYPE'] == Catalog\ProductTable::TYPE_SKU && !$this->config['SEPARATE_SKU_MODE'])
+			return;
+
+		if (empty($this->prices[$id]))
+			return;
+
+		if ($product['TYPE'] == Catalog\ProductTable::TYPE_EMPTY_SKU)
+		{
+			unset($this->prices[$id]);
+			unset($this->existIdsByType[$id]);
+			unset($this->existPriceIds[$id]);
+
+			$conn = Main\Application::getConnection();
+			$helper = $conn->getSqlHelper();
+			$conn->queryExecute(
+				'delete from '.$helper->quote(Catalog\PriceTable::getTableName()).
+				' where '.$helper->quote('PRODUCT_ID').' = '.$id
+			);
+			unset($helper, $conn);
+			return;
+		}
+
+		$success = true;
+		$errorMessage = [];
+		foreach (array_keys($this->prices[$id]) as $rowId)
+		{
+			$row = $this->prices[$id][$rowId];
+			if (
+				!isset($this->currencyReference[$row['CURRENCY']])
+				|| $this->currencyReference[$row['CURRENCY']] == 0
+			)
+				continue;
+			$baseRate = $this->currencyReference[$row['CURRENCY']];
+			$newScale = $row['PRICE'] * $baseRate;
+			if ($newScale == $row['PRICE_SCALE'])
+				continue;
+			$rowResult = Catalog\PriceTable::update($rowId, ['PRICE_SCALE' => $newScale]);
+			if (!$rowResult->isSuccess())
+			{
+				$success = false;
+				$errorMessage = $rowResult->getErrorMessages();
+				break;
+			}
+		}
+		unset($rowResult, $newScale, $baseRate, $row, $rowId);
+
+		unset($this->prices[$id]);
+
+		if (!$success)
+		{
+			$errorId = 'BX_CATALOG_REINDEX_ERR_PRODUCT_PRICE_UPDATE_FAIL_EXT';
+			if (
+				$product['TYPE'] == Catalog\ProductTable::TYPE_OFFER
+				|| $product['TYPE'] == Catalog\ProductTable::TYPE_FREE_OFFER
+			)
+				$errorId = 'BX_CATALOG_REINDEX_ERR_OFFER_PRICE_UPDATE_FAIL_EXT';
+			$this->addError(Loc::getMessage(
+				$errorId,
+				[
+					'#ID#' => $id,
+					'#NAME#' => $product['NAME'],
+					'#ERROR#' => implode('; ', $errorMessage)
+				]
+			));
+			unset($errorId);
+		}
+		unset($errorMessage, $success);
+	}
+
+	private function updateSkuPrices($id, array $product)
+	{
+		if ($product['TYPE'] != Catalog\ProductTable::TYPE_SKU)
+			return;
 		if (!$this->config['CHECK_SKU_PRICES'] || $this->config['SEPARATE_SKU_MODE'])
 			return;
 
 		$success = true;
-		if (!empty($this->prices[$id]))
+		$errorMessage = [];
+		if (!empty($this->calculatePrices[$id]))
 		{
-			foreach (array_keys($this->prices[$id]) as $resultPriceType)
+			foreach (array_keys($this->calculatePrices[$id]) as $resultPriceType)
 			{
 				$rowId = null;
-				$row = $this->prices[$id][$resultPriceType];
+				$row = $this->calculatePrices[$id][$resultPriceType];
 				if (!empty($this->existIdsByType[$id][$resultPriceType]))
 				{
 					$rowId = array_shift($this->existIdsByType[$id][$resultPriceType]);
 					unset($this->existPriceIds[$id][$rowId]);
+					unset($this->prices[$id][$rowId]);
 				}
 				if ($rowId === null)
 				{
@@ -986,11 +1182,16 @@ class CCatalogProductAvailable extends CCatalogStepOperations
 					$rowResult = Catalog\PriceTable::update($rowId, $row);
 				}
 				if (!$rowResult->isSuccess())
+				{
 					$success = false;
+					$errorMessage = $rowResult->getErrorMessages();
+					break;
+				}
 			}
 		}
+		unset($this->calculatePrices[$id]);
 
-		if (!empty($this->existPriceIds[$id]))
+		if ($success && !empty($this->existPriceIds[$id]))
 		{
 			$conn = Main\Application::getConnection();
 			$helper = $conn->getSqlHelper();
@@ -1006,8 +1207,16 @@ class CCatalogProductAvailable extends CCatalogStepOperations
 
 		if (!$success)
 		{
-
+			$this->addError(Loc::getMessage(
+				'BX_CATALOG_REINDEX_ERR_PRODUCT_UPDATE_FAIL_EXT',
+				[
+					'#ID#' => $id,
+					'#NAME#' => $product['NAME'],
+					'#ERROR#' => implode('; ', $errorMessage)
+				]
+			));
 		}
+		unset($errorMessage, $success);
 	}
 
 	private function updateMeasureRatios($id, array $product)
@@ -1019,7 +1228,14 @@ class CCatalogProductAvailable extends CCatalogStepOperations
 			return;
 
 		$action = '';
-		if (
+		if (isset($this->iblockData['SUBSCRIPTION']) && $this->iblockData['SUBSCRIPTION'] == 'Y')
+		{
+			if (!empty($this->measureRatios[$id]['RATIOS']))
+				$action = 'set';
+			else
+				$action = 'create';
+		}
+		elseif (
 			$product['TYPE'] == Catalog\ProductTable::TYPE_PRODUCT
 			|| $product['TYPE'] == Catalog\ProductTable::TYPE_OFFER
 			|| $product['TYPE'] == Catalog\ProductTable::TYPE_FREE_OFFER
@@ -1159,6 +1375,7 @@ class CCatalogProductAvailable extends CCatalogStepOperations
 					case Catalog\ProductTable::TYPE_PRODUCT:
 					case Catalog\ProductTable::TYPE_SET:
 						$fields['AVAILABLE'] = Catalog\ProductTable::calculateAvailable($product);
+						$fields['TYPE'] = (int)$product['TYPE'];
 						break;
 					default:
 						$fields = Catalog\ProductTable::getDefaultAvailableSettings();
@@ -1195,6 +1412,7 @@ class CCatalogProductAvailable extends CCatalogStepOperations
 				case Catalog\ProductTable::TYPE_PRODUCT:
 				case Catalog\ProductTable::TYPE_SET:
 					$fields['AVAILABLE'] = Catalog\ProductTable::calculateAvailable($product);
+					$fields['TYPE'] = (int)$product['TYPE'];
 					break;
 				default:
 					$fields = array(
@@ -1521,6 +1739,8 @@ class CCatalogIblockReindex extends CCatalogProductAvailable
 	{
 		parent::initConfig();
 		$this->config['CHECK_MEASURE_RATIO'] = true;
+		$this->config['CHECK_MEASURE'] = true;
+		$this->config['CHECK_PRICES'] = true;
 	}
 
 	protected function setOldConfig()
@@ -1567,6 +1787,7 @@ class CCatalogIblockReindex extends CCatalogProductAvailable
 			$ratios[$row['ID']] = $row;
 		}
 		unset($row, $iterator);
+
 		if (empty($ratios))
 		{
 			$ratioResult = Catalog\MeasureRatioTable::add(array(

@@ -23,6 +23,8 @@ $MESS['MAIN_MAIL_CONFIRM_PUBLIC_HINT'] = 'Добавленный адрес см
 $MESS['MAIN_MAIL_CONFIRM_CODE_PLACEHOLDER'] = 'Введите код подтверждения';
 
 $MESS['MAIN_MAIL_CONFIRM_SMTP_SERVER'] = 'Сервер';
+$MESS['MAIN_MAIL_CONFIRM_SMTP_PORT'] = 'Порт';
+$MESS['MAIN_MAIL_CONFIRM_SMTP_SSL'] = 'использовать защищенное соединение';
 $MESS['MAIN_MAIL_CONFIRM_SMTP_LOGIN'] = 'Логин';
 $MESS['MAIN_MAIL_CONFIRM_SMTP_PASSWORD'] = 'Пароль';
 
@@ -37,8 +39,15 @@ $MESS['MAIN_MAIL_CONFIRM_EMPTY_SMTP_PORT'] = 'Введите порт SMTP-се�
 $MESS['MAIN_MAIL_CONFIRM_INVALID_SMTP_PORT'] = 'Недопустимый порт SMTP-сервера';
 $MESS['MAIN_MAIL_CONFIRM_EMPTY_SMTP_LOGIN'] = 'Введите логин для авторизации на SMTP-сервере';
 $MESS['MAIN_MAIL_CONFIRM_EMPTY_SMTP_PASSWORD'] = 'Введите пароль для авторизации на SMTP-сервере';
+$MESS['MAIN_MAIL_CONFIRM_INVALID_SMTP_PASSWORD'] = 'Пароль не может начинаться с символа "^" и не должен содержать нулевых байтов';
+$MESS['MAIN_MAIL_CONFIRM_INVALID_SMTP_PASSWORD_CARET'] = 'Пароль не может начинаться с символа "^"';
+$MESS['MAIN_MAIL_CONFIRM_INVALID_SMTP_PASSWORD_NULL'] = 'Пароль не должен содержать нулевых байтов';
+$MESS['MAIN_MAIL_CONFIRM_SPACE_SMTP_PASSWORD'] = 'Пароль начинается или оканчивается пробелом';
 
 $MESS['MAIN_MAIL_CONFIRM_SMTP_WARNING'] = 'Важно! Будьте внимательны при вводе данных SMTP-сервера. Письма не будут доставляться, если данные указаны некорректно.';
 
 $MESS["MAIN_MAIL_CONFIRM_DELETE_SENDER_CONFIRM"] = "Вы действительно хотите удалить отправителя?";
 $MESS["MAIN_MAIL_DELETE_SENDER_ERROR"] = "Ошибка удаления отправителя";
+
+$MESS['MAIN_MAIL_CONFIRM_MENU_PLACEHOLDER'] = 'Отправитель по умолчанию';
+$MESS['MAIN_MAIL_CONFIRM_MENU_UNKNOWN'] = 'Выбрать отправителя';

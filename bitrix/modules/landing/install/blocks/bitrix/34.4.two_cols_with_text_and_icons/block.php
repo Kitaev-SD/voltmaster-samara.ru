@@ -1,19 +1,19 @@
 <section class="landing-block g-pt-100 g-pb-60">
 	<div class="container">
 		<!-- Icon Blocks -->
-		<div class="row">
-			<div class="landing-block-node-card js-animation fadeInUp col-md-6 col-lg-6 g-mb-40">
+		<div class="row landing-block-inner">
+			<div class="landing-block-node-card js-animation fadeInUp col-md-6 col-lg-6 g-mb-40 g-mb-0--last g-px-20">
 				<!-- Icon Blocks -->
 				<div class="media">
-					<div class="d-flex g-mt-25 g-mr-40">
-                  <span class="d-block g-font-size-48 g-line-height-1">
-                    <i class="landing-block-node-card-icon g-color-primary fa fa-user-secret"></i>
+					<div class="d-flex g-mt-25 g-mr-40 g-width-64 justify-content-center">
+                  <span class="landing-block-node-card-icon-container g-color-primary d-block g-font-size-48 g-line-height-1">
+                    <i class="landing-block-node-card-icon fa fa-user-secret"></i>
                   </span>
 					</div>
 
 					<div class="media-body align-self-center">
-						<h3 class="landing-block-node-card-title h5 text-uppercase g-font-weight-800">Criminal law</h3>
-						<div class="landing-block-node-card-text g-font-size-default g-color-gray-dark-v2 mb-0">
+						<h3 class="landing-block-node-card-title landing-semantic-subtitle-medium h5 text-uppercase g-font-weight-700">Criminal law</h3>
+						<div class="landing-block-node-card-text landing-semantic-text-small g-color-gray-dark-v2 mb-0">
 							<p>Proin dignissim eget enim id aliquam.
 								Proin ornare dictum leo, non elementum tellus molestie et. Vivamus sit amet scelerisque
 								leo.
@@ -26,18 +26,18 @@
 				<!-- End Icon Blocks -->
 			</div>
 
-			<div class="landing-block-node-card js-animation fadeInUp col-md-6 col-lg-6 g-mb-40">
+			<div class="landing-block-node-card js-animation fadeInUp col-md-6 col-lg-6 g-mb-40 g-mb-0--last g-px-20">
 				<!-- Icon Blocks -->
 				<div class="media">
-					<div class="d-flex g-mt-25 g-mr-40">
-                  <span class="d-block g-font-size-48 g-line-height-1">
-                    <i class="landing-block-node-card-icon g-color-primary fa fa-institution"></i>
+					<div class="d-flex g-mt-25 g-mr-40 g-width-64 justify-content-center">
+                  <span class="landing-block-node-card-icon-container g-color-primary d-block g-font-size-48 g-line-height-1">
+                    <i class="landing-block-node-card-icon fa fa-institution"></i>
                   </span>
 					</div>
 
 					<div class="media-body align-self-center">
-						<h3 class="landing-block-node-card-title h5 text-uppercase g-font-weight-800">Civil law</h3>
-						<div class="landing-block-node-card-text g-font-size-default g-color-gray-dark-v2 mb-0">
+						<h3 class="landing-block-node-card-title landing-semantic-subtitle-medium h5 text-uppercase g-font-weight-700">Civil law</h3>
+						<div class="landing-block-node-card-text landing-semantic-text-small g-color-gray-dark-v2 mb-0">
 							<p>Nteger commodo est id erat bibendum, eu
 								convallis dolor tempus. Fusce mollis blandit eros. Nunc quis sapien in massa varius
 								convallis at sed justo. Praesent nec consectetur nibh, sed lobortis turpis.</p>
@@ -47,18 +47,18 @@
 				<!-- End Icon Blocks -->
 			</div>
 
-			<div class="landing-block-node-card js-animation fadeInUp col-md-6 col-lg-6 g-mb-40">
+			<div class="landing-block-node-card js-animation fadeInUp col-md-6 col-lg-6 g-mb-40 g-mb-0--last g-px-20">
 				<!-- Icon Blocks -->
 				<div class="media">
-					<div class="d-flex g-mt-25 g-mr-40">
-                  <span class="d-block g-font-size-48 g-line-height-1">
-                    <i class="landing-block-node-card-icon g-color-primary fa fa-suitcase"></i>
+					<div class="d-flex g-mt-25 g-mr-40 g-width-64 justify-content-center">
+                  <span class="landing-block-node-card-icon-container g-color-primary d-block g-font-size-48 g-line-height-1">
+                    <i class="landing-block-node-card-icon fa fa-suitcase"></i>
                   </span>
 					</div>
 
 					<div class="media-body align-self-center">
-						<h3 class="landing-block-node-card-title h5 text-uppercase g-font-weight-800">Business law</h3>
-						<div class="landing-block-node-card-text g-font-size-default g-color-gray-dark-v2 mb-0">
+						<h3 class="landing-block-node-card-title landing-semantic-subtitle-medium h5 text-uppercase g-font-weight-700">Business law</h3>
+						<div class="landing-block-node-card-text landing-semantic-text-small g-color-gray-dark-v2 mb-0">
 							<p>Aenean lobortis ante ac porttitor
 								eleifend. Morbi massa justo, gravida sollicitudin tortor vel, dignissim viverra lectus.
 								In
@@ -70,18 +70,18 @@
 				<!-- End Icon Blocks -->
 			</div>
 
-			<div class="landing-block-node-card js-animation fadeInUp col-md-6 col-lg-6 g-mb-40">
+			<div class="landing-block-node-card js-animation fadeInUp col-md-6 col-lg-6 g-mb-40 g-mb-0--last g-px-20">
 				<!-- Icon Blocks -->
 				<div class="media">
-					<div class="d-flex g-mt-25 g-mr-40">
-                  <span class="d-block g-font-size-48 g-line-height-1">
-                    <i class="landing-block-node-card-icon g-color-primary fa fa-money"></i>
+					<div class="d-flex g-mt-25 g-mr-40 g-width-64 justify-content-center">
+                  <span class="landing-block-node-card-icon-container g-color-primary d-block g-font-size-48 g-line-height-1">
+                    <i class="landing-block-node-card-icon fa fa-money"></i>
                   </span>
 					</div>
 
 					<div class="media-body align-self-center">
-						<h3 class="landing-block-node-card-title h5 text-uppercase g-font-weight-800">Tax law</h3>
-						<div class="landing-block-node-card-text g-font-size-default g-color-gray-dark-v2 mb-0">
+						<h3 class="landing-block-node-card-title landing-semantic-subtitle-medium h5 text-uppercase g-font-weight-700">Tax law</h3>
+						<div class="landing-block-node-card-text landing-semantic-text-small g-color-gray-dark-v2 mb-0">
 							<p>Nam et nulla rutrum, dignissim eros
 								quis, dictum eros. In ullamcorper molestie neque, ac faucibus felis efficitur sed. Nam
 								et

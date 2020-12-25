@@ -12,6 +12,11 @@ require_once($_SERVER['DOCUMENT_ROOT'].'/bitrix/modules/catalog/prolog.php');
 
 Loc::loadMessages(__FILE__);
 
+/** @global CAdminPage $adminPage */
+global $adminPage;
+/** @global CAdminSidePanelHelper $adminSidePanelHelper */
+global $adminSidePanelHelper;
+
 $publicMode = $adminPage->publicMode;
 $selfFolderUrl = $adminPage->getSelfFolderUrl();
 
@@ -31,7 +36,7 @@ if ($publicMode) $canViewUserList = false;
 
 $adminListTableID = 'tbl_catalog_round_rules';
 
-$adminSort = new CAdminSorting($adminListTableID, 'ID', 'ASC');
+$adminSort = new CAdminUiSorting($adminListTableID, 'ID', 'ASC');
 $adminList = new CAdminUiList($adminListTableID, $adminSort);
 
 $listType = array('' => Loc::getMessage('PRICE_ROUND_LIST_FILTER_PRICE_TYPE_ANY'));
@@ -251,14 +256,68 @@ $roundTypeList = Catalog\RoundingTable::getRoundTypes(true);
 
 $rowList = array();
 
+$usePageNavigation = true;
+$navyParams = array();
+if ($request['mode'] == 'excel')
+{
+	$usePageNavigation = false;
+}
+else
+{
+	$navyParams = CDBResult::GetNavParams(CAdminUiResult::GetNavSize($adminListTableID));
+	if ($navyParams['SHOW_ALL'])
+	{
+		$usePageNavigation = false;
+	}
+	else
+	{
+		$navyParams['PAGEN'] = (int)$navyParams['PAGEN'];
+		$navyParams['SIZEN'] = (int)$navyParams['SIZEN'];
+	}
+}
 $getListParams = array(
 	'select' => array_keys($selectFields),
 	'filter' => $filter,
 	'order' => array($by => $order)
 );
+if ($usePageNavigation)
+{
+	$getListParams['limit'] = $navyParams['SIZEN'];
+	$getListParams['offset'] = $navyParams['SIZEN']*($navyParams['PAGEN']-1);
+}
+$totalPages = 0;
+$totalCount = 0;
+if ($usePageNavigation)
+{
+	$totalCount = (int)Catalog\RoundingTable::getCount($getListParams['filter']);
+	if ($totalCount > 0)
+	{
+		$totalPages = ceil($totalCount/$navyParams['SIZEN']);
+		if ($navyParams['PAGEN'] > $totalPages)
+			$navyParams['PAGEN'] = $totalPages;
+		$getListParams['limit'] = $navyParams['SIZEN'];
+		$getListParams['offset'] = $navyParams['SIZEN']*($navyParams['PAGEN']-1);
+	}
+	else
+	{
+		$navyParams['PAGEN'] = 1;
+		$getListParams['limit'] = $navyParams['SIZEN'];
+		$getListParams['offset'] = 0;
+	}
+}
 
 $ruleIterator = new CAdminUiResult(Catalog\RoundingTable::getList($getListParams), $adminListTableID);
-$ruleIterator->NavStart();
+if ($usePageNavigation)
+{
+	$ruleIterator->NavStart($getListParams['limit'], $navyParams['SHOW_ALL'], $navyParams['PAGEN']);
+	$ruleIterator->NavRecordCount = $totalCount;
+	$ruleIterator->NavPageCount = $totalPages;
+	$ruleIterator->NavPageNomer = $navyParams['PAGEN'];
+}
+else
+{
+	$ruleIterator->NavStart();
+}
 
 CTimeZone::Disable();
 $adminList->SetNavigationParams($ruleIterator, array("BASE_LINK" => $selfFolderUrl."cat_round_list.php"));

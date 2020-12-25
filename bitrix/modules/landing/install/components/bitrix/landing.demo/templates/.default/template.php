@@ -11,6 +11,9 @@ use \Bitrix\Main\ModuleManager;
 \Bitrix\Main\UI\Extension::load("ui.fonts.opensans");
 Loc::loadMessages(__FILE__);
 
+$context = \Bitrix\Main\Application::getInstance()->getContext();
+$request = $context->getRequest();
+
 // some errors
 if ($arResult['ERRORS'])
 {
@@ -21,7 +24,7 @@ if ($arResult['ERRORS'])
 }
 
 // show message for license renew if need
-if (empty($arResult['DEMO']))
+if (empty($arResult['DEMO']) && !isset($arResult['ERRORS']['ACCESS_DENIED']))
 {
 	if (ModuleManager::isModuleInstalled('bitrix24'))
 	{
@@ -70,7 +73,7 @@ if ($arResult['FATAL'])
 $bodyClass = $APPLICATION->GetPageProperty('BodyClass');
 $APPLICATION->SetPageProperty(
 	'BodyClass',
-	($bodyClass ? $bodyClass.' ' : '') . 'no-all-paddings no-background'
+	($bodyClass ? $bodyClass.' ' : '') . 'no-all-paddings no-background landing-slider-frame-popup'
 );
 \Bitrix\Landing\Manager::setPageTitle(
 	Loc::getMessage('LANDING_TPL_TITLE')
@@ -87,29 +90,62 @@ Asset::getInstance()->addJS('/bitrix/components/bitrix/landing.sites/templates/.
 
 <?
 foreach ($arResult['DEMO'] as $item):
-	$uriSelect = new \Bitrix\Main\Web\Uri($arResult['CUR_URI']);
-	$uriSelect->addParams(array(
-		'tpl' => (
-					(
-						defined('SMN_SITE_ID') ||
-						!$arParams['SITE_ID']
-					)
-					&&
-				 	isset($item['DATA']['items'][0])
-				)
-				? $item['DATA']['items'][0]
-				: $item['ID']
-	));
+	// skip site group items
+	if (
+		isset($item['DATA']['site_group_item']) &&
+		$item['DATA']['site_group_item'] == 'Y'
+	)
+	{
+		continue;
+	}
+	
+	$tpl = (
+		(
+			defined('SMN_SITE_ID') ||
+			!$arParams['SITE_ID']
+		)
+		&&
+		isset($item['DATA']['items'][0])
+	)
+		? $item['DATA']['items'][0]
+		: $item['ID'];
+
+	if (!isset($item['EXTERNAL_URL']))
+	{
+		$uriSelect = new \Bitrix\Main\Web\Uri($arResult['CUR_URI']);
+		$uriSelect->addParams([
+			'tpl' => $tpl
+		]);
+		$uriSelect->deleteParams([
+			'select'
+		]);
+		$previewUrl = $uriSelect->getUri();
+	}
+	else if (isset($item['EXTERNAL_URL']['href']))
+	{
+		$previewUrl = $item['EXTERNAL_URL']['href'];
+	}
+	else
+	{
+		$previewUrl = '';
+	}
 	?>
 	<?if ($item['AVAILABLE']):?>
-	<span data-href="<?= $uriSelect->getUri();?>" class="landing-template-pseudo-link landing-item landing-item-hover<?= $arResult['LIMIT_REACHED'] ? ' landing-item-payment' : '';?>">
+	<span data-href="<?= $previewUrl;?>" id="landing-demo-<?= \htmlspecialcharsbx($tpl);?>" <?
+		?>class="landing-template-pseudo-link landing-item landing-item-hover<?= ($arResult['LIMIT_REACHED'] && !$item['SINGLETON']) ? ' landing-item-payment' : '';?>" <?
+		?><?if (isset($item['EXTERNAL_URL']['width'])){?>data-slider-width="<?= (int)$item['EXTERNAL_URL']['width'];?>"<?}?>>
 	<?else:?>
-	<span class="landing-item landing-item-hover landing-item-disabled">
+	<span class="landing-item landing-item-hover landing-item-unactive">
 	<?endif;?>
 		<span class="landing-item-inner">
 			<div class="landing-title">
 				<div class="landing-title-wrap">
-					<div class="landing-title-overflow"><?= \htmlspecialcharsbx($item['TITLE'])?></div>
+					<div class="landing-title-overflow">
+						<?= \htmlspecialcharsbx($item['TITLE'])?>
+					</div>
+					<?if ($this->getComponent()::isDemoNew($item['TIMESTAMP'])): ?>
+						<span class="landing-title-new"><?= Loc::getMessage('LANDING_TPL_LABEL_NEW');?></span>
+					<?endif;?>
 				</div>
 			</div>
 			<?if (trim($item['DESCRIPTION'])):?>
@@ -131,6 +167,13 @@ foreach ($arResult['DEMO'] as $item):
 						<span class="landing-item-desc-open"></span>
 					</span>
 				</span>
+				<?if ($item['DESIGNED_BY']):?>
+						<a class="landing-item-designed" href="<?= $item['DESIGNED_BY']['URL'];?>" target="_blank">
+							<?= Loc::getMessage('LANDING_TPL_DESIGNED_BY', [
+								'#DESIGNER#' => $item['DESIGNED_BY']['NAME'],
+							]);?>
+						</a>
+				<?endif;?>
 			<?else:?>
 				<span class="landing-item-cover">
 					<?if ($item['PREVIEW']):?>
@@ -168,6 +211,7 @@ foreach ($arResult['DEMO'] as $item):
 	</div>
 <?endif;?>
 
+<?if (Manager::isB24()):?>
 <a class="landing-license-banner" href="javascript:void(0)" onclick="BX.SidePanel.Instance.open('<?= SITE_DIR;?>marketplace/?placement=site_templates');">
 	<div class="landing-license-banner-icon">
 		<div class="landing-license-banner-icon-arrow"></div>
@@ -176,48 +220,36 @@ foreach ($arResult['DEMO'] as $item):
 		<?= Loc::getMessage('LANDING_TPL_LOAD_APP_TEMPLATE');?>
 	</div>
 </a>
+<?endif;?>
 
 <script type="text/javascript">
 	BX.ready(function ()
 	{
-		var items = [].slice.call(document.querySelectorAll('.landing-template-pseudo-link'));
-
-		items.forEach(function(item) {
-			if (!BX.hasClass(item, 'landing-item-payment'))
+		<?if ($arResult['LIMIT_REACHED']):?>
+		var nodes = BX('grid-tile-wrap').querySelectorAll('.landing-item-payment');
+		if (nodes.length)
+		{
+			for (var i = 0, c = nodes.length; i < c; i++)
 			{
-				BX.bind(item, 'click', function(event) {
-
-					if(event.target.classList.contains('landing-item-desc-open'))
-					{
-						return;
-					}
-
-					BX.SidePanel.Instance.open(event.currentTarget.dataset.href, {
-						allowChangeHistory: false
-					});
+				BX.bind(nodes[i], 'click', function(e)
+				{
+					<?
+					echo \Bitrix\Landing\Restriction\Manager::getActionCode(
+						($arParams['TYPE'] == 'STORE') ? 'limit_shop_number' : 'limit_sites_number'
+					);
+					?>
+					BX.PreventDefault(e);
 				});
 			}
-        });
-
-		var wrapper = BX('grid-tile-wrap');
-		var tiles = Array.prototype.slice.call(wrapper.getElementsByClassName('landing-item'));
-		new BX.Landing.Component.Demo({
-			wrapper : wrapper,
-			inner: BX('grid-tile-inner'),
-			tiles : tiles
-		});
-		<?if ($arResult['LIMIT_REACHED']):?>
-		if (typeof BX.Landing.PaymentAlert !== 'undefined')
-		{
-			BX.Landing.PaymentAlert({
-				nodes: wrapper.querySelectorAll('.landing-item-payment'),
-				title: '<?= \CUtil::jsEscape(Loc::getMessage('LANDING_TPL_LIMIT_REACHED_TITLE'));?>',
-				message: '<?= ($arParams['SITE_ID'] > 0)
-					? \CUtil::jsEscape(Loc::getMessage('LANDING_TPL_PAGE_LIMIT_REACHED_TEXT'))
-					: \CUtil::jsEscape(Loc::getMessage('LANDING_TPL_SITE_LIMIT_REACHED_TEXT'));
-					?>'
-			});
 		}
+		//LANDING_TPL_PAGE_LIMIT_REACHED_TEXT
+		<?endif;?>
+
+		<?if ($select = $request->get('select')):?>
+		BX.fireEvent(
+			BX('landing-demo-<?= \CUtil::JSEscape($select);?>'),
+			'click'
+		);
 		<?endif;?>
 	})
 </script>

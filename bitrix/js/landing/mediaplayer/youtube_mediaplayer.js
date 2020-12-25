@@ -30,9 +30,7 @@
 
 		iframe.src = addQueryParams(src, {
 			enablejsapi: 1,
-			playerVars: {
-				origin: window.location.origin
-			}
+			origin: window.location.protocol + '//' + window.location.host,
 		});
 
 		iframe.onload = function() {

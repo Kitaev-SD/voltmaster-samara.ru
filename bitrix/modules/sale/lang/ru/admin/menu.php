@@ -96,6 +96,8 @@ $MESS["SM1_STAT_GRAPH_STATUS"] = "По статусам";
 $MESS["SM1_STAT_GRAPH_STATUS_DESCR"] = "По статусам заказов";
 $MESS["SM_CRM"] = "CRM";
 $MESS["SALE_CRM_DESCR"] = "Связь с CRM";
+$MESS["SALE_SYNC_TITLE"] = "Синхронизация заказов с Б24";
+$MESS["SALE_SYNC_DESCR"] = "Синхронизация заказов с Б24";
 $MESS["SALE_CASHBOX"] = "Кассы ККМ";
 $MESS["SALE_CASHBOX_TITLE"] = "Кассы";
 $MESS["SALE_CASHBOX_LIST"] = "Список касс";
@@ -197,4 +199,6 @@ $MESS["SALE_MENU_MARKETPLACE_READY_SHOPS"] = "Установить готовы�
 $MESS["SALE_MENU_MARKETING_MARKETPLACE_ADD"] = "Установить из Маркетплейс";
 $MESS["SALE_MENU_TRADING_PLATFORMS_MARKETPLACE_ADD"] = "Установить из Маркетплейс";
 $MESS["SALE_MENU_DELIVERY_REQUESTS"] = "Транспортные заявки";
+$MESS["SALE_MENU_CRM_SITE_MASTER"] = "Переход в Битрикс24";
+$MESS["SALE_MENU_CRM_SITE_MASTER_ITEM"] = "Мастер установки Битрикс24";
 ?>

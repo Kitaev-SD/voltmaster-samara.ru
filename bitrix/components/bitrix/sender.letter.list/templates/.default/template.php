@@ -8,11 +8,15 @@ use Bitrix\Main\Web\Json;
 /** @var array $arParams */
 /** @var array $arResult */
 
+\Bitrix\Main\UI\Extension::load(['sender.error_handler']);
+
 foreach ($arResult['ERRORS'] as $error)
 {
 	ShowError($error);
 }
 
+$canViewClient = $arParams['CAN_VIEW_CLIENT'];
+$canPauseStartStop = $arParams['CAN_PAUSE_START_STOP'];
 foreach ($arResult['ROWS'] as $index => $data)
 {
 	$canEdit = $arParams['CAN_EDIT'];
@@ -119,7 +123,7 @@ foreach ($arResult['ROWS'] as $index => $data)
 		$buttonAction = htmlspecialcharsbx($buttonAction);
 		?>
 		<div class="sender-letter-list-block-flexible">
-			<?if ($buttonCaption):?>
+			<?if ($buttonCaption && $canPauseStartStop):?>
 			<div onclick="<?=$buttonAction?> event.stopPropagation(); return false;" class="sender-letter-list-button sender-letter-list-button-<?=$buttonColor?>" title="<?=htmlspecialcharsbx($buttonTitle)?>">
 				<span class="sender-letter-list-button-icon sender-letter-list-button-icon-<?=$buttonIcon?>"></span>
 					<span class="sender-letter-list-button-name">
@@ -223,7 +227,7 @@ foreach ($arResult['ROWS'] as $index => $data)
 
 	// statistics
 	ob_start();
-	if ($data['POSTING_ID'])
+	if ($data['POSTING_ID'] && $canViewClient)
 	{
 
 		?>
@@ -244,7 +248,19 @@ foreach ($arResult['ROWS'] as $index => $data)
 			onclick="BX.Sender.Page.open('<?=CUtil::JSEscape($data['URLS']['STAT'])?>'); return false;"
 			href="<?=htmlspecialcharsbx($data['URLS']['STAT'])?>"
 		>
-			<?=Loc::getMessage('SENDER_LETTER_LIST_ROW_STATS')?>
+			<?
+			$views = $data['STATS']['READ'];
+			$views .= '%';
+			echo Loc::getMessage('SENDER_LETTER_LIST_ROW_STATS_VIEWS', ['#COUNT#' => $views])?>
+		</a>,
+		<a class="sender-letter-list-link"
+			onclick="BX.Sender.Page.open('<?=CUtil::JSEscape($data['URLS']['STAT'])?>'); return false;"
+			href="<?=htmlspecialcharsbx($data['URLS']['STAT'])?>"
+		>
+			<?
+			$clicks = $data['STATS']['CLICK'];
+			$clicks .= '%';
+			echo Loc::getMessage('SENDER_LETTER_LIST_ROW_STATS_CLICKS', ['#COUNT#' => $clicks])?>
 		</a>
 		<?
 	}
@@ -367,6 +383,10 @@ $APPLICATION->IncludeComponent("bitrix:sender.ui.panel.title", "", array('LIST' 
 			'type' => 'abuses',
 			'href' => $arParams['PATH_TO_ABUSES'],
 		],
+		[
+			'type' => 'settings',
+			'items' => ['import']
+		],
 		$arParams['CAN_EDIT']
 			?
 			[
@@ -388,6 +408,7 @@ if ($arParams['CAN_EDIT'])
 	$controlPanel['GROUPS'][0]['ITEMS'][] = $snippet->getRemoveButton();
 }
 
+$navigation =  $arResult['NAV_OBJECT'];
 $APPLICATION->IncludeComponent(
 	"bitrix:main.ui.grid",
 	"",
@@ -395,15 +416,20 @@ $APPLICATION->IncludeComponent(
 		"GRID_ID" => $arParams['GRID_ID'],
 		"COLUMNS" => $arResult['COLUMNS'],
 		"ROWS" => $arResult['ROWS'],
-		"NAV_OBJECT" => $arResult['NAV_OBJECT'],
-		"~NAV_PARAMS" => array('SHOW_ALWAYS' => false),
+		'NAV_OBJECT' => $navigation,
+		'PAGE_SIZES' => $navigation->getPageSizes(),
+		'DEFAULT_PAGE_SIZE' => $navigation->getPageSize(),
+		'TOTAL_ROWS_COUNT' => $navigation->getRecordCount(),
+		'NAV_PARAM_NAME' => $navigation->getId(),
+		'CURRENT_PAGE' => $navigation->getCurrentPage(),
+		'PAGE_COUNT' => $navigation->getPageCount(),
+		'SHOW_PAGESIZE' => true,
 		'SHOW_ROW_CHECKBOXES' => $arParams['CAN_EDIT'],
 		'SHOW_GRID_SETTINGS_MENU' => true,
 		'SHOW_PAGINATION' => true,
 		'SHOW_SELECTED_COUNTER' => true,
 		'SHOW_TOTAL_COUNTER' => true,
 		'ACTION_PANEL' => $controlPanel,
-		"TOTAL_ROWS_COUNT" => $arResult['TOTAL_ROWS_COUNT'],
 		'ALLOW_COLUMNS_SORT' => true,
 		'ALLOW_COLUMNS_RESIZE' => true,
 		"AJAX_MODE" => "Y",

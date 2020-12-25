@@ -11,6 +11,8 @@ if (!empty($arResult['ERROR']))
 // calendar
 CJSCore::Init(array('date','access'));
 
+$isPeriodHidden = isset($arResult['settings']['period']['hidden']) && $arResult['settings']['period']['hidden'] === 'Y';
+
 $arPeriodTypes = array(
 	"month" => GetMessage("TASKS_THIS_MONTH"),
 	"month_ago" => GetMessage("TASKS_PREVIOUS_MONTH"),
@@ -36,7 +38,11 @@ $aMenu = array(
 		"LINK" => $APPLICATION->GetCurPageParam("EXCEL=Y"),
 	)
 );
-if ($arResult['MARK_DEFAULT'] > 0)
+if ($arResult['SHOW_EDIT_BUTTON'] == false)
+{
+	// do nothing
+}
+else if ($arResult['MARK_DEFAULT'] > 0)
 {
 	$aMenu[] = array(
 		"TEXT" => GetMessage("REPORT_COPY"),
@@ -90,6 +96,7 @@ $context->Show();
 	.adm-filter-box-sizing { width: auto; min-width: 300px;}
 	.adm-filter-content .adm-select-wrap { max-width: none; }
 	.adm-workarea .adm-input-wrap .adm-input { min-width: 110px; }
+	.filter-field-hidden { display: none; }
 </style>
 
 <!-- filter form -->
@@ -98,6 +105,13 @@ $context->Show();
 <input type="hidden" name="ID" value="<?=htmlspecialcharsbx($arParams['REPORT_ID'])?>" />
 <input type="hidden" name="sort_id" value="<?=htmlspecialcharsbx($arResult['sort_id'])?>" />
 <input type="hidden" name="sort_type" value="<?=htmlspecialcharsbx($arResult['sort_type'])?>" />
+<? if(isset($_REQUEST['publicSidePanel']) && $_REQUEST['publicSidePanel'] == 'Y'): ?>
+	<input type="hidden" name="publicSidePanel" value="Y" />
+<? endif ?>
+<? if(isset($_REQUEST['IFRAME']) && $_REQUEST['IFRAME'] == 'Y'): ?>
+	<input type="hidden" name="IFRAME" value="Y" />
+	<input type="hidden" name="IFRAME_TYPE" value="SIDE_SLIDER" />
+<? endif ?>
 <?
 // prepare info
 $info = array();
@@ -253,7 +267,7 @@ foreach($arResult['changeableFilters'] as $chFilter)
 						<? endif; ?>
 
 						<!-- period -->
-						<tr>
+						<tr<? echo $isPeriodHidden ? ' class="filter-field-hidden"' : ''; ?>>
 							<td class="adm-filter-item-left"><?=GetMessage('REPORT_PERIOD').':'?></td>
 							<td class="adm-filter-item-center">
 								<div class="adm-filter-alignment adm-calendar-block">
@@ -577,10 +591,10 @@ foreach($arResult['changeableFilters'] as $chFilter)
 
 <?php
 // determine column data type
-function getResultColumnDataType(&$viewColumnInfo, &$customColumnTypes = array(), $helperClassName)
+function getResultColumnDataType(&$viewColumnInfo, &$customColumnTypes, $helperClassName)
 {
 	$dataType = null;
-	if (array_key_exists($viewColumnInfo['fieldName'], $customColumnTypes))
+	if (is_array($customColumnTypes) && array_key_exists($viewColumnInfo['fieldName'], $customColumnTypes))
 	{
 		$dataType = $customColumnTypes[$viewColumnInfo['fieldName']];
 	}
@@ -1440,25 +1454,54 @@ unset($arGroupingResult['html']);
 	function prepareChartData(&$arResult, &$arGroupingResult = null)
 	{
 		$nMaxValues = 500;
+		$result = array('requestData' => array(), 'columnsNames' => array(), 'err' => 0);
 
 		// check
 		$chartSettings = $arResult['settings']['chart'];
 		if (!isset($chartSettings['x_column']))
-			return null;
+		{
+			$result['err'] = 49;
+		}
 		$xColumnIndex = $chartSettings['x_column'];
+		if (!is_array($arResult['viewColumns'][$xColumnIndex]))
+		{
+			$result['err'] = 49;
+			return $result;
+		}
 		if (!is_array($chartSettings['y_columns']))
-			return null;
+		{
+			$result['err'] = 49;
+			return $result;
+		}
 		$yColumnsCount = count($chartSettings['y_columns']);
-		if ($yColumnsCount === 0) return null;
+		if ($yColumnsCount === 0)
+		{
+			$result['err'] = 49;
+			return $result;
+		}
+		foreach ($chartSettings['y_columns'] as $yColumnIndex)
+		{
+			if (!is_array($arResult['viewColumns'][$yColumnIndex]))
+			{
+				$result['err'] = 49;
+				break;
+			}
+		}
+		if ($result['err'] !== 0)
+		{
+			return $result;
+		}
+
 		$chartTypeIds = array();
-		foreach ($arResult['chartTypes'] as $chartTypeInfo)
-			$chartTypeIds[] = $chartTypeInfo['id'];
+		foreach ($arResult['chartTypes'] as $chartTypeInfo) $chartTypeIds[] = $chartTypeInfo['id'];
 		if (!is_set($chartSettings['type'])
 			|| empty($chartSettings['type'])
 			|| !in_array($chartSettings['type'], $chartTypeIds))
 		{
-			return null;
+			$result['err'] = 49;
+			return $result;
 		}
+
 		$chartType = $chartSettings['type'];
 		if ($chartType === 'pie')
 			$yColumnsCount = 1;    // pie chart has only one array of a values
@@ -1512,7 +1555,10 @@ unset($arGroupingResult['html']);
 			}
 		}
 
-		return array('requestData' => $requestData, 'columnsNames' => $columnsHumanTitles);
+		$result['requestData'] = $requestData;
+		$result['columnsNames'] = $columnsHumanTitles;
+
+		return $result;
 	}
 
 	/*
@@ -1586,6 +1632,10 @@ unset($arGroupingResult['html']);
 	);
 	*/
 	$chartData = prepareChartData($arResult, $arGroupingResult['chart']);
+	if (is_array($chartData) && isset($chartData['err']) && $chartData['err'] !== 0)
+	{
+		$chartData = null;
+	}
 	unset($arGroupingResult);
 ?>
 <div style="font-size: 14px; margin: 40px 2px 2px 2px;"><?php echo GetMessage('REPORT_CHART').':'; ?></div>

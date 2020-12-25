@@ -299,7 +299,7 @@ final class Engine
 			$stub = $dynamicArea->getStub();
 			self::replaceSessid($stub);
 
-			$params["dynamicBlocks"][$dynamicArea->getId()] = substr(md5($stub), 0, 12);
+			$params["dynamicBlocks"][$dynamicArea->getId()] = mb_substr(md5($stub), 0, 12);
 			if ($dynamicArea->getBrowserStorage())
 			{
 				$realId = $dynamicArea->getContainerId() !== null ? $dynamicArea->getContainerId() : "bxdynamic_".$id;
@@ -481,7 +481,7 @@ final class Engine
 
 						if ($page->getStorage() instanceof Data\FileStorage)
 						{
-							$freeSpace = BinaryString::getLength($dividedData["static"]) + strlen($dividedData["md5"]);
+							$freeSpace = BinaryString::getLength($dividedData["static"]) + mb_strlen($dividedData["md5"]);
 							self::ensureFileQuota($freeSpace);
 						}
 
@@ -551,14 +551,6 @@ final class Engine
 				"spread" => array_map(array("CUtil", "JSEscape"), $APPLICATION->GetSpreadCookieUrls()),
 			);
 
-			if ($USER->isAuthorized() && self::getUseAppCache())
-			{
-				if (Loader::includeModule("pull") && \CPullOptions::CheckNeedRun())
-				{
-					$content["pull"] = \CPullChannel::GetConfig($USER->GetID());
-				}
-			}
-
 			$content = \CUtil::PhpToJSObject($content);
 		}
 		else
@@ -610,7 +602,7 @@ final class Engine
 				$realId = $dynamicArea->getContainerId() !== null ? $dynamicArea->getContainerId() : "bxdynamic_".$area->id;
 				$assets =  Asset::getInstance()->getAssetInfo($dynamicArea->getAssetId(), $dynamicArea->getAssetMode());
 				$areaContent = \CUtil::BinSubstr($content, $area->openTagEnd, $area->closingTagStart - $area->openTagEnd);
-				$areaContentMd5 = substr(md5($areaContent), 0, 12);
+				$areaContentMd5 = mb_substr(md5($areaContent), 0, 12);
 
 				$blockId = $dynamicArea->getId();
 				$hasSameContent = isset($pageBlocks[$blockId]) && $pageBlocks[$blockId] === $areaContentMd5;
@@ -622,6 +614,7 @@ final class Engine
 						"CONTENT" => $areaContent,
 						"HASH" => $areaContentMd5,
 						"PROPS" => array(
+							"ID" => $area->id,
 							"CONTAINER_ID" => $dynamicArea->getContainerId(),
 							"USE_BROWSER_STORAGE" => $dynamicArea->getBrowserStorage(),
 							"AUTO_UPDATE" => $dynamicArea->getAutoUpdate(),
@@ -688,10 +681,10 @@ final class Engine
 				break;
 			}
 
-			$idStart = $openTagStart + strlen($openTag);
+			$idStart = $openTagStart + mb_strlen($openTag);
 			$idLength = $endingPos - $idStart;
 			$areaId = \CUtil::BinSubstr($content, $idStart, $idLength);
-			$openTagEnd = $endingPos + strlen($ending);
+			$openTagEnd = $endingPos + mb_strlen($ending);
 
 			$realClosingTag = $closingTag.$areaId.$ending;
 			$closingTagStart = \CUtil::BinStrpos($content, $realClosingTag, $openTagEnd);
@@ -701,7 +694,7 @@ final class Engine
 				continue;
 			}
 
-			$closingTagEnd = $closingTagStart + strlen($realClosingTag);
+			$closingTagEnd = $closingTagStart + mb_strlen($realClosingTag);
 
 			$area = new \stdClass();
 			$area->id = $areaId;
@@ -721,7 +714,7 @@ final class Engine
 	{
 		$blocks = array();
 		$json = Context::getCurrent()->getServer()->get("HTTP_BX_CACHE_BLOCKS");
-		if ($json !== null && strlen($json) > 0)
+		if ($json !== null && $json <> '')
 		{
 			$blocks = json_decode($json, true);
 			if ($blocks === null)
@@ -973,6 +966,7 @@ final class Engine
 
 			r.open("GET", u, true);
 			r.setRequestHeader("BX-ACTION-TYPE", "get_dynamic");
+			r.setRequestHeader("X-Bitrix-Composite", "get_dynamic");
 			r.setRequestHeader("BX-CACHE-MODE", m);
 			r.setRequestHeader("BX-CACHE-BLOCKS", v.dynamicBlocks ? JSON.stringify(v.dynamicBlocks) : "");
 			if (inv)

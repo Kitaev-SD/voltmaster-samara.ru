@@ -121,7 +121,7 @@ class CRestServer
 
 					if($this->checkAuth())
 					{
-						\Bitrix\Rest\StatTable::log($this);
+						\Bitrix\Rest\UsageStatTable::log($this);
 
 
 						if($this->tokenCheck)
@@ -383,7 +383,7 @@ class CRestServer
 
 		$key = \Bitrix\Rest\OAuthService::getEngine()->getClientSecret();
 
-		$signatureState = $method
+		$signatureState = ToLower($method)
 			.\CRestUtil::TOKEN_DELIMITER.($this->scope === \CRestUtil::GLOBAL_SCOPE ? '' : $this->scope)
 			.\CRestUtil::TOKEN_DELIMITER.$queryString
 			.\CRestUtil::TOKEN_DELIMITER.implode(\CRestUtil::TOKEN_DELIMITER, $this->auth);
@@ -706,7 +706,7 @@ class CRestServer
 	public function output($data)
 	{
 		\Bitrix\Rest\LogTable::log($this, $data);
-		\Bitrix\Rest\StatTable::finalize();
+		\Bitrix\Rest\UsageStatTable::finalize();
 
 		switch($this->transport)
 		{

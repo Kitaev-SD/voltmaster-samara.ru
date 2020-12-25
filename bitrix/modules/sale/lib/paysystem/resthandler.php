@@ -59,6 +59,7 @@ class RestHandler extends PaySystem\ServiceHandler
 		{
 			$template .= '<input type="hidden" name="'.htmlspecialcharsbx($key).'" value="'.htmlspecialcharsbx($params[$value]).'">';
 		}
+		$template .= '<input type="hidden" name="BX_PAYSYSTEM_ID" value="'.$this->service->getField('ID').'">';
 		$template .= '<input name="button" value="'.Loc::getMessage('SALE_HANDLERS_REST_HANDLER_BUTTON_PAID').'" type="submit">';
 		$template .= '</form>';
 
@@ -83,7 +84,7 @@ class RestHandler extends PaySystem\ServiceHandler
 
 		return array(
 			'NAME' => $settings['NAME'],
-			'CODES' => $settings['CODES']
+			'CODES' => $settings['CODES'] ?: []
 		);
 	}
 
@@ -110,19 +111,66 @@ class RestHandler extends PaySystem\ServiceHandler
 	 * @param Payment $payment
 	 * @param Request $request
 	 * @return ServiceResult
-	 * @throws \Bitrix\Main\ObjectException
 	 */
 	public function processRequest(Payment $payment, Request $request)
 	{
 		$result = new ServiceResult();
 
-		$result->setPsData([
-			'PS_STATUS_CODE' => 'Y',
-			'PAY_VOUCHER_DATE' => new Type\Date()
-		]);
+		$result->setPsData($this->getPsData($request));
 		$result->setOperationType(ServiceResult::MONEY_COMING);
 
 		return $result;
+	}
+
+	/**
+	 * @param Request $request
+	 * @return array
+	 */
+	private function getPsData(Request $request): array
+	{
+		$psData = [
+			'PS_STATUS' => 'Y',
+			'PS_STATUS_CODE' => 'Y',
+			'PS_RESPONSE_DATE' => new Type\DateTime(),
+			'PAY_VOUCHER_DATE' => new Type\Date(),
+		];
+
+		if ($psInvoiceId = $request->get('PS_INVOICE_ID'))
+		{
+			$psData['PS_INVOICE_ID'] = $psInvoiceId;
+		}
+
+		if ($psStatusCode = $request->get('PS_STATUS_CODE'))
+		{
+			$psData['PS_STATUS_CODE'] = $psStatusCode;
+		}
+
+		if ($psStatusDescription = $request->get('PS_STATUS_DESCRIPTION'))
+		{
+			$psData['PS_STATUS_DESCRIPTION'] = $psStatusDescription;
+		}
+
+		if ($psStatusMessage = $request->get('PS_STATUS_MESSAGE'))
+		{
+			$psData['PS_STATUS_MESSAGE'] = $psStatusMessage;
+		}
+
+		if ($psSum = $request->get('PS_SUM'))
+		{
+			$psData['PS_SUM'] = $psSum;
+		}
+
+		if ($psCurrency = $request->get('PS_CURRENCY'))
+		{
+			$psData['PS_CURRENCY'] = $psCurrency;
+		}
+
+		if ($psRecurringToken = $request->get('PS_RECURRING_TOKEN'))
+		{
+			$psData['PS_RECURRING_TOKEN'] = $psRecurringToken;
+		}
+
+		return $psData;
 	}
 
 	/**

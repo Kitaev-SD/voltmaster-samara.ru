@@ -2,6 +2,8 @@
 namespace Bitrix\Sale\PaySystem;
 
 use Bitrix\Main\Application;
+use Bitrix\Main\Context;
+use Bitrix\Main\Text;
 use Bitrix\Main\Error;
 use Bitrix\Main\IO;
 use Bitrix\Main\Localization\Loc;
@@ -20,23 +22,14 @@ abstract class BaseServiceHandler
 	const ACTIVE_URL = 'active';
 
 	protected $handlerType = '';
-	
+
 	protected $service = null;
-	
+
 	protected $extraParams = array();
 	protected $initiateMode = self::STREAM;
-	
+
 	/** @var bool */
 	protected $isClone = false;
-
-	/**
-	 * @param Payment $payment
-	 * @param Request|null $request
-	 */
-	public function preInitiatePay(Payment $payment, Request $request = null)
-	{
-		return;
-	}
 
 	/**
 	 * @param Payment $payment
@@ -76,6 +69,12 @@ abstract class BaseServiceHandler
 			if ($this->initiateMode == self::STREAM)
 			{
 				require($templatePath);
+
+				if ($this->service->getField('ENCODING') != '')
+				{
+					define("BX_SALE_ENCODING", $this->service->getField('ENCODING'));
+					AddEventHandler('main', 'OnEndBufferContent', array($this, 'OnEndBufferContent'));
+				}
 			}
 			elseif ($this->initiateMode == self::STRING)
 			{
@@ -83,8 +82,14 @@ abstract class BaseServiceHandler
 				$content = require($templatePath);
 
 				$buffer = ob_get_contents();
-				if (strlen($buffer) > 0)
+				if ($buffer <> '')
 					$content = $buffer;
+
+				if ($this->service->getField('ENCODING') != '')
+				{
+					$encoding = Context::getCurrent()->getCulture()->getCharset();
+					$content = Text\Encoding::convertEncoding($content, $encoding, $this->service->getField('ENCODING'));
+				}
 
 				$result->setTemplate($content);
 				ob_end_clean();
@@ -93,12 +98,6 @@ abstract class BaseServiceHandler
 		else
 		{
 			$result->addError(new Error(Loc::getMessage('SALE_PS_BASE_SERVICE_TEMPLATE_ERROR')));
-		}
-
-		if ($this->service->getField('ENCODING') != '')
-		{
-			define("BX_SALE_ENCODING", $this->service->getField('ENCODING'));
-			AddEventHandler('main', 'OnEndBufferContent', array($this, 'OnEndBufferContent'));
 		}
 
 		return $result;
@@ -173,7 +172,13 @@ abstract class BaseServiceHandler
 	 */
 	protected function getBusinessValue(Payment $payment = null, $code)
 	{
-		return BusinessValue::getValueFromProvider($payment, $code, $this->service->getConsumerName());
+		$value = BusinessValue::getValueFromProvider($payment, $code, $this->service->getConsumerName());
+		if (is_string($value))
+		{
+			$value = trim($value);
+		}
+
+		return $value;
 	}
 
 	/**
@@ -185,12 +190,42 @@ abstract class BaseServiceHandler
 		$documentRoot = Application::getDocumentRoot();
 		$dirs = Manager::getHandlerDirectories();
 		$handlerDir = $dirs[$this->handlerType];
-		$file = $documentRoot.$handlerDir.$this->getName().'/.description.php';
+		$file = $documentRoot.$handlerDir.static::getName().'/.description.php';
 
 		if (IO\File::isFileExists($file))
+		{
 			require $file;
+		}
+
+		if (isset($data["CODES"]) && is_array($data["CODES"]))
+		{
+			$data["CODES"] = $this->filterDescriptionCodes($data["CODES"]);
+		}
 
 		return $data;
+	}
+
+	/**
+	 * @param $codes
+	 * @return array
+	 */
+	protected function filterDescriptionCodes($codes)
+	{
+		$psMode = $this->service->getField("PS_MODE");
+		return array_filter($codes, static function ($code) use ($psMode) {
+			if (!isset($code["HANDLER_MODE"]))
+			{
+				return true;
+			}
+
+			if (isset($code["HANDLER_MODE"]) && !is_array($code["HANDLER_MODE"]))
+			{
+				trigger_error("HANDLER_MODE must be an array", E_USER_WARNING);
+				return false;
+			}
+
+			return in_array($psMode, $code["HANDLER_MODE"], true);
+		});
 	}
 
 	/**
@@ -247,14 +282,6 @@ abstract class BaseServiceHandler
 	public function debitNoDemand(Payment $payment)
 	{
 		return new ServiceResult();
-	}
-
-	/**
-	 * @return bool
-	 */
-	public function isAffordPdf()
-	{
-		return false;
 	}
 
 	/**

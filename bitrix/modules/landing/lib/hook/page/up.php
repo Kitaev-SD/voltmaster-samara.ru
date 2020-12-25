@@ -2,6 +2,7 @@
 namespace Bitrix\Landing\Hook\Page;
 
 use \Bitrix\Landing\Manager;
+use \Bitrix\Landing\Assets;
 use \Bitrix\Landing\Field;
 use \Bitrix\Main\Localization\Loc;
 
@@ -28,6 +29,11 @@ class Up extends \Bitrix\Landing\Hook\Page
 	 */
 	public function enabled()
 	{
+		if ($this->issetCustomExec())
+		{
+			return true;
+		}
+
 		return $this->fields['SHOW']->getValue() == 'Y';
 	}
 
@@ -37,6 +43,12 @@ class Up extends \Bitrix\Landing\Hook\Page
 	 */
 	public function exec()
 	{
-		Manager::setPageClass('BodyClass', 'g-upper-show');
+		if ($this->execCustom())
+		{
+			return;
+		}
+
+		$assets = Assets\Manager::getInstance();
+		$assets->addAsset('landing_upper');
 	}
 }

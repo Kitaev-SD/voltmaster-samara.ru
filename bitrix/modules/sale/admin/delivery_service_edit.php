@@ -30,7 +30,7 @@ $ID = isset($_REQUEST["ID"]) ? intval($_REQUEST["ID"]) : 0;
 $srvStrError = "";
 $fields = array();
 $tabControlName = "tabControl";
-$isItSavingProcess = ($_SERVER['REQUEST_METHOD'] == "POST" && (strlen($_POST["save"]) > 0 || strlen($_POST["apply"]) > 0)) ? true : false;
+$isItSavingProcess = ($_SERVER['REQUEST_METHOD'] == "POST" && ($_POST["save"] <> '' || $_POST["apply"] <> '')) ? true : false;
 $isItReloadingProcess = ($_SERVER['REQUEST_METHOD'] == "POST" && (!isset($_POST["save"]) && !isset($_POST["apply"]))) ? true : false;
 $isItViewProcess = $_SERVER['REQUEST_METHOD'] != "POST";
 $classNamesList = Services\Manager::getHandlersList();
@@ -73,6 +73,11 @@ if (($isItReloadingProcess || $isItSavingProcess) && $saleModulePermissions == "
 	else
 		$fields["ACTIVE"] = "N";
 
+	if(isset($_POST["XML_ID"]) && $_POST["XML_ID"])
+		$fields["XML_ID"] = trim($_POST["XML_ID"]);
+	else
+		$fields["XML_ID"] = Services\Manager::generateXmlId();
+
 	if(isset($_POST["ALLOW_EDIT_SHIPMENT"]) && $_POST["ALLOW_EDIT_SHIPMENT"] == "Y")
 		$fields["ALLOW_EDIT_SHIPMENT"] = "Y";
 	else
@@ -111,17 +116,26 @@ if (($isItReloadingProcess || $isItSavingProcess) && $saleModulePermissions == "
 		$fields["LOGOTIP"]["MODULE_ID"] = "sale";
 		CFile::SaveForDB($fields, "LOGOTIP", "sale/delivery/logotip");
 	}
-	elseif(isset($_POST["LOGOTIP_FILE_ID"]) && intval($_POST["LOGOTIP_FILE_ID"]))
+	elseif(isset($_POST["LOGOTIP_FILE_ID"]) && (int)$_POST["LOGOTIP_FILE_ID"] > 0)
 	{
-		$fields["LOGOTIP"] = intval($_POST["LOGOTIP_FILE_ID"]);
+		$logoFileId = (int)$_POST["LOGOTIP_FILE_ID"];
+		$res = CFile::GetByID($logoFileId);
+
+		if($file = $res->Fetch())
+		{
+			if(mb_substr($file['SUBDIR'], 0, 21) === 'sale/delivery/logotip')
+			{
+				$fields["LOGOTIP"] = $logoFileId;
+			}
+		}
 	}
 
 	if ($isItSavingProcess)
 	{
-		if(strlen($fields["NAME"]) <=0 )
+		if($fields["NAME"] == '' )
 			$srvStrError .= Loc::getMessage("SALE_DSE_ERROR_NO_NAME").$delimiter;
 
-		if(strlen($fields["CLASS_NAME"]) <=0 )
+		if($fields["CLASS_NAME"] == '' )
 			$srvStrError .= Loc::getMessage("SALE_DSE_ERROR_NO_CLASS_NAME").$delimiter;
 
 		if($srvStrError == '')
@@ -142,7 +156,7 @@ if (($isItReloadingProcess || $isItSavingProcess) && $saleModulePermissions == "
 
 			if($srvStrError == '')
 			{
-				if(isset($fields["PARENT_ID"]) && $fields["PARENT_ID"] == "new" && strlen($_POST["GROUP_NAME"]) > 0)
+				if(isset($fields["PARENT_ID"]) && $fields["PARENT_ID"] == "new" && $_POST["GROUP_NAME"] <> '')
 				{
 					$fields["PARENT_ID"] = Services\Manager::getGroupId($_POST["GROUP_NAME"]);
 
@@ -240,9 +254,9 @@ if (($isItReloadingProcess || $isItSavingProcess) && $saleModulePermissions == "
 			}
 		}
 
-		if(strlen($srvStrError) <= 0)
+		if($srvStrError == '')
 		{
-			if (strlen($_POST["apply"]) > 0)
+			if ($_POST["apply"] <> '')
 			{
 				$paramsToKill = array();
 				if(!empty($_REQUEST["RESET_TARIF_SETTINGS"]))
@@ -259,7 +273,7 @@ if (($isItReloadingProcess || $isItSavingProcess) && $saleModulePermissions == "
 				$redirectUrl = $adminSidePanelHelper->setDefaultQueryParams($redirectUrl);
 				LocalRedirect($redirectUrl);
 			}
-			elseif(strlen($_POST["save"]) > 0)
+			elseif($_POST["save"] <> '')
 			{
 				$adminSidePanelHelper->sendSuccessResponse("base", array("ID" => $ID));
 				$adminSidePanelHelper->localRedirect((!empty($backUrlReq) ? $backUrlReq : $listUrl));
@@ -283,6 +297,7 @@ if(empty($fields) && $ID <= 0)
 	$fields["PARENT_ID"] = $_REQUEST["PARENT_ID"] ? intval($_REQUEST["PARENT_ID"]) : 0;
 	$fields["PROFILE_ID"] = $_REQUEST["PROFILE_ID"] ? htmlspecialcharsbx($_REQUEST["PROFILE_ID"]) : "";
 	$fields["SERVICE_TYPE"] = $_REQUEST["SERVICE_TYPE"] ? htmlspecialcharsbx($_REQUEST["SERVICE_TYPE"]) : "";
+	$fields["REST_CODE"] = $_REQUEST["REST_CODE"] ? htmlspecialcharsbx($_REQUEST["REST_CODE"]) : "";
 	$fields["CURRENCY"] = COption::GetOptionString("sale", "default_currency", "RUB");
 	$fields["RIGHTS"] = "YYY"; //Admin Manager Client
 	$fields["ACTIVE"] = "Y";
@@ -309,8 +324,18 @@ if($ID > 0 && ($_SERVER['REQUEST_METHOD'] != "POST" || $isItSavingProcess))
 {
 	$dbRes = \Bitrix\Sale\Delivery\Services\Table::getById($ID);
 
-	if(!$fields = $dbRes->fetch())
+	if(!$savedFields = $dbRes->fetch())
+	{
 		$srvStrError .= str_replace("#ID#", $ID, Loc::getMessage("SALE_DSE_ERROR_ID"))."<br>";
+	}
+	elseif(!empty($fields))
+	{
+		$fields = array_merge($savedFields, $fields);
+	}
+	else
+	{
+		$fields = $savedFields;
+	}
 }
 
 /* If action is copying */
@@ -368,10 +393,10 @@ $isGroup = $fields["CLASS_NAME"] == '\Bitrix\Sale\Delivery\Services\Group';
 
 $service = null;
 
-if((isset($fields["CLASS_NAME"]) && strlen($fields["CLASS_NAME"]) > 0) || $parentService)
+if((isset($fields["CLASS_NAME"]) && $fields["CLASS_NAME"] <> '') || $parentService)
 {
 	/* We must convert handler config from post as it was taken from database */
-	if($isItSavingProcess && strlen($srvStrError) > 0)
+	if($isItSavingProcess && $srvStrError <> '')
 	{
 		try
 		{
@@ -420,23 +445,23 @@ if((isset($fields["CLASS_NAME"]) && strlen($fields["CLASS_NAME"]) > 0) || $paren
 
 		if($ID <= 0)
 		{
-			if(strlen($fields["PROFILE_ID"]) > 0 || strlen($fields["SERVICE_TYPE"]) > 0)
+			if($fields["PROFILE_ID"] <> '' || $fields["SERVICE_TYPE"] <> '' || $fields["REST_CODE"] <> '')
 			{
 				$fields["NAME"] = $service->getName();
 				$fields["DESCRIPTION"] = $service->getDescription();
 				$fields["LOGOTIP"] = $service->getLogotip();
 			}
 
-			if(strlen($fields["NAME"]) <= 0)
+			if($fields["NAME"] == '')
 				$fields["NAME"] = $service->getClassTitle();
 
-			if(strlen($fields["DESCRIPTION"]) <= 0)
+			if($fields["DESCRIPTION"] == '')
 				$fields["DESCRIPTION"] = $service->getClassDescription();
 		}
 	}
 }
 
-if(strlen($fields["DESCRIPTION"]) > 0)
+if($fields["DESCRIPTION"] <> '')
 {
 	$CBXSanitizer = new \CBXSanitizer;
 	$CBXSanitizer->SetLevel(\CBXSanitizer::SECURE_LEVEL_LOW);
@@ -502,7 +527,7 @@ if($showExtraServices && $ID > 0)
 	);
 }
 
-$isTrackingTabShow = $service && $ID > 0 && strlen($service->getTrackingClass()) > 0 && !$service->isTrackingInherited();
+$isTrackingTabShow = $service && $ID > 0 && $service->getTrackingClass() <> '' && !$service->isTrackingInherited();
 
 if($isTrackingTabShow)
 {
@@ -847,26 +872,7 @@ if ($ID > 0 && $saleModulePermissions >= "W")
 $context = new CAdminContextMenu($aMenu);
 $context->Show();
 
-//warn about unfilled required fields
-if($ID > 0)
-{
-	if(is_array($serviceConfig) && !empty($serviceConfig))
-	{
-		foreach($serviceConfig as $sectionKey => $configSection)
-		{
-			if(is_array($configSection["ITEMS"]) && !empty($configSection["ITEMS"]))
-			{
-				foreach($configSection["ITEMS"] as $name => $params)
-				{
-					if(!empty($params['REQUIRED']) && $params['REQUIRED'] == true && strlen($params['VALUE']) <= 0)
-						$srvStrError .= Loc::getMessage('SALE_DSE_REQUIRED_FIELD').' "'.$params['NAME'].'".<br>';
-				}
-			}
-		}
-	}
-}
-
-if(strlen($srvStrError) > 0)
+if($srvStrError <> '')
 {
 	$m = Array("DETAILS"=>$srvStrError, "TYPE"=>"ERROR", "HTML"=>true);
 
@@ -898,7 +904,7 @@ $actionUrl = $adminSidePanelHelper->setDefaultQueryParams($actionUrl);
 
 <?if(is_array($fields)):?>
 	<?foreach($fields as $fieldName => $fieldValue): /* if fields don't show let's make them hidden */?>
-		<?if(!is_array($fieldValue) && strlen($fieldValue) > 0 && !array_key_exists($fieldName, $showFieldsList)):?>
+		<?if(!is_array($fieldValue) && $fieldValue <> '' && !array_key_exists($fieldName, $showFieldsList)):?>
 			<input type="hidden" name="<?=$fieldName?>" value="<?=$fieldValue?>">
 		<?endif;?>
 	<?endforeach;?>
@@ -926,7 +932,7 @@ $tabControl->BeginNextTab();
 		<tr class="adm-detail-required-field">
 			<td width="40%"><?=Loc::getMessage("SALE_DSE_FORM_CLASS_NAME")?>:</td>
 			<td width="60%">
-				<?if(count($classNamesList) > 1 && (strlen($fields["CLASS_NAME"]) <= 0 )):?>
+				<?if(count($classNamesList) > 1 && ($fields["CLASS_NAME"] == '' )):?>
 					<select name="CLASS_NAME" onchange="if(this.value == '') return; top.BX.showWait(); this.form.submit(); /*elements.apply.click();*/">
 						<option value=""></option>
 						<?foreach($classNamesList as $className):?>
@@ -1067,6 +1073,14 @@ $tabControl->BeginNextTab();
 			</td>
 		</tr>
 	<?endif;?>
+	<?if(array_key_exists("XML_ID", $showFieldsList)):?>
+		<tr>
+			<td width="40%"><?=Loc::getMessage('SALE_DSE_XML_ID')?>:</td>
+			<td width="60%">
+				<input type="text" name="XML_ID" value="<?=(isset($fields["XML_ID"]) ? htmlspecialcharsbx($fields["XML_ID"]) : Services\Manager::generateXmlId() )?>" size="40">
+			</td>
+		</tr>
+	<?endif;?>
 	<?$hiddensConfigHtml = "";?>
 	<?if(is_array($serviceConfig) && !empty($serviceConfig)):?>
 		<?foreach($serviceConfig as $sectionKey => $configSection):?>
@@ -1101,7 +1115,7 @@ $tabControl->BeginNextTab();
 		</tr>
 	<?endif;?>
 
-	<?if(strlen($restrictionsHtml) > 0):?>
+	<?if($restrictionsHtml <> ''):?>
 		<?$tabControl->BeginNextTab();?>
 		<tr><td id="sale-delivery-restriction-container"><?=$restrictionsHtml?></td></tr>
 	<?endif;?>

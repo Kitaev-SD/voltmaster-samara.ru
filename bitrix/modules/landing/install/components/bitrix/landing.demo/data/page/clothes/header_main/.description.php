@@ -18,6 +18,7 @@ return array(
 			'METAOG_IMAGE' => 'https://cdn.bitrix24.site/bitrix/images/demo/page/clothes/header_main/preview.jpg',
 			'VIEW_USE' => 'N',
 			'VIEW_TYPE' => 'no',
+			'THEME_CODE' => 'travel',
 		),
 	),
 	'layout' => array(
@@ -66,7 +67,8 @@ return array(
 				'.landing-block-node-menu-logo' => array(
 					0 => array(
 						'alt' => 'Logo',
-						'src' => 'https://cdn.bitrix24.site/bitrix/images/landing/business/eshop/logo-en.png',
+						'src' => 'https://cdn.bitrix24.site/bitrix/images/landing/business/eshop/logo_wo_icon.png',
+						'src2x' => 'https://cdn.bitrix24.site/bitrix/images/landing/business/eshop/logo_wo_icon@2x.png',
 					),
 				),
 				'.landing-block-node-menu-logo-link' => array(
@@ -124,7 +126,7 @@ return array(
 			),
 			'style' => array(
 				'#wrapper' => array(
-					0 => 'landing-block landing-block-menu g-bg-white u-header u-header--fixed',
+					0 => 'landing-block landing-block-menu g-bg-white u-header u-header--static u-header--relative',
 				),
 			),
 			'attrs' => array(),

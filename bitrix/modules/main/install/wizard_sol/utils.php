@@ -3,7 +3,7 @@ class WizardServices
 {
 	function PatchHtaccess($path)
 	{
-		if (strtoupper(substr(PHP_OS, 0, 3)) === "WIN")
+		if (mb_strtoupper(mb_substr(PHP_OS, 0, 3)) === "WIN")
 		{
 			$io = CBXVirtualIo::GetInstance();
 			$fnhtaccess = $io->CombinePath($path, '.htaccess');
@@ -12,7 +12,7 @@ class WizardServices
 				$ffhtaccess = $io->GetFile($fnhtaccess);
 				$ffhtaccessContent = $ffhtaccess->GetContents();
 
-				if (strpos($ffhtaccessContent, "/bitrix/virtual_file_system.php") === false)
+				if (mb_strpos($ffhtaccessContent, "/bitrix/virtual_file_system.php") === false)
 				{
 					$ffhtaccessContent = preg_replace('/RewriteEngine On/is', "RewriteEngine On\r\n\r\n".
 						"RewriteCond %{REQUEST_FILENAME} -f [OR]\r\n".
@@ -54,18 +54,11 @@ class WizardServices
 				"NAME" => $dirName,
 			);
 
-			if (file_exists($absolutePath."/".$dirName."/description.php"))
+			$descriptionFile = $absolutePath."/".$dirName."/description.php";
+			if (file_exists($descriptionFile))
 			{
-				if (LANGUAGE_ID != "en" && LANGUAGE_ID != "ru")
-				{
-					if (file_exists(($fname = $absolutePath."/".$dirName."/lang/".LangSubst(LANGUAGE_ID)."/description.php")))
-						__IncludeLang($fname);
-				}
-
-				if (file_exists(($fname = $absolutePath."/".$dirName."/lang/".LANGUAGE_ID."/description.php")))
-					__IncludeLang($fname);
-
-				include($absolutePath."/".$dirName."/description.php");
+				\Bitrix\Main\Localization\Loc::loadLanguageFile($descriptionFile);
+				include($descriptionFile);
 			}
 
 			$arTemplate["ID"] = $dirName;
@@ -170,21 +163,34 @@ class WizardServices
 		$arMessages = Array();
 		if ($lang != "en" && $lang != "ru")
 		{
-			if (file_exists(($fname = WIZARD_SERVICE_ABSOLUTE_PATH."/lang/".LangSubst($lang)."/".$relativePath)))
+			$subst_lang = LangSubst($lang);
+			$fname = WIZARD_SERVICE_ABSOLUTE_PATH."/lang/".$subst_lang."/".$relativePath;
+			$fname = \Bitrix\Main\Localization\Translation::convertLangPath($fname, $subst_lang);
+			if (file_exists($fname))
 			{
 				if ($bReturnArray)
-					$arMessages = __IncludeLang($fname, true);
+				{
+					$arMessages = __IncludeLang($fname, true, true);
+				}
 				else
-					__IncludeLang($fname);
+				{
+					__IncludeLang($fname, false, true);
+				}
 			}
 		}
 
-		if (file_exists(($fname = WIZARD_SERVICE_ABSOLUTE_PATH."/lang/".$lang."/".$relativePath)))
+		$fname = WIZARD_SERVICE_ABSOLUTE_PATH."/lang/".$lang."/".$relativePath;
+		$fname = \Bitrix\Main\Localization\Translation::convertLangPath($fname, $lang);
+		if (file_exists($fname))
 		{
 			if ($bReturnArray)
-				$arMessages = array_merge($arMessages, __IncludeLang($fname, true));
+			{
+				$arMessages = array_merge($arMessages, __IncludeLang($fname, true, true));
+			}
 			else
-				__IncludeLang($fname);
+			{
+				__IncludeLang($fname, false, true);
+			}
 		}
 
 		return $arMessages;
@@ -192,7 +198,7 @@ class WizardServices
 
 	function GetCurrentSiteID($selectedSiteID = null)
 	{
-		if (strlen($selectedSiteID) > 0)
+		if ($selectedSiteID <> '')
 		{
 			$obSite = CSite::GetList($by = "def", $order = "desc", Array("LID" => $selectedSiteID));
 			if (!$arSite = $obSite->Fetch())
@@ -292,13 +298,13 @@ class WizardServices
 
 		$path = rtrim($path, "/");
 
-		if (strlen($path) <= 0)
+		if ($path == '')
 			$path = "/";
 
-		if( ($position = strrpos($path, "/")) !== false)
+		if( ($position = mb_strrpos($path, "/")) !== false)
 		{
-			$pathFile = substr($path, $position+1);
-			$pathDir = substr($path, 0, $position);
+			$pathFile = mb_substr($path, $position + 1);
+			$pathDir = mb_substr($path, 0, $position);
 		}
 		else
 			return false;
@@ -368,7 +374,7 @@ class WizardServices
 		if (!is_array($siteID))
 			$siteID = Array($siteID);
 
-		require_once($_SERVER["DOCUMENT_ROOT"]."/bitrix/modules/iblock/classes/".strtolower($GLOBALS["DB"]->type)."/cml2.php");
+		require_once($_SERVER["DOCUMENT_ROOT"]."/bitrix/modules/iblock/classes/".mb_strtolower($GLOBALS["DB"]->type)."/cml2.php");
 		$iblockID = ImportXMLFile(
 			$xmlFile,
 			$iblockType,
@@ -406,7 +412,7 @@ class WizardServices
 	function SetIBlockFormSettings($iblockID, $settings)
 	{
 		global $DBType;
-		require_once($_SERVER['DOCUMENT_ROOT']."/bitrix/modules/main/classes/".strtolower($DBType)."/favorites.php");
+		require_once($_SERVER['DOCUMENT_ROOT']."/bitrix/modules/main/classes/".mb_strtolower($DBType)."/favorites.php");
 
 		CUserOptions::SetOption(
 			"form",
@@ -419,7 +425,7 @@ class WizardServices
 	function SetUserOption($category, $option, $settings, $common = false, $userID = false)
 	{
 		global $DBType;
-		require_once($_SERVER['DOCUMENT_ROOT']."/bitrix/modules/main/classes/".strtolower($DBType)."/favorites.php");
+		require_once($_SERVER['DOCUMENT_ROOT']."/bitrix/modules/main/classes/".mb_strtolower($DBType)."/favorites.php");
 
 		CUserOptions::SetOption(
 			$category,

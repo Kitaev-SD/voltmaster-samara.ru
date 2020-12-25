@@ -9,7 +9,6 @@
 use Bitrix\Main\Localization\CultureTable;
 use Bitrix\Main\Service\GeoIp;
 
-
 IncludeModuleLangFile(__FILE__);
 
 class main extends CModule
@@ -25,9 +24,7 @@ class main extends CModule
 	{
 		$arModuleVersion = array();
 
-		$path = str_replace("\\", "/", __FILE__);
-		$path = substr($path, 0, strlen($path) - strlen("/install/index.php"));
-		include($path."/classes/general/version.php");
+		include(__DIR__.'/../classes/general/version.php');
 
 		if (is_array($arModuleVersion) && array_key_exists("VERSION", $arModuleVersion))
 		{
@@ -70,7 +67,7 @@ class main extends CModule
 		if ($success)
 			return true;
 
-		if ($DBType == "mysql" && defined("MYSQL_TABLE_TYPE") && strlen(MYSQL_TABLE_TYPE)>0)
+		if ($DBType == "mysql" && defined("MYSQL_TABLE_TYPE") && MYSQL_TABLE_TYPE <> '')
 			$DB->Query("SET storage_engine = '".MYSQL_TABLE_TYPE."'", true);
 
 		$errors = $DB->RunSQLBatch($_SERVER["DOCUMENT_ROOT"]."/bitrix/modules/main/install/".$DBType."/install.sql");
@@ -80,19 +77,169 @@ class main extends CModule
 			return false;
 		}
 
-		if (strtolower($DB->type) == 'mysql')
+		if(\Bitrix\Main\ORM\Fields\CryptoField::cryptoAvailable())
 		{
-			$errors = $DB->RunSQLBatch($_SERVER["DOCUMENT_ROOT"]."/bitrix/modules/main/install/".$DBType."/install_ft.sql");
-			if ($errors === false)
-			{
-				$entity = \Bitrix\Main\UserTable::getEntity();
-				$entity->enableFullTextIndex("SEARCH_USER_CONTENT");
-				$entity->enableFullTextIndex("SEARCH_DEPARTMENT_CONTENT");
-				$entity->enableFullTextIndex("SEARCH_ADMIN_CONTENT");
-			}
+			\Bitrix\Main\UserPhoneAuthTable::enableCrypto("OTP_SECRET");
+			\Bitrix\Main\Authentication\Internal\UserAuthCodeTable::enableCrypto("OTP_SECRET");
 		}
 
 		$this->InstallTasks();
+
+		if($this->InstallGroups() === false)
+		{
+			return false;
+		}
+
+		self::InstallRatings();
+
+		if($this->InstallLanguages() === false)
+		{
+			return false;
+		}
+
+		if($this->InstallSites() === false)
+		{
+			return false;
+		}
+
+		if (!defined('BX_UTF_PCRE_MODIFIER'))
+			define('BX_UTF_PCRE_MODIFIER', defined('BX_UTF') ? 'u' : '');
+
+		RegisterModule("main");
+		RegisterModuleDependences('iblock', 'OnIBlockPropertyBuildList', 'main', 'CIBlockPropertyUserID', 'GetUserTypeDescription', 100, '/modules/main/tools/prop_userid.php');
+		RegisterModuleDependences('main', 'OnUserDelete','main', 'CFavorites','OnUserDelete', 100, "/modules/main/classes/".mb_strtolower($GLOBALS["DB"]->type)."/favorites.php");
+		RegisterModuleDependences('main', 'OnLanguageDelete','main', 'CFavorites','OnLanguageDelete', 100, "/modules/main/classes/".mb_strtolower($GLOBALS["DB"]->type)."/favorites.php");
+		RegisterModuleDependences('main', 'OnUserDelete','main', 'CUserOptions','OnUserDelete');
+		RegisterModuleDependences('main', 'OnChangeFile','main', 'CMain','OnChangeFileComponent');
+		RegisterModuleDependences('main', 'OnUserTypeRightsCheck','main', 'CUser','UserTypeRightsCheck');
+		RegisterModuleDependences('main', 'OnUserLogin', 'main', 'UpdateTools','CheckUpdates');
+		RegisterModuleDependences('main', 'OnModuleUpdate', 'main', 'UpdateTools','SetUpdateResult');
+		RegisterModuleDependences('main', 'OnUpdateCheck', 'main', 'UpdateTools','SetUpdateError');
+		RegisterModuleDependences('main', 'OnPanelCreate', 'main', 'CUndo', 'CheckNotifyMessage');
+		RegisterModuleDependences('main', 'OnAfterAddRating', 	 'main', 'CRatingsComponentsMain', 'OnAfterAddRating');
+		RegisterModuleDependences('main', 'OnAfterUpdateRating', 'main', 'CRatingsComponentsMain', 'OnAfterUpdateRating');
+		RegisterModuleDependences('main', 'OnSetRatingsConfigs', 'main', 'CRatingsComponentsMain', 'OnSetRatingConfigs');
+		RegisterModuleDependences('main', 'OnGetRatingsConfigs', 'main', 'CRatingsComponentsMain', 'OnGetRatingConfigs');
+		RegisterModuleDependences('main', 'OnGetRatingsObjects', 'main', 'CRatingsComponentsMain', 'OnGetRatingObject');
+		RegisterModuleDependences('main', 'OnGetRatingContentOwner', 'main', 'CRatingsComponentsMain', 'OnGetRatingContentOwner');
+		RegisterModuleDependences('main', 'OnAfterAddRatingRule', 	 'main', 'CRatingRulesMain', 'OnAfterAddRatingRule');
+		RegisterModuleDependences('main', 'OnAfterUpdateRatingRule', 'main', 'CRatingRulesMain', 'OnAfterUpdateRatingRule');
+		RegisterModuleDependences('main', 'OnGetRatingRuleObjects',  'main', 'CRatingRulesMain', 'OnGetRatingRuleObjects');
+		RegisterModuleDependences('main', 'OnGetRatingRuleConfigs',  'main', 'CRatingRulesMain', 'OnGetRatingRuleConfigs');
+		RegisterModuleDependences('main', 'OnAfterUserAdd', 'main', 'CRatings', 'OnAfterUserRegister');
+		RegisterModuleDependences('main', 'OnUserDelete', 'main', 'CRatings', 'OnUserDelete');
+		RegisterModuleDependences('main', 'OnAfterGroupAdd', 'main', 'CGroupAuthProvider', 'OnAfterGroupAdd');
+		RegisterModuleDependences('main', 'OnBeforeGroupUpdate', 'main', 'CGroupAuthProvider', 'OnBeforeGroupUpdate');
+		RegisterModuleDependences('main', 'OnBeforeGroupDelete', 'main', 'CGroupAuthProvider', 'OnBeforeGroupDelete');
+		RegisterModuleDependences('main', 'OnAfterSetUserGroup', 'main', 'CGroupAuthProvider', 'OnAfterSetUserGroup');
+		RegisterModuleDependences('main', 'OnUserLogin', 'main', 'CGroupAuthProvider', 'OnUserLogin');
+		RegisterModuleDependences("main", "OnEventLogGetAuditTypes", "main", "CEventMain", "GetAuditTypes");
+		RegisterModuleDependences("main", "OnEventLogGetAuditHandlers", "main", "CEventMain", "MakeMainObject");
+		RegisterModuleDependences("perfmon", "OnGetTableSchema", "main", "CTableSchema", "OnGetTableSchema");
+		RegisterModuleDependences("sender", "OnConnectorList", "main", "\\Bitrix\\Main\\SenderEventHandler", "onConnectorListUser");
+
+		RegisterModuleDependences("main", "OnUserTypeBuildList", "main", "CUserTypeString", "GetUserTypeDescription", 110);
+		RegisterModuleDependences("main", "OnUserTypeBuildList", "main", "CUserTypeInteger", "GetUserTypeDescription", 120);
+		RegisterModuleDependences("main", "OnUserTypeBuildList", "main", "CUserTypeDouble", "GetUserTypeDescription", 130);
+		RegisterModuleDependences("main", "OnUserTypeBuildList", "main", "CUserTypeDateTime", "GetUserTypeDescription", 140);
+		RegisterModuleDependences("main", "OnUserTypeBuildList", "main", "CUserTypeDate", "GetUserTypeDescription", 145);
+		RegisterModuleDependences("main", "OnUserTypeBuildList", "main", "CUserTypeBoolean", "GetUserTypeDescription", 150);
+		RegisterModuleDependences("main", "OnUserTypeBuildList", "main", "CUserTypeUrl", "GetUserTypeDescription", 155);
+		RegisterModuleDependences("main", "OnUserTypeBuildList", "main", "CUserTypeFile", "GetUserTypeDescription", 160);
+		RegisterModuleDependences("main", "OnUserTypeBuildList", "main", "CUserTypeEnum", "GetUserTypeDescription", 170);
+		RegisterModuleDependences("main", "OnUserTypeBuildList", "main", "CUserTypeIBlockSection", "GetUserTypeDescription", 180);
+		RegisterModuleDependences("main", "OnUserTypeBuildList", "main", "CUserTypeIBlockElement", "GetUserTypeDescription", 190);
+		RegisterModuleDependences("main", "OnUserTypeBuildList", "main", "CUserTypeStringFormatted", "GetUserTypeDescription", 200);
+		RegisterModuleDependences("main", "OnUserTypeBuildList", "main", "\\Bitrix\\Main\\UrlPreview\\UrlPreviewUserType", "getUserTypeDescription", 210);
+
+		RegisterModuleDependences("main", "OnBeforeEndBufferContent", "main", "\\Bitrix\\Main\\Analytics\\Counter", "onBeforeEndBufferContent");
+		RegisterModuleDependences("main", "OnBeforeRestartBuffer", "main", "\\Bitrix\\Main\\Analytics\\Counter", "onBeforeRestartBuffer");
+
+		RegisterModuleDependences("main", "OnFileDelete", "main", "\\Bitrix\\Main\\UI\\Viewer\\FilePreviewTable", "onFileDelete");
+
+		RegisterModuleDependences("socialnetwork", "OnSocNetLogDelete", "main", "CUserCounter", "OnSocNetLogDelete");
+		RegisterModuleDependences("socialnetwork", "OnSocNetLogCommentDelete", "main", "CUserCounter", "OnSocNetLogCommentDelete");
+
+		RegisterModuleDependences("main", "OnAdminInformerInsertItems", "main", "CMpNotifications", "OnAdminInformerInsertItemsHandlerMP");
+
+		RegisterModuleDependences("rest", "OnRestServiceBuildDescription", "main", '\Bitrix\Main\Rest\Handlers', "onRestServiceBuildDescription");
+
+		if (LANGUAGE_ID == "ru")
+			COption::SetOptionString("main", "vendor", "1c_bitrix");
+		else
+			COption::SetOptionString("main", "vendor", "bitrix");
+
+		COption::SetOptionString("main", "PARAM_MAX_SITES", "2");
+		COption::SetOptionString("main", "PARAM_MAX_USERS", "0");
+		COption::SetOptionString("main", "distributive6", "Y");
+		COption::SetOptionString("main", "~new_license11_sign", "Y");
+		COption::SetOptionString("main", "GROUP_DEFAULT_TASK", "1");
+		COption::SetOptionString("main", "admin_lid", LANGUAGE_ID);
+		COption::SetOptionString("main", "update_site", "www.bitrixsoft.com");
+		COption::SetOptionString("main", "update_site_ns", "Y");
+		COption::SetOptionString("main", "optimize_css_files", "Y");
+		COption::SetOptionString("main", "optimize_js_files", "Y");
+		COption::SetOptionString("main", "control_file_duplicates", "Y");
+
+		$nextDay = time() + 86400;
+		CAgent::AddAgent('\\Bitrix\\Main\\Analytics\\CounterDataTable::submitData();', "main", "N", 60);
+		CAgent::AddAgent("CCaptchaAgent::DeleteOldCaptcha(3600);","main", "N", 3600);
+		if (!file_exists($_SERVER['DOCUMENT_ROOT'].'/bitrix/modules/bitrix24'))
+		{
+			CAgent::AddAgent("CSiteCheckerTest::CommonTest();", "main", "N", 86400, "", "Y", ConvertTimeStamp(strtotime(date('Y-m-d 03:00:00', $nextDay)), 'FULL'));
+		}
+		CAgent::AddAgent("CEvent::CleanUpAgent();","main", "N", 86400, "", "Y", ConvertTimeStamp(strtotime(date('Y-m-d 03:10:00', $nextDay)), 'FULL'));
+		CAgent::AddAgent("CUser::CleanUpHitAuthAgent();","main", "N", 86400, "", "Y", ConvertTimeStamp(strtotime(date('Y-m-d 03:15:00', $nextDay)), 'FULL'));
+		CAgent::AddAgent("CUndo::CleanUpOld();", "main", "N", 86400, "", "Y", ConvertTimeStamp(strtotime(date('Y-m-d 03:20:00', $nextDay)), 'FULL'));
+		CAgent::AddAgent('CUserCounter::DeleteOld();', "main", "N", 86400, "", "Y", ConvertTimeStamp(strtotime(date('Y-m-d 03:25:00', $nextDay)), 'FULL'));
+		CAgent::AddAgent('\\Bitrix\\Main\\UI\\Viewer\\FilePreviewTable::deleteOldAgent();', 'main', "N", 86400, "", "Y", ConvertTimeStamp(strtotime(date('Y-m-d 03:30:00', $nextDay)), 'FULL'));
+		CAgent::AddAgent("CUser::AuthActionsCleanUpAgent();", "main", "N", 86400, "", "Y", ConvertTimeStamp(strtotime(date('Y-m-d 04:15:00', $nextDay)), 'FULL'));
+		CAgent::AddAgent("CUser::CleanUpAgent();", "main", "N", 86400, "", "Y", ConvertTimeStamp(strtotime(date('Y-m-d 04:20:00', $nextDay)), 'FULL'));
+		CAgent::AddAgent("CUser::DeactivateAgent();", "main", "N", 86400, "", "Y", ConvertTimeStamp(strtotime(date('Y-m-d 04:25:00', $nextDay)), 'FULL'));
+		CAgent::AddAgent("CEventLog::CleanUpAgent();", "main", "N", 86400, "", "Y", ConvertTimeStamp(strtotime(date('Y-m-d 04:30:00', $nextDay)), 'FULL'));
+
+		$eventManager = \Bitrix\Main\EventManager::getInstance();
+
+		$eventManager->registerEventHandler("sale", "OnSaleBasketItemSaved", "main", "\\Bitrix\\Main\\Analytics\\Catalog", "catchCatalogBasket");
+		$eventManager->registerEventHandler("sale", "OnSaleOrderSaved", "main", "\\Bitrix\\Main\\Analytics\\Catalog", "catchCatalogOrder");
+		$eventManager->registerEventHandler("sale", "OnSaleOrderPaid", "main", "\\Bitrix\\Main\\Analytics\\Catalog", "catchCatalogOrderPayment");
+		$eventManager->registerEventHandlerCompatible("sale", "onBuildDiscountConditionInterfaceControls", "main", "\\Bitrix\\Main\\Discount\\UserConditionControl", "onBuildDiscountConditionInterfaceControls", 1000);
+
+		$eventManager->registerEventHandler('main', 'OnBeforePhpMail', 'main', '\Bitrix\Main\Mail\Sender', 'applyCustomSmtp');
+
+		$eventManager->registerEventHandler('main', 'OnBuildFilterFactoryMethods', 'main', '\Bitrix\Main\Filter\FactoryMain', 'onBuildFilterFactoryMethods');
+
+		RegisterModuleDependences("main", "OnBeforeUserTypeAdd", "main", '\Bitrix\Main\UserField\Internal\UserFieldHelper', "OnBeforeUserTypeAdd");
+		RegisterModuleDependences("main", "OnAfterUserTypeAdd", "main", '\Bitrix\Main\UserField\Internal\UserFieldHelper', "onAfterUserTypeAdd");
+		RegisterModuleDependences("main", "OnBeforeUserTypeDelete", "main", '\Bitrix\Main\UserField\Internal\UserFieldHelper', "OnBeforeUserTypeDelete");
+		$eventManager->registerEventHandler('main', 'onGetUserFieldValues', 'main', '\Bitrix\Main\UserField\Internal\UserFieldHelper', 'onGetUserFieldValues');
+		$eventManager->registerEventHandler('main', 'onUpdateUserFieldValues', 'main', '\Bitrix\Main\UserField\Internal\UserFieldHelper', 'onUpdateUserFieldValues');
+		$eventManager->registerEventHandler('main', 'onDeleteUserFieldValues', 'main', '\Bitrix\Main\UserField\Internal\UserFieldHelper', 'onDeleteUserFieldValues');
+
+		RegisterModuleDependences("main", "OnAuthProvidersBuildList", "main", "\\Bitrix\\Main\\Access\\Auth\\AccessAuthProvider", "getProviders");
+		RegisterModuleDependences("iblock", "OnBeforeIBlockSectionUpdate", "main", "\\Bitrix\\Main\\Access\\Auth\\AccessEventHandler", "onBeforeIBlockSectionUpdate");
+		RegisterModuleDependences("iblock", "OnBeforeIBlockSectionAdd", "main", "\\Bitrix\\Main\\Access\\Auth\\AccessEventHandler", "onBeforeIBlockSectionAdd");
+		RegisterModuleDependences("iblock", "OnBeforeIBlockSectionDelete", "main", "\\Bitrix\\Main\\Access\\Auth\\AccessEventHandler", "onBeforeIBlockSectionDelete");
+
+		self::InstallDesktop();
+
+		self::InstallSmiles();
+
+		/* geolocation handlers */
+		if(function_exists('geoip_db_avail')) //if available php geoip extension
+		{
+			GeoIp\HandlerTable::add(array('SORT' => 90, 'ACTIVE' => 'Y', 'CLASS_NAME' => '\Bitrix\Main\Service\GeoIp\Extension'));
+		}
+
+		GeoIp\HandlerTable::add(array('SORT' => 100, 'ACTIVE' => 'N', 'CLASS_NAME' => '\Bitrix\Main\Service\GeoIp\MaxMind'));
+		GeoIp\HandlerTable::add(array('SORT' => 110, 'ACTIVE' => 'Y', 'CLASS_NAME' => '\Bitrix\Main\Service\GeoIp\SypexGeo'));
+
+		return true;
+	}
+
+	protected function InstallGroups()
+	{
+		global $APPLICATION, $DB;
 
 		$group = new CGroup;
 
@@ -140,7 +287,7 @@ class main extends CModule
 				continue;
 
 			//mssql does not allow insert identity by default
-			if(strtolower($DB->type) == "mssql")
+			if($DB->type == "MSSQL")
 				unset($arGroup["~ID"]);
 
 			$success = (bool)$group->Add($arGroup);
@@ -151,7 +298,12 @@ class main extends CModule
 			}
 		}
 
-		self::InstallRatings();
+		return true;
+	}
+
+	protected function InstallLanguages()
+	{
+		global $APPLICATION;
 
 		$addResult = CultureTable::add(array(
 			"NAME" => LANGUAGE_ID,
@@ -160,7 +312,23 @@ class main extends CModule
 			"FORMAT_DATETIME" => GetMessage("MAIN_DEFAULT_LANGUAGE_FORMAT_DATETIME"),
 			"FORMAT_NAME" => GetMessage("MAIN_DEFAULT_LANGUAGE_FORMAT_NAME"),
 			"WEEK_START" => (LANGUAGE_ID=='en' ? 0 : 1),
-			"CHARSET" => (defined("BX_UTF") ? "UTF-8" : GetMessage("MAIN_DEFAULT_LANGUAGE_FORMAT_CHARSET"))
+			"CHARSET" => (defined("BX_UTF") ? "UTF-8" : GetMessage("MAIN_DEFAULT_LANGUAGE_FORMAT_CHARSET")),
+			"SHORT_DATE_FORMAT" => GetMessage("MAIN_DEFAULT_LANGUAGE_SHORT_DATE_FORMAT"),
+			"MEDIUM_DATE_FORMAT" => GetMessage("MAIN_DEFAULT_LANGUAGE_MEDIUM_DATE_FORMAT"),
+			"LONG_DATE_FORMAT" => GetMessage("MAIN_DEFAULT_LANGUAGE_LONG_DATE_FORMAT"),
+			"FULL_DATE_FORMAT" => GetMessage("MAIN_DEFAULT_LANGUAGE_FULL_DATE_FORMAT"),
+			"DAY_MONTH_FORMAT" => GetMessage("MAIN_DEFAULT_LANGUAGE_DAY_MONTH_FORMAT"),
+			"DAY_SHORT_MONTH_FORMAT" => GetMessage("MAIN_DEFAULT_LANGUAGE_DAY_SHORT_MONTH_FORMAT"),
+			"DAY_OF_WEEK_MONTH_FORMAT" => GetMessage("MAIN_DEFAULT_LANGUAGE_DAY_OF_WEEK_MONTH_FORMAT"),
+			"SHORT_DAY_OF_WEEK_MONTH_FORMAT" => GetMessage("MAIN_DEFAULT_LANGUAGE_SHORT_DAY_OF_WEEK_MONTH_FORMAT"),
+			"SHORT_DAY_OF_WEEK_SHORT_MONTH_FORMAT" => GetMessage("MAIN_DEFAULT_LANGUAGE_SHORT_DAY_OF_WEEK_SHORT_MONTH_FORMAT"),
+			"SHORT_TIME_FORMAT" => GetMessage("MAIN_DEFAULT_LANGUAGE_SHORT_TIME_FORMAT"),
+			"LONG_TIME_FORMAT" => GetMessage("MAIN_DEFAULT_LANGUAGE_LONG_TIME_FORMAT"),
+			"AM_VALUE" => GetMessage("MAIN_DEFAULT_LANGUAGE_AM_VALUE"),
+			"PM_VALUE" => GetMessage("MAIN_DEFAULT_LANGUAGE_PM_VALUE"),
+			"NUMBER_THOUSANDS_SEPARATOR" => GetMessage("MAIN_DEFAULT_LANGUAGE_NUMBER_THOUSANDS_SEPARATOR"),
+			"NUMBER_DECIMAL_SEPARATOR" => GetMessage("MAIN_DEFAULT_LANGUAGE_NUMBER_DECIMAL_SEPARATOR"),
+			"NUMBER_DECIMALS" => 2,
 		));
 		$cultureId = $addResult->getId();
 
@@ -175,7 +343,7 @@ class main extends CModule
 			)
 		);
 
-		if (LANGUAGE_ID <> "en")
+		if (LANGUAGE_ID <> "en" && file_exists($_SERVER['DOCUMENT_ROOT'].'/bitrix/modules/main/lang/en/install/index.php'))
 		{
 			$addResult = CultureTable::add(array(
 				"NAME" => "en",
@@ -184,7 +352,23 @@ class main extends CModule
 				"FORMAT_DATETIME" => "MM/DD/YYYY H:MI:SS T",
 				"FORMAT_NAME" => "#NAME# #LAST_NAME#",
 				"WEEK_START" => 0,
-				"CHARSET" => (defined("BX_UTF") ? "UTF-8" : "iso-8859-1")
+				"CHARSET" => (defined("BX_UTF") ? "UTF-8" : "iso-8859-1"),
+				"SHORT_DATE_FORMAT" => "n/j/Y",
+				"MEDIUM_DATE_FORMAT" => "M j, Y",
+				"LONG_DATE_FORMAT" => "F j, Y",
+				"FULL_DATE_FORMAT" => "l, F j, Y",
+				"DAY_MONTH_FORMAT" => "F j",
+				"DAY_SHORT_MONTH_FORMAT" => "M j",
+				"DAY_OF_WEEK_MONTH_FORMAT" => "l, F j",
+				"SHORT_DAY_OF_WEEK_MONTH_FORMAT" => "D, F j",
+				"SHORT_DAY_OF_WEEK_SHORT_MONTH_FORMAT" => "D, M j",
+				"SHORT_TIME_FORMAT" => "g:i a",
+				"LONG_TIME_FORMAT" => "g:i:s a",
+				"AM_VALUE" => "am",
+				"PM_VALUE" => "pm",
+				"NUMBER_THOUSANDS_SEPARATOR" => ",",
+				"NUMBER_DECIMAL_SEPARATOR" => ".",
+				"NUMBER_DECIMALS" => "2",
 			));
 			$cultureId = $addResult->getId();
 
@@ -207,7 +391,23 @@ class main extends CModule
 				"FORMAT_DATETIME" => "DD.MM.YYYY HH:MI:SS",
 				"FORMAT_NAME" => "#NAME# #LAST_NAME#",
 				"WEEK_START" => 1,
-				"CHARSET" => (defined("BX_UTF") ? "UTF-8" : "iso-8859-1")
+				"CHARSET" => (defined("BX_UTF") ? "UTF-8" : "iso-8859-1"),
+				"SHORT_DATE_FORMAT" => "d.m.Y",
+				"MEDIUM_DATE_FORMAT" => "j. M Y",
+				"LONG_DATE_FORMAT" => "j. F Y",
+				"FULL_DATE_FORMAT" => "l, j. F  Y",
+				"DAY_MONTH_FORMAT" => "j. F",
+				"DAY_SHORT_MONTH_FORMAT" => "j. M",
+				"DAY_OF_WEEK_MONTH_FORMAT" => "l, j. F",
+				"SHORT_DAY_OF_WEEK_MONTH_FORMAT" => "D, j. F",
+				"SHORT_DAY_OF_WEEK_SHORT_MONTH_FORMAT" => "D, j. M",
+				"SHORT_TIME_FORMAT" => "H:i",
+				"LONG_TIME_FORMAT" => "H:i:s",
+				"AM_VALUE" => "am",
+				"PM_VALUE" => "pm",
+				"NUMBER_THOUSANDS_SEPARATOR" => ".",
+				"NUMBER_DECIMAL_SEPARATOR" => ",",
+				"NUMBER_DECIMALS" => "2",
 			));
 			$cultureId = $addResult->getId();
 
@@ -230,7 +430,23 @@ class main extends CModule
 				"FORMAT_DATETIME" => "DD.MM.YYYY HH:MI:SS",
 				"FORMAT_NAME" => "#NAME# #LAST_NAME#",
 				"WEEK_START" => 1,
-				"CHARSET" => (defined("BX_UTF") ? "UTF-8" : "windows-1251")
+				"CHARSET" => (defined("BX_UTF") ? "UTF-8" : "windows-1251"),
+				"SHORT_DATE_FORMAT" => "d.m.Y",
+				"MEDIUM_DATE_FORMAT" => "j M Y",
+				"LONG_DATE_FORMAT" => "j F Y",
+				"FULL_DATE_FORMAT" => "l, j F Y",
+				"DAY_MONTH_FORMAT" => "j F",
+				"DAY_SHORT_MONTH_FORMAT" => "j M",
+				"DAY_OF_WEEK_MONTH_FORMAT" => "l, j F",
+				"SHORT_DAY_OF_WEEK_MONTH_FORMAT" => "D, j F",
+				"SHORT_DAY_OF_WEEK_SHORT_MONTH_FORMAT" => "D, j M",
+				"SHORT_TIME_FORMAT" => "H:i",
+				"LONG_TIME_FORMAT" => "H:i:s",
+				"AM_VALUE" => "am",
+				"PM_VALUE" => "pm",
+				"NUMBER_THOUSANDS_SEPARATOR" => " ",
+				"NUMBER_DECIMAL_SEPARATOR" => ",",
+				"NUMBER_DECIMALS" => "2",
 			));
 			$cultureId = $addResult->getId();
 
@@ -253,7 +469,23 @@ class main extends CModule
 				"FORMAT_DATETIME" => "DD.MM.YYYY HH:MI:SS",
 				"FORMAT_NAME" => "#NAME# #LAST_NAME#",
 				"WEEK_START" => 1,
-				"CHARSET" => (defined("BX_UTF") ? "UTF-8" : "windows-1251")
+				"CHARSET" => (defined("BX_UTF") ? "UTF-8" : "windows-1251"),
+				"SHORT_DATE_FORMAT" => "d.m.Y",
+				"MEDIUM_DATE_FORMAT" => "j M Y",
+				"LONG_DATE_FORMAT" => "j F Y",
+				"FULL_DATE_FORMAT" => "l, j F Y",
+				"DAY_MONTH_FORMAT" => "j F",
+				"DAY_SHORT_MONTH_FORMAT" => "j M",
+				"DAY_OF_WEEK_MONTH_FORMAT" => "l, j F",
+				"SHORT_DAY_OF_WEEK_MONTH_FORMAT" => "D, j F",
+				"SHORT_DAY_OF_WEEK_SHORT_MONTH_FORMAT" => "D, j M",
+				"SHORT_TIME_FORMAT" => "H:i",
+				"LONG_TIME_FORMAT" => "H:i:s",
+				"AM_VALUE" => "am",
+				"PM_VALUE" => "pm",
+				"NUMBER_THOUSANDS_SEPARATOR" => " ",
+				"NUMBER_DECIMAL_SEPARATOR" => ",",
+				"NUMBER_DECIMALS" => "2",
 			));
 			$cultureId = $addResult->getId();
 
@@ -281,6 +513,13 @@ class main extends CModule
 				return false;
 			}
 		}
+
+		return true;
+	}
+
+	protected function InstallSites()
+	{
+		global $APPLICATION;
 
 		$culture = CultureTable::getRow(array('filter'=>array(
 			"=FORMAT_DATE" => GetMessage("MAIN_DEFAULT_SITE_FORMAT_DATE"),
@@ -328,121 +567,6 @@ class main extends CModule
 				return false;
 			}
 		}
-
-		if (!defined('BX_UTF_PCRE_MODIFIER'))
-			define('BX_UTF_PCRE_MODIFIER', defined('BX_UTF') ? 'u' : '');
-
-		RegisterModule("main");
-		RegisterModuleDependences('iblock', 'OnIBlockPropertyBuildList', 'main', 'CIBlockPropertyUserID', 'GetUserTypeDescription', 100, '/modules/main/tools/prop_userid.php');
-		RegisterModuleDependences('main', 'OnUserDelete','main', 'CFavorites','OnUserDelete', 100, "/modules/main/classes/".strtolower($GLOBALS["DB"]->type)."/favorites.php");
-		RegisterModuleDependences('main', 'OnLanguageDelete','main', 'CFavorites','OnLanguageDelete', 100, "/modules/main/classes/".strtolower($GLOBALS["DB"]->type)."/favorites.php");
-		RegisterModuleDependences('main', 'OnUserDelete','main', 'CUserOptions','OnUserDelete');
-		RegisterModuleDependences('main', 'OnChangeFile','main', 'CMain','OnChangeFileComponent');
-		RegisterModuleDependences('main', 'OnUserTypeRightsCheck','main', 'CUser','UserTypeRightsCheck');
-		RegisterModuleDependences('main', 'OnUserLogin', 'main', 'UpdateTools','CheckUpdates');
-		RegisterModuleDependences('main', 'OnModuleUpdate', 'main', 'UpdateTools','SetUpdateResult');
-		RegisterModuleDependences('main', 'OnUpdateCheck', 'main', 'UpdateTools','SetUpdateError');
-		RegisterModuleDependences('main', 'OnPanelCreate', 'main', 'CUndo', 'CheckNotifyMessage');
-		RegisterModuleDependences('main', 'OnAfterAddRating', 	 'main', 'CRatingsComponentsMain', 'OnAfterAddRating');
-		RegisterModuleDependences('main', 'OnAfterUpdateRating', 'main', 'CRatingsComponentsMain', 'OnAfterUpdateRating');
-		RegisterModuleDependences('main', 'OnSetRatingsConfigs', 'main', 'CRatingsComponentsMain', 'OnSetRatingConfigs');
-		RegisterModuleDependences('main', 'OnGetRatingsConfigs', 'main', 'CRatingsComponentsMain', 'OnGetRatingConfigs');
-		RegisterModuleDependences('main', 'OnGetRatingsObjects', 'main', 'CRatingsComponentsMain', 'OnGetRatingObject');
-		RegisterModuleDependences('main', 'OnGetRatingContentOwner', 'main', 'CRatingsComponentsMain', 'OnGetRatingContentOwner');
-		RegisterModuleDependences('main', 'OnAfterAddRatingRule', 	 'main', 'CRatingRulesMain', 'OnAfterAddRatingRule');
-		RegisterModuleDependences('main', 'OnAfterUpdateRatingRule', 'main', 'CRatingRulesMain', 'OnAfterUpdateRatingRule');
-		RegisterModuleDependences('main', 'OnGetRatingRuleObjects',  'main', 'CRatingRulesMain', 'OnGetRatingRuleObjects');
-		RegisterModuleDependences('main', 'OnGetRatingRuleConfigs',  'main', 'CRatingRulesMain', 'OnGetRatingRuleConfigs');
-		RegisterModuleDependences('main', 'OnAfterUserAdd', 'main', 'CRatings', 'OnAfterUserRegister');
-		RegisterModuleDependences('main', 'OnUserDelete', 'main', 'CRatings', 'OnUserDelete');
-		RegisterModuleDependences('main', 'OnUserDelete', 'main', 'CAccess', 'OnUserDelete');
-		RegisterModuleDependences('main', 'OnAfterGroupAdd', 'main', 'CGroupAuthProvider', 'OnAfterGroupAdd');
-		RegisterModuleDependences('main', 'OnBeforeGroupUpdate', 'main', 'CGroupAuthProvider', 'OnBeforeGroupUpdate');
-		RegisterModuleDependences('main', 'OnBeforeGroupDelete', 'main', 'CGroupAuthProvider', 'OnBeforeGroupDelete');
-		RegisterModuleDependences('main', 'OnAfterSetUserGroup', 'main', 'CGroupAuthProvider', 'OnAfterSetUserGroup');
-		RegisterModuleDependences('main', 'OnUserLogin', 'main', 'CGroupAuthProvider', 'OnUserLogin');
-		RegisterModuleDependences("main", "OnEventLogGetAuditTypes", "main", "CEventMain", "GetAuditTypes");
-		RegisterModuleDependences("main", "OnEventLogGetAuditHandlers", "main", "CEventMain", "MakeMainObject");
-		RegisterModuleDependences("perfmon", "OnGetTableSchema", "main", "CTableSchema", "OnGetTableSchema");
-		RegisterModuleDependences("sender", "OnConnectorList", "main", "\\Bitrix\\Main\\SenderEventHandler", "onConnectorListUser");
-
-		RegisterModuleDependences("main", "OnUserTypeBuildList", "main", "CUserTypeString", "GetUserTypeDescription", 110);
-		RegisterModuleDependences("main", "OnUserTypeBuildList", "main", "CUserTypeInteger", "GetUserTypeDescription", 120);
-		RegisterModuleDependences("main", "OnUserTypeBuildList", "main", "CUserTypeDouble", "GetUserTypeDescription", 130);
-		RegisterModuleDependences("main", "OnUserTypeBuildList", "main", "CUserTypeDateTime", "GetUserTypeDescription", 140);
-		RegisterModuleDependences("main", "OnUserTypeBuildList", "main", "CUserTypeDate", "GetUserTypeDescription", 145);
-		RegisterModuleDependences("main", "OnUserTypeBuildList", "main", "CUserTypeBoolean", "GetUserTypeDescription", 150);
-		RegisterModuleDependences("main", "OnUserTypeBuildList", "main", "CUserTypeUrl", "GetUserTypeDescription", 155);
-		RegisterModuleDependences("main", "OnUserTypeBuildList", "main", "CUserTypeFile", "GetUserTypeDescription", 160);
-		RegisterModuleDependences("main", "OnUserTypeBuildList", "main", "CUserTypeEnum", "GetUserTypeDescription", 170);
-		RegisterModuleDependences("main", "OnUserTypeBuildList", "main", "CUserTypeIBlockSection", "GetUserTypeDescription", 180);
-		RegisterModuleDependences("main", "OnUserTypeBuildList", "main", "CUserTypeIBlockElement", "GetUserTypeDescription", 190);
-		RegisterModuleDependences("main", "OnUserTypeBuildList", "main", "CUserTypeStringFormatted", "GetUserTypeDescription", 200);
-		RegisterModuleDependences("main", "OnUserTypeBuildList", "main", "\\Bitrix\\Main\\UrlPreview\\UrlPreviewUserType", "getUserTypeDescription", 210);
-
-		RegisterModuleDependences("main", "OnBeforeEndBufferContent", "main", "\\Bitrix\\Main\\Analytics\\Counter", "onBeforeEndBufferContent");
-		RegisterModuleDependences("main", "OnBeforeRestartBuffer", "main", "\\Bitrix\\Main\\Analytics\\Counter", "onBeforeRestartBuffer");
-
-		RegisterModuleDependences("disk", "onAfterAjaxActionCreateFolderWithSharing", "main", "\\Bitrix\\Main\\FinderDestTable", "onAfterDiskAjaxAction");
-		RegisterModuleDependences("disk", "onAfterAjaxActionAppendSharing", "main", "\\Bitrix\\Main\\FinderDestTable", "onAfterDiskAjaxAction");
-		RegisterModuleDependences("disk", "onAfterAjaxActionChangeSharingAndRights", "main", "\\Bitrix\\Main\\FinderDestTable", "onAfterDiskAjaxAction");
-
-		RegisterModuleDependences("socialnetwork", "OnSocNetLogDelete", "main", "CUserCounter", "OnSocNetLogDelete");
-		RegisterModuleDependences("socialnetwork", "OnSocNetLogCommentDelete", "main", "CUserCounter", "OnSocNetLogCommentDelete");
-
-		RegisterModuleDependences("main", "OnAdminInformerInsertItems", "main", "CMpNotifications", "OnAdminInformerInsertItemsHandlerMP");
-
-		RegisterModuleDependences("rest", "OnRestServiceBuildDescription", "main", '\Bitrix\Main\Rest\Handlers', "onRestServiceBuildDescription");
-
-		COption::SetOptionString("main", "PARAM_MAX_SITES", "2");
-		COption::SetOptionString("main", "PARAM_MAX_USERS", "0");
-		COption::SetOptionString("main", "distributive6", "Y");
-		COption::SetOptionString("main", "~new_license11_sign", "Y");
-		COption::SetOptionString("main", "GROUP_DEFAULT_TASK", "1");
-
-		if (LANGUAGE_ID == "ru")
-			COption::SetOptionString("main", "vendor", "1c_bitrix");
-		else
-			COption::SetOptionString("main", "vendor", "bitrix");
-
-		COption::SetOptionString("main", "admin_lid", LANGUAGE_ID);
-		COption::SetOptionString("main", "update_site", "www.bitrixsoft.com");
-		COption::SetOptionString("main", "update_site_ns", "Y");
-		COption::SetOptionString("main", "optimize_css_files", "Y");
-		COption::SetOptionString("main", "optimize_js_files", "Y");
-
-		CAgent::AddAgent("CEvent::CleanUpAgent();","main", "N", 86400);
-		CAgent::AddAgent("CUser::CleanUpHitAuthAgent();","main", "N", 86400);
-		CAgent::AddAgent("CCaptchaAgent::DeleteOldCaptcha(3600);","main", "N", 3600);
-		CAgent::AddAgent("CUndo::CleanUpOld();", "main", "N", 86400);
-		CAgent::AddAgent("CUser::AuthActionsCleanUpAgent();", "main", "N", 86400, ConvertTimeStamp(strtotime(date('Y-m-d 04:15:00', time() + 86400)), 'FULL'));
-		if (!file_exists($_SERVER['DOCUMENT_ROOT'].'/bitrix/modules/bitrix24'))
-			CAgent::AddAgent("CSiteCheckerTest::CommonTest();", "main", "N", 86400, "", "Y", ConvertTimeStamp(strtotime(date('Y-m-d 03:00:00', time() + 86400)), 'FULL'));
-		CAgent::AddAgent('\\Bitrix\\Main\\Analytics\\CounterDataTable::submitData();', "main", "N", 60);
-		CAgent::AddAgent('CUserCounter::DeleteOld();', "main", "N", 60*60*24);
-		CAgent::AddAgent('\\Bitrix\\Main\\UI\\Viewer\\FilePreviewTable::deleteOldAgent();', 'main');
-
-		$eventManager = \Bitrix\Main\EventManager::getInstance();
-
-		$eventManager->registerEventHandler("sale", "OnSaleBasketItemSaved", "main", "\\Bitrix\\Main\\Analytics\\Catalog", "catchCatalogBasket");
-		$eventManager->registerEventHandler("sale", "OnSaleOrderSaved", "main", "\\Bitrix\\Main\\Analytics\\Catalog", "catchCatalogOrder");
-		$eventManager->registerEventHandler("sale", "OnSaleOrderPaid", "main", "\\Bitrix\\Main\\Analytics\\Catalog", "catchCatalogOrderPayment");
-		$eventManager->registerEventHandlerCompatible("sale", "onBuildDiscountConditionInterfaceControls", "main", "\\Bitrix\\Main\\Discount\\UserConditionControl", "onBuildDiscountConditionInterfaceControls", 1000);
-
-		$eventManager->registerEventHandler('main', 'OnBeforePhpMail', 'main', '\Bitrix\Main\Mail\Sender', 'applyCustomSmtp');
-
-		self::InstallDesktop();
-
-		self::InstallSmiles();
-
-		/* geolocation handlers */
-		if(function_exists('geoip_db_avail')) //if available php geoip extension
-		{
-			GeoIp\HandlerTable::add(array('SORT' => 90, 'ACTIVE' => 'Y', 'CLASS_NAME' => '\Bitrix\Main\Service\GeoIp\Extension'));
-		}
-
-		GeoIp\HandlerTable::add(array('SORT' => 100, 'ACTIVE' => 'N', 'CLASS_NAME' => '\Bitrix\Main\Service\GeoIp\MaxMind'));
-		GeoIp\HandlerTable::add(array('SORT' => 110, 'ACTIVE' => 'Y', 'CLASS_NAME' => '\Bitrix\Main\Service\GeoIp\SypexGeo'));
 
 		return true;
 	}
@@ -1399,6 +1523,43 @@ class main extends CModule
 				'DESCRIPTION' => getMessage('MAIN_MAIL_CONFIRM_EVENT_TYPE_DESC'),
 				'SORT'        => 8,
 			);
+			$arEventTypes[] = array(
+				'LID'         => $lid,
+				'EVENT_NAME'  => 'EVENT_LOG_NOTIFICATION',
+				'NAME'        => getMessage('MAIN_INSTALL_EVENT_TYPE_NOTIFICATION'),
+				'DESCRIPTION' => getMessage('MAIN_INSTALL_EVENT_TYPE_NOTIFICATION_DESC'),
+				'SORT'        => 9,
+			);
+			$arEventTypes[] = array(
+				'LID'         => $lid,
+				'EVENT_NAME'  => 'USER_CODE_REQUEST',
+				'NAME'        => GetMessage("MAIN_INSTALL_EVENT_TYPE_USER_CODE_REQUEST"),
+				'DESCRIPTION' => GetMessage("MAIN_INSTALL_EVENT_TYPE_USER_CODE_REQUEST_DESC"),
+				'SORT'        => 10,
+			);
+
+			//sms types
+			$arEventTypes[] = array(
+				'LID'         => $lid,
+				'EVENT_NAME'  => 'SMS_USER_CONFIRM_NUMBER',
+				'EVENT_TYPE'  => \Bitrix\Main\Mail\Internal\EventTypeTable::TYPE_SMS,
+				'NAME'        => GetMessage("main_install_sms_event_confirm_name"),
+				'DESCRIPTION' => GetMessage("main_install_sms_event_confirm_descr"),
+			);
+			$arEventTypes[] = array(
+				'LID'         => $lid,
+				'EVENT_NAME'  => 'SMS_USER_RESTORE_PASSWORD',
+				'EVENT_TYPE'  => \Bitrix\Main\Mail\Internal\EventTypeTable::TYPE_SMS,
+				'NAME'        => GetMessage("main_install_sms_event_restore_name"),
+				'DESCRIPTION' => GetMessage("main_install_sms_event_restore_descr"),
+			);
+			$arEventTypes[] = array(
+				'LID'         => $lid,
+				'EVENT_NAME'  => 'SMS_EVENT_LOG_NOTIFICATION',
+				'EVENT_TYPE'  => \Bitrix\Main\Mail\Internal\EventTypeTable::TYPE_SMS,
+				'NAME'        => getMessage('MAIN_INSTALL_EVENT_TYPE_NOTIFICATION'),
+				'DESCRIPTION' => getMessage('MAIN_INSTALL_EVENT_TYPE_NOTIFICATION_DESC_SMS'),
+			);
 		}
 
 		$type = new CEventType;
@@ -1481,10 +1642,67 @@ class main extends CModule
 			'BODY_TYPE'        => 'html',
 			'SITE_TEMPLATE_ID' => 'mail_join',
 		);
+		$arMessages[] = array(
+			"EVENT_NAME" => "EVENT_LOG_NOTIFICATION",
+			"LID" => "s1",
+			"LANGUAGE_ID" => LANGUAGE_ID,
+			"EMAIL_FROM" => "#DEFAULT_EMAIL_FROM#",
+			"EMAIL_TO" => "#EMAIL#",
+			"SUBJECT" => GetMessage("MAIN_EVENT_MESS_NOTIFICATION"),
+			"MESSAGE" => GetMessage("MAIN_EVENT_MESS_NOTIFICATION_TEXT"),
+		);
+		$arMessages[] = array(
+			"EVENT_NAME" => "USER_CODE_REQUEST",
+			"LID" => "s1",
+			"LANGUAGE_ID" => LANGUAGE_ID,
+			"EMAIL_FROM" => "#DEFAULT_EMAIL_FROM#",
+			"EMAIL_TO" => "#EMAIL#",
+			"SUBJECT" => GetMessage("MAIN_INSTALL_EVENT_MESS_USER_CODE_REQUEST"),
+			"MESSAGE" => GetMessage("MAIN_INSTALL_EVENT_MESS_USER_CODE_REQUEST_MESS"),
+		);
 
 		$message = new CEventMessage;
 		foreach ($arMessages as $arMessage)
 			$message->Add($arMessage);
+
+		//sms templates
+		$smsTemplates = [
+			[
+				"EVENT_NAME" => "SMS_USER_CONFIRM_NUMBER",
+				"ACTIVE" => true,
+				"SENDER" => "#DEFAULT_SENDER#",
+				"RECEIVER" => "#USER_PHONE#",
+				"MESSAGE" => GetMessage("main_install_sms_template_confirm_mess"),
+			],
+			[
+				"EVENT_NAME" => "SMS_USER_RESTORE_PASSWORD",
+				"ACTIVE" => true,
+				"SENDER" => "#DEFAULT_SENDER#",
+				"RECEIVER" => "#USER_PHONE#",
+				"MESSAGE" => GetMessage("main_install_sms_template_restore_mess"),
+			],
+			[
+				"EVENT_NAME" => "SMS_EVENT_LOG_NOTIFICATION",
+				"ACTIVE" => true,
+				"SENDER" => "#DEFAULT_SENDER#",
+				"RECEIVER" => "#PHONE_NUMBER#",
+				"MESSAGE" => GetMessage("main_install_sms_template_notification_mess"),
+			],
+		];
+
+		$entity = \Bitrix\Main\Sms\TemplateTable::getEntity();
+		$site = \Bitrix\Main\SiteTable::getEntity()->wakeUpObject("s1");
+
+		foreach($smsTemplates as $smsTemplate)
+		{
+			$template = $entity->createObject();
+			foreach($smsTemplate as $field => $value)
+			{
+				$template->set($field, $value);
+			}
+			$template->addToSites($site);
+			$template->save();
+		}
 
 		return true;
 	}
@@ -1525,5 +1743,27 @@ class main extends CModule
 
 	function DoUninstall()
 	{
+	}
+
+	public function migrateToBox()
+	{
+		global $DB;
+
+		COption::SetOptionInt("main", "disk_space", 0);
+		COption::SetOptionString("main", "server_name", "");
+		COption::SetOptionString("main", "~sale_converted_15", 'Y');
+
+		COption::RemoveOption("main", "~controller_group_name");
+		CControllerClient::Unlink();
+
+		$users = $DB->Query("SELECT ID FROM b_user WHERE EXTERNAL_AUTH_ID = 'bot'");
+		while($user = $users->Fetch())
+		{
+			CUser::Delete($user['ID']);
+		}
+
+		$DB->Query("UPDATE b_user SET EXTERNAL_AUTH_ID = NULL WHERE EXTERNAL_AUTH_ID = 'socservices'");
+		$DB->Query("UPDATE b_file SET HANDLER_ID=NULL WHERE HANDLER_ID = 1");
+		$DB->Query("UPDATE b_event_message SET EMAIL_FROM='#DEFAULT_EMAIL_FROM#' WHERE EMAIL_FROM LIKE '%no-reply@bitrix24%'");
 	}
 }

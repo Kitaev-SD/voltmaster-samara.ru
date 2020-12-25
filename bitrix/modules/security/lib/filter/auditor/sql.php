@@ -22,7 +22,7 @@ class Sql
 
 	protected function getFilters()
 	{
-		$sqlStart = '(?:(?<![a-z0-9_-])|\/\*M?!\d+?)\K';
+		$sqlStart = '(?:(?<![a-z0-9_.-])|\/\*M?!\d+?)\K';
 		$sqlEnd = '(?![a-z_])';
 		$sqlSpace = "(?:[\\x00-\\x20\(\)\'\"\`*@\+\-\.~\\\ed!\d{}]|(?:\\/\\*.*?\\*\\/)|(?:\\/\\*M?!\d*)|(?:\\*\\/)|(?:#[^\\n]*[\\n]+))+";
 		$sqlExpEnd = "[\\x00-\\x20\(\)\'\"\`*@\+\-\.~\\\ed!\d{}\\/]";
@@ -60,7 +60,7 @@ class Sql
 			"/{$sqlStart}(fr)(om{$sqlSpace}.+{$sqlExpEnd}lim)(it){$sqlEnd}/is" => $sqlSplitTo3,
 		);
 
-		$dbt = strtolower($DBType);
+		$dbt = mb_strtolower($DBType);
 		if ($dbt === 'mssql')
 		{
 			$filters += array(

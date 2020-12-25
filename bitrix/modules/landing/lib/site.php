@@ -2,6 +2,8 @@
 namespace Bitrix\Landing;
 
 use \Bitrix\Main\Localization\Loc;
+use \Bitrix\Main\Event;
+use \Bitrix\Main\EventResult;
 
 Loc::loadMessages(__FILE__);
 
@@ -14,30 +16,71 @@ class Site extends \Bitrix\Landing\Internals\BaseTable
 	public static $internalClass = 'SiteTable';
 
 	/**
-	 * Get public url for site.
+	 * Return true if site exists and available.
 	 * @param int $id Site id.
+	 * @param bool $deleted And from recycle bin.
+	 * @return bool
+	 */
+	public static function ping($id, $deleted = false)
+	{
+		$filter = [
+			'ID' => $id
+		];
+		if ($deleted)
+		{
+			$filter['=DELETED'] = ['Y', 'N'];
+		}
+		$check = Site::getList([
+			'select' => [
+				'ID'
+			],
+			'filter' => $filter
+		]);
+		return (boolean) $check->fetch();
+	}
+
+	/**
+	 * Get public url for site.
+	 * @param int[]|int $id Site id or array of ids.
 	 * @param boolean $full Return full site url with relative path.
-	 * @return string
+	 * @return string|array
 	 */
 	public static function getPublicUrl($id, $full = true)
 	{
+		$paths = [];
+		$isB24 = Manager::isB24();
+
+		$siteKeyCode = Site\Type::getKeyCode();
+		$defaultPubPath = rtrim(Manager::getPublicationPath(), '/');
+		$hostUrl = Domain::getHostUrl();
+		$disableCloud = Manager::isCloudDisable();
 		$res = self::getList(array(
 			'select' => array(
 				'DOMAIN_PROTOCOL' => 'DOMAIN.PROTOCOL',
 				'DOMAIN_NAME' => 'DOMAIN.DOMAIN',
+				'DOMAIN_ID',
+				'SMN_SITE_ID',
 				'CODE',
-				'SMN_SITE_ID'
+				'TYPE',
+				'ID'
 			),
 			'filter' => array(
 				'ID' => $id,
-				'=DELETED' => ['Y', 'N']
+				'=DELETED' => ['Y', 'N'],
+				'CHECK_PERMISSIONS' => 'N'
 			)
 		));
-		if ($row = $res->fetch())
+		while ($row = $res->fetch())
 		{
-			$bitrix24 = Manager::isB24();
+			$pubPath = '';
+			$isB24localVar = $isB24;
 
-			if (!$bitrix24)
+			if ($row['TYPE'] == 'SMN')
+			{
+				$isB24localVar = false;
+			}
+
+			if (!$isB24localVar || $disableCloud)
 			{
 				$pubPath = Manager::getPublicationPath(
 					null,
@@ -46,18 +89,49 @@ class Site extends \Bitrix\Landing\Internals\BaseTable
 				$pubPath = rtrim($pubPath, '/');
 			}
 
+			if ($siteKeyCode == 'ID')
+			{
+				$row['CODE'] = '/' . $row['ID'] . '/';
+			}
+
 			// force https
 			if (Manager::isHttps())
 			{
 				$row['DOMAIN_PROTOCOL'] = \Bitrix\Landing\Internals\DomainTable::PROTOCOL_HTTPS;
 			}
 
-			return $row['DOMAIN_PROTOCOL'] . '://' .
-					$row['DOMAIN_NAME'] .
-					(!$bitrix24 ? $pubPath : '') .
-					(!$bitrix24 && $full ? $row['CODE'] : '');
+			if ($row['DOMAIN_ID'])
+			{
+				$paths[$row['ID']] = ($disableCloud ? $hostUrl : $row['DOMAIN_PROTOCOL'] . '://' . $row['DOMAIN_NAME']) . $pubPath;
+				if ($full)
+				{
+					if ($disableCloud && $isB24localVar)
+					{
+						$paths[$row['ID']] .= $row['CODE'];
+					}
+					else if (!$isB24localVar)
+					{
+						$paths[$row['ID']] .= '/';
+					}
+				}
+			}
+			else
+			{
+				$paths[$row['ID']] = $hostUrl . $defaultPubPath . ($full ? $row['CODE'] : '');
+			}
+
+			unset($pubPath);
 		}
-		return '';
+		unset($res, $row);
+
+		if (is_array($id))
+		{
+			return $paths;
+		}
+		else
+		{
+			return isset($paths[$id]) ? $paths[$id] : '';
+		}
 	}
 
 	/**
@@ -67,6 +141,11 @@ class Site extends \Bitrix\Landing\Internals\BaseTable
 	 */
 	public static function getHooks($id)
 	{
+		if (!Rights::hasAccessForSite($id, Rights::ACCESS_TYPES['read']))
+		{
+			return [];
+		}
+
 		return Hook::getForSite($id);
 	}
 
@@ -118,7 +197,8 @@ class Site extends \Bitrix\Landing\Internals\BaseTable
 			'PAGE' => Loc::getMessage('LANDING_TYPE_PAGE'),
 			'STORE' => Loc::getMessage('LANDING_TYPE_STORE'),
 			'SMN' => Loc::getMessage('LANDING_TYPE_SMN'),
-			'PREVIEW' => Loc::getMessage('LANDING_TYPE_PREVIEW')
+			'KNOWLEDGE' => Loc::getMessage('LANDING_TYPE_KNOWLEDGE'),
+			'GROUP' => Loc::getMessage('LANDING_TYPE_GROUP')
 		);
 
 		return $types;
@@ -136,10 +216,39 @@ class Site extends \Bitrix\Landing\Internals\BaseTable
 	/**
 	 * Delete site by id.
 	 * @param int $id Site id.
+	 * @param bool $pagesDelete Delete all pages before.
 	 * @return \Bitrix\Main\Result
 	 */
-	public static function delete($id)
+	public static function delete($id, $pagesDelete = false)
 	{
+		// first delete all pages if you want
+		if ($pagesDelete)
+		{
+			$res = Landing::getList([
+				'select' => [
+					'ID', 'FOLDER_ID'
+				],
+				'filter' => [
+					'SITE_ID' => $id,
+					'=DELETED' => ['Y', 'N']
+				]
+			]);
+			while ($row = $res->fetch())
+			{
+				if ($row['FOLDER_ID'])
+				{
+					Landing::update($row['ID'], [
+						'FOLDER_ID' => 0
+					]);
+				}
+				$resDel = Landing::delete($row['ID'], true);
+				if (!$resDel->isSuccess())
+				{
+					return $resDel;
+				}
+			}
+		}
+		// delete site
 		$result = parent::delete($id);
 		return $result;
 	}
@@ -151,6 +260,32 @@ class Site extends \Bitrix\Landing\Internals\BaseTable
 	 */
 	public static function markDelete($id)
 	{
+		$event = new Event('landing', 'onBeforeSiteRecycle', array(
+			'id' => $id,
+			'delete' => 'Y'
+		));
+		$event->send();
+
+		foreach ($event->getResults() as $result)
+		{
+			if ($result->getType() == EventResult::ERROR)
+			{
+				$return = new \Bitrix\Main\Result;
+				foreach ($result->getErrors() as $error)
+				{
+					$return->addError(
+						$error
+					);
+				}
+				return $return;
+			}
+		}
+
+		if (($currentScope = Site\Type::getCurrentScopeId()))
+		{
+			Agent::addUniqueAgent('clearRecycleScope', [$currentScope]);
+		}
+
 		return parent::update($id, array(
 			'DELETED' => 'Y'
 		));
@@ -163,9 +298,90 @@ class Site extends \Bitrix\Landing\Internals\BaseTable
 	 */
 	public static function markUnDelete($id)
 	{
+		$event = new Event('landing', 'onBeforeSiteRecycle', array(
+			'id' => $id,
+			'delete' => 'N'
+		));
+		$event->send();
+
+		foreach ($event->getResults() as $result)
+		{
+			if ($result->getType() == EventResult::ERROR)
+			{
+				$return = new \Bitrix\Main\Result;
+				foreach ($result->getErrors() as $error)
+				{
+					$return->addError(
+						$error
+					);
+				}
+				return $return;
+			}
+		}
+
 		return parent::update($id, array(
 			'DELETED' => 'N'
 		));
+	}
+
+	/**
+	 * Copy site without site's pages.
+	 * @param int $siteId Site id.
+	 * @return \Bitrix\Main\Result
+	 */
+	public static function copy($siteId)
+	{
+		$siteId = intval($siteId);
+		$result = new \Bitrix\Main\Result;
+		$error = new Error;
+
+		$siteRow = Site::getList([
+			'filter' => [
+				'ID' => $siteId
+			]
+		])->fetch();
+
+		if (!$siteRow)
+		{
+			$error->addError(
+				'SITE_NOT_FOUND',
+				Loc::getMessage('LANDING_COPY_ERROR_SITE_NOT_FOUND')
+			);
+		}
+		else
+		{
+			$result = Site::add([
+				'CODE' => $siteRow['CODE'],
+				'ACTIVE' => 'N',
+				'TITLE' => $siteRow['TITLE'],
+				'XML_ID' => $siteRow['XML_ID'],
+				'DESCRIPTION' => $siteRow['DESCRIPTION'],
+				'TYPE' => $siteRow['TYPE'],
+				'SMN_SITE_ID' => $siteRow['SMN_SITE_ID'],
+				'LANG' => $siteRow['LANG']
+			]);
+
+			if ($result->isSuccess())
+			{
+				// copy hook data
+				Hook::copySite(
+					$siteId,
+					$result->getId()
+				);
+				// copy files
+				File::copySiteFiles(
+					$siteId,
+					$result->getId()
+				);
+			}
+		}
+
+		if (!$error->isEmpty())
+		{
+			$result->addError($error->getFirstError());
+		}
+
+		return $result;
 	}
 
 	/**
@@ -177,11 +393,24 @@ class Site extends \Bitrix\Landing\Internals\BaseTable
 	public static function fullExport($siteForExport, $params = array())
 	{
 		$version = 3;//used in demo/class.php
+		$siteForExport = intval($siteForExport);
 		$tplsXml = array();
 		$export = array();
-		Landing::setEditMode(
-			isset($params['edit_mode']) && $params['edit_mode'] === 'Y'
-		);
+		$editMode = isset($params['edit_mode']) && $params['edit_mode'] === 'Y';
+
+		Landing::setEditMode($editMode);
+		Hook::setEditMode($editMode);
+
+		if (!is_array($params))
+		{
+			$params = array();
+		}
+		$params['hooks_files'] = Hook::HOOKS_CODES_FILES;
+
+		if (isset($params['scope']))
+		{
+			Site\Type::setScope($params['scope']);
+		}
 
 		// check params
 		if (
@@ -202,7 +431,7 @@ class Site extends \Bitrix\Landing\Internals\BaseTable
 		}
 		// additional hooks for disable
 		$params['hooks_disable'][] = 'B24BUTTON_CODE';
-		$params['hooks_disable'][] = 'SETTINGS_SECTION_ID';
+		$params['hooks_disable'][] = 'FAVICON_PICTURE';
 		// get all templates
 		$res = Template::getList(array(
 			'select' => array(
@@ -273,10 +502,12 @@ class Site extends \Bitrix\Landing\Internals\BaseTable
 			if (empty($export))
 			{
 				$export = array(
+					'charset' => SITE_CHARSET,
 					'code' => isset($params['code'])
 								? $params['code']
 								: trim($row['SITE_CODE'], '/'),
 					'code_mainpage' => '',
+					'site_code' => $row['SITE_CODE'],
 					'name' => isset($params['name'])
 								? $params['name']
 								: $row['SITE_TITLE'],
@@ -296,7 +527,7 @@ class Site extends \Bitrix\Landing\Internals\BaseTable
 								? $params['preview_url']
 								: '',
 					'show_in_list' => 'Y',
-					'type' => strtolower($row['SITE_TYPE']),
+					'type' => mb_strtolower($row['SITE_TYPE']),
 					'version' => $version,
 					'fields' => array(
 						'ADDITIONAL_FIELDS' => array(),
@@ -326,18 +557,37 @@ class Site extends \Bitrix\Landing\Internals\BaseTable
 				}
 				// site hooks
 				$hookFields = &$export['fields']['ADDITIONAL_FIELDS'];
-				foreach (Hook::getForSite($row['SITE_ID']) as $hCode => $hook)
+				foreach (Hook::getForSite($row['SITE_ID']) as $hookCode => $hook)
 				{
-
+					if ($hookCode == 'SETTINGS')
+					{
+						continue;
+					}
 					foreach ($hook->getFields() as $fCode => $field)
 					{
-						$hCodeFull = $hCode . '_' . $fCode;
-						if (!in_array($hCodeFull, $params['hooks_disable']))
+						$hookCodeFull = $hookCode . '_' . $fCode;
+						if (!in_array($hookCodeFull, $params['hooks_disable']))
 						{
-							$hookFields[$hCodeFull] = $field->getValue();
-							if (!$hookFields[$hCodeFull])
+							$hookFields[$hookCodeFull] = $field->getValue();
+							if (!$hookFields[$hookCodeFull])
 							{
-								unset($hookFields[$hCodeFull]);
+								unset($hookFields[$hookCodeFull]);
+							}
+							else if (
+								in_array($hookCodeFull, $params['hooks_files']) &&
+								intval($hookFields[$hookCodeFull]) > 0
+							)
+							{
+								$hookFields['~' . $hookCodeFull] = $hookFields[$hookCodeFull];
+								$hookFields[$hookCodeFull] = File::getFilePath(
+									$hookFields[$hookCodeFull]
+								);
+								if ($hookFields[$hookCodeFull])
+								{
+									$hookFields[$hookCodeFull] = Manager::getUrlFromFile(
+										$hookFields[$hookCodeFull]
+									);
+								}
 							}
 						}
 					}
@@ -369,7 +619,7 @@ class Site extends \Bitrix\Landing\Internals\BaseTable
 							? $params['preview_url']
 							: '',
 				'show_in_list' => ($pagesCount == 1) ? 'Y' : 'N',
-				'type' => strtolower($row['SITE_TYPE']),
+				'type' => mb_strtolower($row['SITE_TYPE']),
 				'version' => $version,
 				'fields' => array(
 					'TITLE' => (isset($params['name']) && $pagesCount == 1)
@@ -405,17 +655,37 @@ class Site extends \Bitrix\Landing\Internals\BaseTable
 			}
 			// page hooks
 			$hookFields = &$export['items'][$row['ID']]['fields']['ADDITIONAL_FIELDS'];
-			foreach (Hook::getForLanding($row['ID']) as $hCode => $hook)
+			foreach (Hook::getForLanding($row['ID']) as $hookCode => $hook)
 			{
+				if ($hookCode == 'SETTINGS')
+				{
+					continue;
+				}
 				foreach ($hook->getFields() as $fCode => $field)
 				{
-					$hCodeFull = $hCode . '_' . $fCode;
-					if (!in_array($hCodeFull, $params['hooks_disable']))
+					$hookCodeFull = $hookCode . '_' . $fCode;
+					if (!in_array($hookCodeFull, $params['hooks_disable']))
 					{
-						$hookFields[$hCodeFull] = $field->getValue();
-						if (!$hookFields[$hCodeFull])
+						$hookFields[$hookCodeFull] = $field->getValue();
+						if (!$hookFields[$hookCodeFull])
 						{
-							unset($hookFields[$hCodeFull]);
+							unset($hookFields[$hookCodeFull]);
+						}
+						else if (
+							in_array($hookCodeFull, $params['hooks_files']) &&
+							intval($hookFields[$hookCodeFull]) > 0
+						)
+						{
+							$hookFields['~' . $hookCodeFull] = $hookFields[$hookCodeFull];
+							$hookFields[$hookCodeFull] = File::getFilePath(
+								$hookFields[$hookCodeFull]
+							);
+							if ($hookFields[$hookCodeFull])
+							{
+								$hookFields[$hookCodeFull] = Manager::getUrlFromFile(
+									$hookFields[$hookCodeFull]
+								);
+							}
 						}
 					}
 				}
@@ -447,219 +717,6 @@ class Site extends \Bitrix\Landing\Internals\BaseTable
 					{
 						continue;
 					}
-					$cards = array();
-					$nodes = array();
-					$styles = array();
-					$allAttrs = array();
-					$doc = $block->getDom();
-					$manifest = $block->getManifest();
-					// get actual cards content
-					if (isset($manifest['cards']))
-					{
-						foreach ($manifest['cards'] as $selector => $node)
-						{
-							$cards[$selector] = [
-								'source' => []
-							];
-							$resultList = $doc->querySelectorAll($selector);
-							$resultListCnt = count($resultList);
-							foreach ($resultList as $pos => $result)
-							{
-								$cards[$selector]['source'][$pos] = array(
-									'value' => $result->getAttribute('data-card-preset'),
-									'type' => Block::PRESET_SYM_CODE
-								);
-								if (!$cards[$selector]['source'][$pos]['value'])
-								{
-									//@tmp for menu first item
-									if (strpos($block->getCode(), 'menu') !== false)
-									{
-										$cards[$selector]['source'][$pos]['value'] = $resultListCnt > 0 ? 1 : 0;
-									}
-									else
-									{
-										$cards[$selector]['source'][$pos]['value'] = 0;
-									}
-									$cards[$selector]['source'][$pos]['type'] = Block::CARD_SYM_CODE;
-								}
-							}
-							// attrs
-							if (
-								isset($node['additional']['attrs']) &&
-								is_array($node['additional']['attrs'])
-							)
-							{
-								foreach ($node['additional']['attrs'] as $attr)
-								{
-									if (isset($attr['attribute']))
-									{
-										if (!isset($allAttrs[$selector]))
-										{
-											$allAttrs[$selector] = [];
-										}
-										$allAttrs[$selector][] = $attr['attribute'];
-									}
-								}
-							}
-						}
-					}
-					// get actual data from nodes
-					if (isset($manifest['nodes']))
-					{
-						foreach ($manifest['nodes'] as $selector => $node)
-						{
-							$class = '\\Bitrix\\Landing\\Node\\' . $node['type'];
-							$nodes[$selector] = $class::getNode($block, $selector);
-						}
-					}
-					// get actual css from nodes
-					if (isset($manifest['style']['nodes']))
-					{
-						foreach ($manifest['style']['nodes'] as $selector => $node)
-						{
-							$styles[$selector] = array();
-							$resultList = $doc->querySelectorAll($selector);
-							foreach ($resultList as $pos => $result)
-							{
-								if ($result->getNodeType() == $result::ELEMENT_NODE)
-								{
-									$styles[$selector][$pos] = $result->getClassName();
-								}
-							}
-							if (empty($styles[$selector]))
-							{
-								unset($styles[$selector]);
-							}
-							// attrs
-							if (
-								isset($node['additional']['attrs']) &&
-								is_array($node['additional']['attrs'])
-							)
-							{
-								foreach ($node['additional']['attrs'] as $attr)
-								{
-									if (isset($attr['attribute']))
-									{
-										if (!isset($allAttrs[$selector]))
-										{
-											$allAttrs[$selector] = [];
-										}
-										$allAttrs[$selector][] = $attr['attribute'];
-									}
-								}
-							}
-						}
-					}
-					// get actual css from block wrapper
-					if (isset($manifest['style']['block']))
-					{
-						$resultList = array(
-							array_pop($doc->getChildNodesArray())
-						);
-						foreach ($resultList as $pos => $result)
-						{
-							if ($result && $result->getNodeType() == $result::ELEMENT_NODE)
-							{
-								$styles['#wrapper'][$pos] = $result->getClassName();
-							}
-						}
-					}
-					// attrs
-					if (
-						isset($manifest['style']['block']['additional']['attrs']) &&
-						is_array($manifest['style']['block']['additional']['attrs'])
-					)
-					{
-						$selector = '#wrapper';
-						foreach ($manifest['style']['block']['additional']['attrs'] as $attr)
-						{
-							if (isset($attr['attribute']))
-							{
-								if (!isset($allAttrs[$selector]))
-								{
-									$allAttrs[$selector] = [];
-								}
-								$allAttrs[$selector][] = $attr['attribute'];
-							}
-						}
-					}
-					// get actual attrs from nodes
-					if (isset($manifest['attrs']))
-					{
-						foreach ($manifest['attrs'] as $selector => $item)
-						{
-							if (isset($item['attribute']))
-							{
-								if (!isset($allAttrs[$selector]))
-								{
-									$allAttrs[$selector] = [];
-								}
-								$allAttrs[$selector][] = $item['attribute'];
-							}
-							else if (is_array($item))
-							{
-								foreach ($item as $itemAttr)
-								{
-									if (isset($itemAttr['attribute']))
-									{
-										if (!isset($allAttrs[$selector]))
-										{
-											$allAttrs[$selector] = [];
-										}
-										$allAttrs[$selector][] = $itemAttr['attribute'];
-									}
-								}
-							}
-						}
-					}
-					// remove some system attrs
-					if (isset($allAttrs['.bitrix24forms']))
-					{
-						unset($allAttrs['.bitrix24forms']);
-					}
-					// collect attrs
-					$allAttrsNew = [];
-					if (isset($allAttrs['#wrapper']))
-					{
-						$allAttrsNew['#wrapper'] = [];
-						$resultList = array(
-							array_pop($doc->getChildNodesArray())
-						);
-						foreach ($resultList as $pos => $result)
-						{
-							foreach ($allAttrs['#wrapper'] as $attrKey)
-							{
-								if (!isset($allAttrsNew['#wrapper'][$pos]))
-								{
-									$allAttrsNew['#wrapper'][$pos] = [];
-								}
-								$allAttrsNew['#wrapper'][$pos][$attrKey] = $result->getAttribute($attrKey);
-							}
-						}
-						unset($allAttrs['#wrapper']);
-					}
-					foreach ($allAttrs as $selector => $attr)
-					{
-						$resultList = $doc->querySelectorAll($selector);
-						foreach ($resultList as $pos => $result)
-						{
-							if (!isset($allAttrsNew[$selector]))
-							{
-								$allAttrsNew[$selector] = [];
-							}
-							if (!isset($allAttrsNew[$selector][$pos]))
-							{
-								$allAttrsNew[$selector][$pos] = [];
-							}
-							foreach ($attr as $attrKey)
-							{
-								$allAttrsNew[$selector][$pos][$attrKey] = $result->getAttribute($attrKey);
-							}
-							unset($attrVal);
-						}
-					}
-					$allAttrs = $allAttrsNew;
-					unset($allAttrsNew);
 					// repo blocks
 					$repoBlock = array();
 					if ($block->getRepoId())
@@ -675,15 +732,19 @@ class Site extends \Bitrix\Landing\Internals\BaseTable
 							);
 						}
 					}
+					$exportBlock = $block->export();
 					$exportItem = array(
 						'old_id' => $block->getId(),
 						'code' => $block->getCode(),
+						'access' => $block->getAccess(),
 						'anchor' => $block->getLocalAnchor(),
 						'repo_block' => $repoBlock,
-						'cards' => $cards,
-						'nodes' => $nodes,
-						'style' => $styles,
-						'attrs' => $allAttrs
+						'cards' => $exportBlock['cards'],
+						'nodes' => $exportBlock['nodes'],
+						'menu' => $exportBlock['menu'],
+						'style' => $exportBlock['style'],
+						'attrs' => $exportBlock['attrs'],
+						'dynamic' => $exportBlock['dynamic']
 					);
 					foreach ($exportItem as $key => $item)
 					{
@@ -768,7 +829,7 @@ class Site extends \Bitrix\Landing\Internals\BaseTable
 	/**
 	 * Get md5 hash for site, using http host.
 	 * @param int $id Site id.
-	 * @param string Domain name for this site.
+	 * @param string $domain Domain name for this site.
 	 * @return string
 	 */
 	public static function getPublicHash($id, $domain = null)
@@ -813,19 +874,92 @@ class Site extends \Bitrix\Landing\Internals\BaseTable
 			$hash[] = $domain;
 		}
 
-		$hash[] = rtrim(Manager::getPublicationPath($id), '/');
-		if (!Manager::isB24())
+		if (Manager::isB24())
 		{
+			$hash[] = rtrim(Manager::getPublicationPath($id), '/');
+		}
+		else
+		{
+			$hash[] = $id;
 			$hash[] = LICENSE_KEY;
 		}
+
 		$hashes[$id] = md5(implode('', $hash));
 
 		return $hashes[$id];
 	}
 
 	/**
+	 * Switch domains between two sites. Returns true on success.
+	 * @param int $siteId1 First site id.
+	 * @param int $siteId2 Second site id.
+	 * @return bool
+	 */
+	public static function switchDomain(int $siteId1, int $siteId2): bool
+	{
+		return \Bitrix\Landing\Internals\SiteTable::switchDomain($siteId1, $siteId2);
+	}
+
+	/**
+	 * Sets new random domain to site. Actual for Bitrix24 only.
+	 * @param int $siteId Site id.
+	 * @return bool
+	 */
+	public static function randomizeDomain(int $siteId): bool
+	{
+		return \Bitrix\Landing\Internals\SiteTable::randomizeDomain($siteId);
+	}
+
+	/**
+	 * Tries to add page to the all menu on the site.
+	 * Detects blocks with menu-manifests only.
+	 * @param int $siteId Site id.
+	 * @param array $data Landing data ([ID, TITLE]).
+	 * @return void
+	 */
+	public static function addLandingToMenu(int $siteId, array $data): void
+	{
+		Landing::setEditMode();
+		$res = Landing::getList([
+			'select' => [
+				'ID'
+			],
+			'filter' => [
+				'SITE_ID' => $siteId,
+				'!==AREAS.ID' => null
+			],
+		]);
+		while ($row = $res->fetch())
+		{
+			$landing = Landing::createInstance($row['ID']);
+			if ($landing->exist())
+			{
+				foreach ($landing->getBlocks() as $block)
+				{
+					$manifest = $block->getManifest();
+					if (isset($manifest['menu']))
+					{
+						foreach ($manifest['menu'] as $menuSelector => $foo)
+						{
+							$block->updateNodes([
+								$menuSelector => [
+									[
+										'text' => $data['TITLE'],
+										'href' => '#landing' . $data['ID']
+									]
+								]
+							], ['appendMenu' => true]);
+							$block->save();
+						}
+					}
+				}
+			}
+		}
+	}
+
+	/**
 	 * Event handler for check existing pages of main module's site.
-	 * @param string Main site id.
+	 * @param string $siteId Main site id.
 	 * @return bool
 	 */
 	public static function onBeforeMainSiteDelete($siteId)
@@ -835,7 +969,8 @@ class Site extends \Bitrix\Landing\Internals\BaseTable
 				'ID'
 			),
 			'filter' => array(
-				'=SITE.SMN_SITE_ID' => $siteId
+				'=SITE.SMN_SITE_ID' => $siteId,
+				'CHECK_PERMISSIONS' => 'N'
 			)
 		));
 
@@ -853,11 +988,13 @@ class Site extends \Bitrix\Landing\Internals\BaseTable
 
 	/**
 	 * Event handler for delete pages of main module's site.
-	 * @param string Main site id.
+	 * @param string $siteId Main site id.
 	 * @return void
 	 */
 	public static function onMainSiteDelete($siteId)
 	{
+		Rights::setOff();
+
 		$realSiteId = null;
 		// delete pages
 		$res = Landing::getList(array(
@@ -897,5 +1034,7 @@ class Site extends \Bitrix\Landing\Internals\BaseTable
 		{
 			self::delete($realSiteId);
 		}
+
+		Rights::setOn();
 	}
 }

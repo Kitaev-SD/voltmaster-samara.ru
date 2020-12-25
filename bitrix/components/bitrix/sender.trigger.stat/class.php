@@ -1,35 +1,27 @@
 <?
 
-use Bitrix\Main\Localization\Loc;
-use Bitrix\Main\Error;
-use Bitrix\Main\ErrorCollection;
 use Bitrix\Main\Context;
-use Bitrix\Main\Loader;
-
+use Bitrix\Main\Error;
+use Bitrix\Main\Localization\Loc;
 use Bitrix\Sender\Entity;
-use Bitrix\Sender\Security;
 use Bitrix\Sender\PostingRecipientTable;
+use Bitrix\Sender\Security;
 
 if (!defined("B_PROLOG_INCLUDED") || B_PROLOG_INCLUDED !== true)
 {
 	die();
 }
 
+if (!Bitrix\Main\Loader::includeModule('sender'))
+{
+	ShowError('Module `sender` not installed');
+	die();
+}
+
 Loc::loadMessages(__FILE__);
 
-class SenderTriggerStatComponent extends CBitrixComponent
+class SenderTriggerStatComponent extends \Bitrix\Sender\Internals\CommonSenderComponent
 {
-	/** @var ErrorCollection $errors */
-	protected $errors;
-
-	/** @var Entity\TriggerCampaign $campaignEntity */
-	protected $campaignEntity;
-
-	protected function checkRequiredParams()
-	{
-		return true;
-	}
-
 	protected function initParams()
 	{
 		$request = Context::getCurrent()->getRequest();
@@ -51,7 +43,7 @@ class SenderTriggerStatComponent extends CBitrixComponent
 			$GLOBALS['APPLICATION']->SetTitle(Loc::getMessage('SENDER_TRIGGER_STAT_COMP_TITLE'));
 		}
 
-		if (!Security\Access::current()->canViewLetters())
+		if (!Security\Access::getInstance()->canViewLetters())
 		{
 			Security\AccessChecker::addError($this->errors);
 			return false;
@@ -108,7 +100,7 @@ class SenderTriggerStatComponent extends CBitrixComponent
 			);
 			$statRawDb = \Bitrix\Sender\PostingTable::getList(array(
 				'select' => array(
-					'CNT', 'READ_CNT', 'CLICK_CNT', 'UNSUB_CNT', 'ERROR_CNT',
+					'CNT', 'SENT_SUCCESS', 'READ_CNT', 'CLICK_CNT', 'UNSUB_CNT', 'ERROR_CNT',
 				),
 				'filter' => array(
 					'=MAILING_CHAIN_ID' => $chain['ID'],
@@ -116,6 +108,7 @@ class SenderTriggerStatComponent extends CBitrixComponent
 				'runtime' => array(
 					new \Bitrix\Main\Entity\ExpressionField('CNT', 'SUM(%s)', 'COUNT_SEND_SUCCESS'),
 					new \Bitrix\Main\Entity\ExpressionField('ERROR_CNT', 'SUM(%s)', 'COUNT_SEND_ERROR'),
+					new \Bitrix\Main\Entity\ExpressionField('SENT_SUCCESS', 'SUM(%s)', 'COUNT_SEND_SUCCESS'),
 					new \Bitrix\Main\Entity\ExpressionField('READ_CNT', 'SUM(%s)', 'COUNT_READ'),
 					new \Bitrix\Main\Entity\ExpressionField('CLICK_CNT', 'SUM(%s)', 'COUNT_CLICK'),
 					new \Bitrix\Main\Entity\ExpressionField('UNSUB_CNT', 'SUM(%s)', 'COUNT_UNSUB')
@@ -123,7 +116,7 @@ class SenderTriggerStatComponent extends CBitrixComponent
 			));
 			while($statRaw = $statRawDb->fetch())
 			{
-				$stat['CNT']['SENT_SUCCESS'] += $statRaw['CNT'];
+				$stat['CNT']['SENT_SUCCESS'] += $statRaw['SENT_SUCCESS'];
 				$stat['CNT']['SEND_ERROR'] += $statRaw['ERROR_CNT'];
 				$stat['CNT']['READ'] += $statRaw['READ_CNT'];
 				$stat['CNT']['CLICK'] += $statRaw['CLICK_CNT'];
@@ -195,7 +188,7 @@ class SenderTriggerStatComponent extends CBitrixComponent
 	public function executeComponent()
 	{
 		$this->errors = new \Bitrix\Main\ErrorCollection();
-		if (!Loader::includeModule('sender'))
+		if (!Bitrix\Main\Loader::includeModule('sender'))
 		{
 			$this->errors->setError(new Error('Module `sender` is not installed.'));
 			$this->printErrors();
@@ -216,5 +209,15 @@ class SenderTriggerStatComponent extends CBitrixComponent
 		}
 
 		$this->includeComponentTemplate();
+	}
+
+	public function getEditAction()
+	{
+		return \Bitrix\Sender\Access\ActionDictionary::ACTION_MAILING_VIEW;
+	}
+
+	public function getViewAction()
+	{
+		return \Bitrix\Sender\Access\ActionDictionary::ACTION_MAILING_VIEW;
 	}
 }

@@ -64,7 +64,7 @@ if ($_REQUEST['unique_id'])
 			ob_end_clean();
 			if (function_exists('mb_internal_encoding'))
 				mb_internal_encoding('ISO-8859-1');
-			echo $buff === '' ? 'SUCCESS' : 'Length: '.strlen($buff).' ('.$buff . ')';
+			echo $buff === '' ? 'SUCCESS' : 'Length: '.mb_strlen($buff).' ('.$buff . ')';
 		break;
 		case 'pcre_recursion_test':
 			$a = str_repeat('a',4096);
@@ -114,7 +114,7 @@ if ($_REQUEST['unique_id'])
 			if ($binaryData === $binaryData_received)
 				echo "SUCCESS";
 			else
-				echo 'strlen($binaryData)='.strlen($binaryData).', strlen($binaryData_received)='.strlen($binaryData_received);
+				echo 'strlen($binaryData)='.mb_strlen($binaryData).', strlen($binaryData_received)='.mb_strlen($binaryData_received);
 		break;
 		case 'post_test':
 			$ok = true;
@@ -136,7 +136,7 @@ if ($_REQUEST['unique_id'])
 		break;
 		case 'auth_test':
 			$remote_user = $_SERVER["REMOTE_USER"] ? $_SERVER["REMOTE_USER"] : $_SERVER["REDIRECT_REMOTE_USER"];
-			$strTmp = base64_decode(substr($remote_user,6));
+			$strTmp = base64_decode(mb_substr($remote_user, 6));
 			if ($strTmp)
 				list($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']) = explode(':', $strTmp);
 			if ($_SERVER['PHP_AUTH_USER']=='test_user' && $_SERVER['PHP_AUTH_PW']=='test_password')
@@ -152,12 +152,12 @@ if ($_REQUEST['unique_id'])
 				$GLOBALS['_SERVER'][$key] = $GLOBALS['_REQUEST'][$key];
 			function IsHTTPS()
 			{
-				return ($_SERVER["SERVER_PORT"]==443 || strtolower($_SERVER["HTTPS"])=="on");
+				return ($_SERVER["SERVER_PORT"]==443 || mb_strtolower($_SERVER["HTTPS"]) == "on");
 			}
 
 			function SetStatus($status)
 			{
-				$bCgi = (stristr(php_sapi_name(), "cgi") !== false);
+				$bCgi = (mb_stristr(php_sapi_name(), "cgi") !== false);
 				$bFastCgi = ($bCgi && (array_key_exists('FCGI_ROLE', $_SERVER) || array_key_exists('FCGI_ROLE', $_ENV)));
 				if($bCgi && !$bFastCgi)
 					header("Status: ".$status);
@@ -172,7 +172,7 @@ if ($_REQUEST['unique_id'])
 				SetStatus("302 Found");
 				$protocol = (IsHTTPS() ? "https" : "http");
 				$host = $_SERVER['HTTP_HOST'];
-				if($_SERVER['SERVER_PORT'] <> 80 && $_SERVER['SERVER_PORT'] <> 443 && $_SERVER['SERVER_PORT'] > 0 && strpos($_SERVER['HTTP_HOST'], ":") === false)
+				if($_SERVER['SERVER_PORT'] <> 80 && $_SERVER['SERVER_PORT'] <> 443 && $_SERVER['SERVER_PORT'] > 0 && mb_strpos($_SERVER['HTTP_HOST'], ":") === false)
 					$host .= ":".$_SERVER['SERVER_PORT'];
 				$url = "?redirect_test=Y&done=Y&unique_id=".checker_get_unique_id();
 				header("Request-URI: ".$protocol."://".$host.$url);
@@ -193,7 +193,10 @@ if ($_REQUEST['unique_id'])
 			header('Content-type: text/plain; charset='.LANG_CHARSET);
 		}
 		define('LANGUAGE_ID', preg_match('#[a-z]{2}#',$_REQUEST['lang'],$regs) ? $regs[0] : 'en');
-		include_once($_SERVER['DOCUMENT_ROOT'].'/bitrix/modules/main/lang/'.LANGUAGE_ID.'/admin/site_checker.php');
+		if (file_exists($file = $_SERVER['DOCUMENT_ROOT'].'/bitrix/modules/main/lang/'.LANGUAGE_ID.'/admin/site_checker.php'))
+			include_once($file);
+		else
+			include_once($_SERVER['DOCUMENT_ROOT'].'/bitrix/modules/main/lang/en/admin/site_checker.php');
 		InitPureDB();
 		if (!function_exists('AddMessage2Log'))
 		{
@@ -321,7 +324,7 @@ if ($_POST['access_check'])
 				mkdir($tmp);
 			$upload = $_SERVER['DOCUMENT_ROOT'].'/'.COption::GetOptionString('main', 'upload_dir', 'upload');
 
-			if (0===strpos($_REQUEST['break_point'], $upload))
+			if (0 === mb_strpos($_REQUEST['break_point'], $upload))
 				$path = $upload;
 			else
 			{
@@ -476,7 +479,6 @@ if ($bIntranet)
 	$aTabs[] = array("DIV" => "edit0", "TAB" => GetMessage("SC_PORTAL_WORK"), "ICON" => "site_check", "TITLE" => GetMessage("SC_PORTAL_WORK_DESC"));
 $aTabs[] = array("DIV" => "edit1", "TAB" => GetMessage("SC_TEST_CONFIG"), "ICON" => "site_check", "TITLE" => GetMessage("SC_FULL_CP_TEST"));
 $aTabs[] = array("DIV" => "edit2", "TAB" => GetMessage("SC_TAB_2"), "ICON" => "site_check", "TITLE" => GetMessage("SC_SUBTITLE_DISK"));
-$aTabs[] = array("DIV" => "edit5", "TAB" => GetMessage("SC_TAB_5"), "ICON" => "site_check", "TITLE" => GetMessage("SC_TIK_TITLE"));
 
 $tabControl = new CAdminTabControl("tabControl", $aTabs, true, true);
 
@@ -548,7 +550,6 @@ require($_SERVER["DOCUMENT_ROOT"]."/bitrix/modules/main/include/prolog_admin_aft
 	</style>
 	<script>
 		var bTestFinished = false;
-		var bSubmit;
 
 		function show_popup(title, link, confirm_text)
 		{
@@ -572,7 +573,7 @@ require($_SERVER["DOCUMENT_ROOT"]."/bitrix/modules/main/include/prolog_admin_aft
 			html = '<div style="font-size:1.2em;padding:20px">';
 			html += (r = obTestResult[id]) ? '<div style="border:1px solid #ccc;padding:10px;"><b><?=GetMessageJS("MAIN_SC_TEST_RESULT")?></b> ' + r + '</div><br>' : '';
 			html += (h = obHelp[id]) ? h : obHelp['notopic'];
-			html += '<br><br><?=CUtil::JSEscape(GetMessage('SC_READ_MORE_ANC'))?>'.replace('#LINK#', '/bitrix/admin/site_checker.php?lang=<?=LANGUAGE_ID?>&read_log=Y&anchor=' + id + '#' + id);
+			html += '<br><br><?=GetMessageJS('SC_READ_MORE_ANC')?>'.replace('#LINK#', '/bitrix/admin/site_checker.php?lang=<?=LANGUAGE_ID?>&read_log=Y&anchor=' + id + '#' + id);
 			html += '</div>';
 
 			var d = new BX.CAdminDialog({
@@ -627,7 +628,7 @@ require($_SERVER["DOCUMENT_ROOT"]."/bitrix/modules/main/include/prolog_admin_aft
 			catch(e)
 			{
 				console.log(e);
-				alert('<?=GetMessage("SC_TEST_FAIL")?>');
+				alert('<?=GetMessageJS("SC_TEST_FAIL")?>');
 			}
 		}
 
@@ -678,7 +679,7 @@ require($_SERVER["DOCUMENT_ROOT"]."/bitrix/modules/main/include/prolog_admin_aft
 			{
 				console.log(e);
 				strNextRequest = '';
-				strResult = '<span class="sc_error"><?=GetMessage("SC_TEST_FAIL")?></span>';
+				strResult = '<span class="sc_error"><?=GetMessageJS("SC_TEST_FAIL")?></span>';
 			}
 
 			if (document.getElementById('test_start').disabled) // Stop was not pressed
@@ -747,12 +748,6 @@ require($_SERVER["DOCUMENT_ROOT"]."/bitrix/modules/main/include/prolog_admin_aft
 				{
 					set_start(0);
 					bTestFinished = true;
-					if (bSubmit)
-					{
-						if (window.tabControl)
-							tabControl.SelectTab('edit5');
-						SubmitToSupport();
-					}
 				}
 			}
 		}
@@ -953,7 +948,7 @@ $tabControl->BeginNextTab();
 	<td colspan="2">
 		<br>
 		<input type=button value="<?=GetMessage("SC_START_TEST_B")?>" id="test_start" onclick="set_start(1)" class="adm-btn-green">
-		<input type=button value="<?=GetMessage("SC_STOP_TEST_B")?>" disabled id="test_stop" onclick="bSubmit=false;set_start(0)">
+		<input type=button value="<?=GetMessage("SC_STOP_TEST_B")?>" disabled id="test_stop" onclick="set_start(0)">
 		<div id="progress" style="visibility:hidden;padding-top:4px;" width="100%">
 			<div id="status" style="font-weight:bold;font-size:1.2em"></div>
 			<table border="0" cellspacing="0" cellpadding="2" width="100%">
@@ -975,6 +970,7 @@ $tabControl->BeginNextTab();
 	</td>
 	</tr>
 <?
+// disk permissions
 $tabControl->BeginNextTab();
 ?>
 	<tr>
@@ -988,7 +984,7 @@ $tabControl->BeginNextTab();
 		<?
 		foreach(CSiteCheckerTest::GetTestList() as $test)
 		{
-			$help = GetMessage('SC_HELP_'.strtoupper($test));
+			$help = GetMessage('SC_HELP_'.mb_strtoupper($test));
 			$help = str_replace('<code>','<div class="sc_code">',$help);
 			$help = str_replace('</code>','</div>',$help);
 			$help = str_replace("\r", "", $help);
@@ -1041,111 +1037,11 @@ $tabControl->BeginNextTab();
 		</td>
 	</tr>
 <?
-$tabControl->BeginNextTab();
-
-if(!isset($strTicketError))
-	$strTicketError = "";
 ?>
-<tr><td colspan="2"><?
-	if(isset($ticket_sent))
-	{
-		if(!empty($aMsg))
-		{
-			$e = new CAdminException($aMsg);
-			$APPLICATION->ThrowException($e);
-			if($e = $APPLICATION->GetException())
-			{
-				$message = new CAdminMessage(GetMessage("SC_ERROR0"), $e);
-				if($message)
-					echo $message->Show();
-			}
-		}
-
-		if(strlen($strTicketError)>0 && !$message)
-			CAdminMessage::ShowMessage($strTicketError);
-		elseif(!$message)
-			CAdminMessage::ShowNote(str_replace("#EMAIL#", "", GetMessage("SC_TIK_SEND_SUCCESS")));
-	}
-		?></td>
-</tr>
 <script>
-	function SubmitToSupport()
-	{
-		var frm = document.forms.fticket;
-
-		if (frm.ticket_text.value == '')
-		{
-			alert('<?=GetMessage("SC_NOT_FILLED")?>');
-			return;
-		}
-
-//		frm.submit_button.disabled = 'disabled';
-
-		if (!bTestFinished && frm.ticket_test.checked)
-		{
-			alert('<?=GetMessageJS("SC_TEST_WARN")?>');
-//			if (window.tabControl)
-//				tabControl.SelectTab('edit3');
-			bSubmit = true; // submit after test
-			set_start(1);
-		}
-		else if(frm.ticket_test.checked)
-		{
-			CHttpRequest.Action = function (result)
-			{
-				document.forms.fticket.test_file_contents.value = result;
-				frm.submit();
-			};
-			CHttpRequest.Send('?read_log=Y');
-		}
-		else
-			frm.submit();
-	}
 </script>
 <?
 		?>
-<form method="POST" action="<?=SUPPORT_PAGE?>" name="fticket" target="_blank">
-<?echo bitrix_sessid_post();?>
-<input type="hidden" name="send_ticket" value="Y">
-<input type="hidden" name="license_key" value="<?=(LICENSE_KEY == "DEMO"? "DEMO" : md5("BITRIX".LICENSE_KEY."LICENCE"))?>">
-<input type="hidden" name="test_file_contents" value="">
-<input type="hidden" name="ticket_title" value="<?=GetMessage('SC_RUS_L1').' '.htmlspecialcharsbx($_SERVER['HTTP_HOST'])?>">
-<input type="hidden" name="BX_UTF" value="<?=(defined('BX_UTF') && BX_UTF==true)?'Y':'N'?>">
-<input type="hidden" name="tabControl_active_tab" value="edit5">
-<tr>
-	<td valign="top"><span class="required">*</span><?=GetMessage("SC_TIK_DESCR")?><br>
-			<small><?=GetMessage("SC_TIK_DESCR_DESCR")?></small></td>
-	<td valign="top"><textarea name="ticket_text" rows="6" cols="60"><?= htmlspecialcharsbx($_REQUEST["ticket_text"])?></textarea></td>
-</tr>
-<tr>
-	<td valign="top"><label for="ticket_test"><?=GetMessage("SC_TIK_ADD_TEST")?></label></td>
-	<td valign="top"><input type="checkbox" id="ticket_test" name="ticket_test" value="Y" checked></td>
-</tr>
-<?if (strlen($_REQUEST["last_error_query"])>0):?>
-	<tr>
-		<td valign="top"><?=GetMessage("SC_TIK_LAST_ERROR")?></td>
-		<td valign="top">
-			<?=GetMessage("SC_TIK_LAST_ERROR_ADD")?>
-			<input type="hidden" name="last_error_query" value="<?= htmlspecialcharsbx($_REQUEST["last_error_query"])?>">
-		</td>
-	</tr>
-<?endif;?>
-<tr>
-	<td></td>
-	<td>
-		<input type="button" name="submit_button" onclick="SubmitToSupport()" value="<?=GetMessage("SC_TIK_SEND_MESS")?>">
-	</td>
-</tr>
-<tr>
-	<td colspan=2>
-	<?
-	echo BeginNote();
-	echo GetMessage("SC_SUPPORT_COMMENT").' <a href="'.SUPPORT_PAGE.'" target=_blank>'.SUPPORT_PAGE.'</a>';
-	echo EndNote();
-	?>
-	</td>
-</tr>
-</form>
 <?
 //$tabControl->Buttons();
 $tabControl->End();

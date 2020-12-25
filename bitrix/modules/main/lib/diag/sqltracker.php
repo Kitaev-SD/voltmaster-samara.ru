@@ -3,7 +3,7 @@ namespace Bitrix\Main\Diag;
 
 class SqlTracker implements \Iterator
 {
-	/** @var array[]SqlTrackerQuery */
+	/** @var SqlTrackerQuery[] */
 	protected $queries = array();
 	/** @var float */
 	protected $time = 0.0;
@@ -74,7 +74,7 @@ class SqlTracker implements \Iterator
 	/**
 	 * Returns array of SqlTrackerQuery objects so far collected.
 	 *
-	 * @return array
+	 * @return SqlTrackerQuery[]
 	 */
 	public function getQueries()
 	{
@@ -134,7 +134,7 @@ class SqlTracker implements \Iterator
 		if ($this->logFilePath)
 		{
 			$header = "TIME: ".round($executionTime, 6)." SESSION: ".session_id()." ".$additional."\n";
-			$headerLength = strlen($header);
+			$headerLength = mb_strlen($header);
 			$body = $this->formatSql($sql);
 			$trace = $this->formatTrace(\Bitrix\Main\Diag\Helper::getBackTrace($this->depthBackTrace, null, $traceSkip));
 			$footer = str_repeat("-", $headerLength);
@@ -184,7 +184,7 @@ class SqlTracker implements \Iterator
 				else
 				{
 					$skip = false;
-					$tabs = strlen($line) - strlen(ltrim($line, "\t"));
+					$tabs = mb_strlen($line) - mb_strlen(ltrim($line, "\t"));
 				}
 			}
 			if ($tabs)

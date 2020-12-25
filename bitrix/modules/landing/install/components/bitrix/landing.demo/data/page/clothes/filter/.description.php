@@ -18,6 +18,7 @@ return array(
 			'METAOG_IMAGE' => 'https://cdn.bitrix24.site/bitrix/images/demo/page/clothes/filter/preview.jpg',
 			'VIEW_USE' => 'N',
 			'VIEW_TYPE' => 'no',
+			'THEME_CODE' => 'travel',
 		),
 	),
 	'layout' => array(
@@ -49,10 +50,10 @@ return array(
 			),
 			'style' => array(
 				'.landing-block-node-title' => array(
-					0 => 'landing-block-node-title g-font-weight-400 g-font-montserrat g-font-size-20',
+					0 => 'landing-block-node-title g-font-weight-400 g-font-size-20',
 				),
 				'.landing-block-node-text' => array(
-					0 => 'landing-block-node-text g-pb-1 g-font-open-sans g-font-size-14',
+					0 => 'landing-block-node-text g-pb-1 g-font-size-14',
 				),
 				'#wrapper' => array(
 					0 => 'landing-block js-animation fadeInUp g-pt-20 g-pb-20 animated g-pl-40 g-pr-40 l-d-xs-none l-d-md-none',
@@ -100,7 +101,7 @@ return array(
 			),
 			'style' => array(
 				'.landing-block-card' => array(
-					0 => 'landing-block-card js-animation fadeIn landing-block-node-contact g-brd-between-cols col-sm-6 col-md-6 g-px-15 g-py-30 g-py-0--md g-mb-15 col-lg-12 landing-card g-brd-white',
+					0 => 'landing-block-card js-animation fadeIn landing-block-node-contact g-brd-between-cols col-sm-6 col-md-6 g-px-15 g-py-30 g-py-0--md g-mb-15 col-lg-12  g-brd-white',
 				),
 				'.landing-block-node-contact-title' => array(
 					0 => 'landing-block-node-contact-title d-block text-uppercase g-font-size-14 g-color-main g-mb-5',
@@ -195,19 +196,19 @@ return array(
 					0 => ' ',
 				),
 				'.landing-block-node-element-list' => array(
-					0 => '<li class="landing-block-node-element-list-item g-brd-bottom g-brd-gray-light-v3 g-py-10 g-text-transform-none g-font-open-sans g-font-size-14 text-left"><a href="#landing@landing[clothes/faq]" target="_self">
+					0 => '<li class="landing-block-node-element-list-item g-brd-bottom g-brd-gray-light-v3 g-py-10 g-text-transform-none g-font-size-14 text-left"><a href="#landing@landing[clothes/faq]" target="_self">
 							'. Loc::getMessage("LANDING_DEMO_STORE_CLOTHES-FILTER--TEXT_4").'
 						</a></li>
-						<li class="landing-block-node-element-list-item g-brd-bottom g-brd-gray-light-v3 g-py-10 g-text-transform-none g-font-open-sans g-font-size-14 text-left"><a href="#landing@landing[clothes/delivery]" target="_self">
+						<li class="landing-block-node-element-list-item g-brd-bottom g-brd-gray-light-v3 g-py-10 g-text-transform-none g-font-size-14 text-left"><a href="#landing@landing[clothes/delivery]" target="_self">
 							'. Loc::getMessage("LANDING_DEMO_STORE_CLOTHES-FILTER--TEXT_5").'
 						</a></li>
-						<li class="landing-block-node-element-list-item g-brd-bottom g-brd-gray-light-v3 g-py-10 g-text-transform-none g-font-open-sans g-font-size-14 text-left"><a href="#landing@landing[clothes/about]" target="_self">
+						<li class="landing-block-node-element-list-item g-brd-bottom g-brd-gray-light-v3 g-py-10 g-text-transform-none g-font-size-14 text-left"><a href="#landing@landing[clothes/about]" target="_self">
 							'. Loc::getMessage("LANDING_DEMO_STORE_CLOTHES-FILTER--TEXT_6").'
 						</a></li>
-						<li class="landing-block-node-element-list-item g-brd-bottom g-brd-gray-light-v3 g-py-10 g-text-transform-none g-font-open-sans g-font-size-14 text-left"><a href="#landing@landing[clothes/quarantee]" target="_self">
+						<li class="landing-block-node-element-list-item g-brd-bottom g-brd-gray-light-v3 g-py-10 g-text-transform-none g-font-size-14 text-left"><a href="#landing@landing[clothes/guarantee]" target="_self">
 							'. Loc::getMessage("LANDING_DEMO_STORE_CLOTHES-FILTER--TEXT_7").'
 						</a></li>
-						<li class="landing-block-node-element-list-item g-brd-bottom g-brd-gray-light-v3 g-py-10 g-text-transform-none g-font-open-sans g-font-size-14 text-left"><a href="#landing@landing[clothes/contacts]" target="_self">
+						<li class="landing-block-node-element-list-item g-brd-bottom g-brd-gray-light-v3 g-py-10 g-text-transform-none g-font-size-14 text-left"><a href="#landing@landing[clothes/contacts]" target="_self">
 							'. Loc::getMessage("LANDING_DEMO_STORE_CLOTHES-FILTER--TEXT_8").'
 						</a></li>',
 				),
@@ -217,13 +218,13 @@ return array(
 					0 => 'landing-block-node-element js-animation landing-block-card col-md-6 g-parent g-brd-around g-brd-gray-light-v4 g-brd-bottom-primary--hover g-brd-bottom-2--hover g-mb-30 g-mb-0--lg g-transition-0_2 g-transition--ease-in col-lg-12 animated fadeInUp',
 				),
 				'.landing-block-node-element-title' => array(
-					0 => 'landing-block-node-element-title h5 g-color-black g-mb-10 g-text-transform-none g-font-montserrat g-font-size-20',
+					0 => 'landing-block-node-element-title h5 g-color-black g-mb-10 g-text-transform-none g-font-size-20',
 				),
 				'.landing-block-node-element-text' => array(
 					0 => 'landing-block-node-element-text g-color-gray-dark-v4',
 				),
 				'.landing-block-node-element-list-item' => array(
-					0 => 'landing-block-node-element-list-item g-brd-bottom g-brd-gray-light-v3 g-py-10 g-text-transform-none g-font-open-sans g-font-size-14 text-left',
+					0 => 'landing-block-node-element-list-item g-brd-bottom g-brd-gray-light-v3 g-py-10 g-text-transform-none g-font-size-14 text-left',
 				),
 				'.landing-block-node-element-icon' => array(
 					0 => 'landing-block-node-element-icon icon-fire',

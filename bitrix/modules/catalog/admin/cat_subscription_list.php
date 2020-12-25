@@ -10,6 +10,9 @@ use Bitrix\Catalog;
 
 require_once($_SERVER['DOCUMENT_ROOT'].'/bitrix/modules/main/include/prolog_admin_before.php');
 
+/** @global CAdminPage $adminPage */
+global $adminPage;
+
 Loader::includeModule('catalog');
 Loc::loadMessages(__FILE__);
 
@@ -30,7 +33,7 @@ if(isset($_REQUEST['mode']) && ($_REQUEST['mode'] == 'list' || $_REQUEST['mode']
 	CFile::disableJSFunction(true);
 
 $tableId = 'tbl_product_subscription_list';
-$sortObject = new CAdminSorting($tableId, 'DATE_FROM', 'DESC');
+$sortObject = new CAdminUiSorting($tableId, 'DATE_FROM', 'DESC');
 $listObject = new CAdminUiList($tableId, $sortObject);
 
 global $by, $order;
@@ -240,7 +243,7 @@ while($subscribe = $queryObject->fetch())
 	{
 		$editUrl = $selfFolderUrl.CIBlock::getAdminElementEditLink($subscribe['IBLOCK_ID'], $subscribe['ITEM_ID'], array(
 			'find_section_section' => -1, 'WF' => 'Y', 'replace_script_name' => true,
-			'return_url' => $APPLICATION->getCurPageParam('', array('mode', 'table_id'))));
+			'return_url' => $APPLICATION->getCurPageParam('', array('mode', 'table_id', "internal", "grid_id", "grid_action", "bxajaxid", "sessid")))); //todo replace to $listObject->getCurPageParam()
 	}
 	else
 	{
@@ -288,7 +291,7 @@ while($user = $userQuery->fetch())
 		foreach($listUserData[$user['ID']] as $subscribeId)
 		{
 			$userString='<a href="'.$urlToUser.'">'.
-				CUser::formatName(CSite::getNameFormat(false), $user, true, false).'</a>';
+				CUser::formatName(CSite::getNameFormat(false), $user, true, true).'</a>';
 			$rowList[$subscribeId]->addField('USER_ID', $userString);
 		}
 	}

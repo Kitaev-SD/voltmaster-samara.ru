@@ -4,6 +4,8 @@ define("NOT_CHECK_PERMISSIONS", true);
 require_once($_SERVER['DOCUMENT_ROOT']."/bitrix/modules/main/include/prolog_before.php");
 
 use Bitrix\Main\Localization\Loc;
+use Bitrix\Main\Web\Uri;
+use Bitrix\Main\Application;
 
 Loc::loadMessages(__FILE__);
 
@@ -115,6 +117,12 @@ if($request->isPost() && check_bitrix_sessid() && \Bitrix\Main\Loader::includeMo
 									$appFields['DATE_FINISH'] = '';
 								}
 
+								//Configuration app
+								if($appDetailInfo['TYPE'] == \Bitrix\Rest\AppTable::TYPE_CONFIGURATION)
+								{
+									$appFields['INSTALLED'] = \Bitrix\Rest\AppTable::NOT_INSTALLED;
+								}
+
 								$existingApp = \Bitrix\Rest\AppTable::getByClientId($appFields['CLIENT_ID']);
 
 								if($existingApp)
@@ -194,12 +202,28 @@ if($request->isPost() && check_bitrix_sessid() && \Bitrix\Main\Loader::includeMo
 
 									\Bitrix\Rest\AppTable::install($appId);
 
+									$uriString = \CRestUtil::getApplicationPage($appId);
+									$uri = new Uri($uriString);
+									$request = Application::getInstance()->getContext()->getRequest();
+									$ver = intVal($request->getPost("version"));
+									$check_hash = $request->getPost("check_hash");
+									$install_hash = $request->getPost("install_hash");
+									$uri->addParams(
+										[
+											'ver' => $ver,
+											'check_hash' => $check_hash,
+											'install_hash' => $install_hash
+
+										]
+									);
+									$redirect = $uri->getUri();
+
 									$result = array(
 										'success' => 1,
 										'id' => $appId,
 										'open' => $appDetailInfo["OPEN_API"] !== "Y",
 										'installed' => $appFields['INSTALLED'] === 'Y',
-										'redirect' => \CRestUtil::getApplicationPage($appId),
+										'redirect' => $redirect,
 									);
 								}
 								else
@@ -240,25 +264,45 @@ if($request->isPost() && check_bitrix_sessid() && \Bitrix\Main\Loader::includeMo
 				$dbRes = \Bitrix\Rest\AppTable::getList(array(
 					'filter' => array(
 						"=CODE" => $code,
-						"!=STATUS" => \Bitrix\Rest\AppTable::STATUS_LOCAL,
+						"!=STATUS" => \Bitrix\Rest\AppTable::STATUS_LOCAL
 					),
 				));
 
 				$appInfo = $dbRes->fetch();
 				if($appInfo)
 				{
-					\Bitrix\Rest\AppTable::uninstall($appInfo['ID'], $clean == "true");
+					$checkResult = \Bitrix\Rest\AppTable::checkUninstallAvailability($appInfo['ID'], $clean == 'true');
+					if($checkResult->isEmpty() && \Bitrix\Rest\AppTable::canUninstallByType($appInfo['CODE'], $appInfo['VERSION']))
+					{
+						\Bitrix\Rest\AppTable::uninstall($appInfo['ID'], $clean == "true");
 
-					$appFields = array(
-						'ACTIVE' => 'N',
-						'INSTALLED' => 'N',
-					);
+						$appFields = array(
+							'ACTIVE' => 'N',
+							'INSTALLED' => 'N',
+						);
 
-					\Bitrix\Rest\AppTable::update($appInfo['ID'], $appFields);
+						\Bitrix\Rest\AppTable::update($appInfo['ID'], $appFields);
 
-					\Bitrix\Rest\AppLogTable::log($appInfo['ID'], \Bitrix\Rest\AppLogTable::ACTION_TYPE_UNINSTALL);
+						\Bitrix\Rest\AppLogTable::log($appInfo['ID'], \Bitrix\Rest\AppLogTable::ACTION_TYPE_UNINSTALL);
 
-					$result = array('success' => 1);
+						$result = array('success' => 1);
+					}
+					else
+					{
+						$errorMessage = '';
+						foreach($checkResult as $error)
+						{
+							$errorMessage .= $error->getMessage()."\n";
+						}
+
+						$result = array('error' => $errorMessage);
+						if($checkResult->isEmpty() && \Bitrix\Rest\AppTable::getAppType($appInfo['CODE']) == \Bitrix\Rest\AppTable::TYPE_CONFIGURATION)
+						{
+							$result = [
+								'sliderUrl' => \Bitrix\Rest\Marketplace\Url::getConfigurationImportRollbackUrl($appInfo['CODE'])
+							];
+						}
+					}
 				}
 				else
 				{

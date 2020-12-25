@@ -33,7 +33,7 @@ class Location extends ExternalLocationMap
 
 		$csvFilePath = self::getLocationsFilePath();
 
-		if(strlen($csvFilePath) <= 0)
+		if($csvFilePath == '')
 		{
 			$result->addError(new Error(Loc::getMessage('SALE_DLVRS_ADDL_LOCATIONS_ERROR')));
 			return $result;
@@ -77,10 +77,24 @@ class Location extends ExternalLocationMap
 
 				$csvFilePath = self::getLocationsFilePath();
 
-				if(strlen($csvFilePath) <= 0)
+				if($csvFilePath == '')
 				{
 					$result->addError(new Error(Loc::getMessage('SALE_DLVRS_ADDL_LOCATIONS_ERROR')));
 					return $result;
+				}
+
+				$res = \Bitrix\Sale\Location\LocationTable::getList(array(
+					'runtime' => array(new \Bitrix\Main\Entity\ExpressionField('MAX', 'MAX(ID)')),
+					'select' => array('MAX')
+				));
+
+				if($loc = $res->fetch())
+				{
+					$_SESSION['SALE_HNDL_ADD_DLV_LOC_MAX_ID'] = (int)$loc['MAX'];
+				}
+				else
+				{
+					$_SESSION['SALE_HNDL_ADD_DLV_LOC_MAX_ID'] = 0;
 				}
 
 				$result->setData(array(
@@ -96,7 +110,7 @@ class Location extends ExternalLocationMap
 
 				$csvFilePath = !empty($step) ? $step : '';
 
-				if(strlen($csvFilePath) <= 0)
+				if($csvFilePath == '')
 				{
 					$result->addError(new Error(Loc::getMessage('SALE_DLVRS_ADDL_LOCATIONS_ERROR_PATH')));
 					return $result;
@@ -143,13 +157,25 @@ class Location extends ExternalLocationMap
 
 			case 'create_normalized_loc_table':
 
-				self::fillNormalizedTable();
+				$lastId = self::fillNormalizedTable((int)$step, $timeout);
 
-				$result->setData(array(
-					'STAGE' => 'map_by_names',
-					'MESSAGE' => Loc::getMessage('SALE_DLVRS_ADDL_LOCATIONS_COMP_BY_NAMES'),
-					'PROGRESS' => $progress + 5
-				));
+				if($lastId > 0 && $lastId < $_SESSION['SALE_HNDL_ADD_DLV_LOC_MAX_ID'])
+				{
+					$result->setData(array(
+						'STAGE' => 'create_normalized_loc_table',
+						'STEP' => $lastId,
+						'MESSAGE' => Loc::getMessage('SALE_DLVRS_ADDL_LOCATIONS_NORM'),
+						'PROGRESS' => $progress <= 25 ? $progress + 1 : $progress
+					));
+				}
+				else
+				{
+					$result->setData(array(
+						'STAGE' => 'map_by_names',
+						'MESSAGE' => Loc::getMessage('SALE_DLVRS_ADDL_LOCATIONS_COMP_BY_NAMES'),
+						'PROGRESS' => $progress + 5
+					));
+				}
 
 				break;
 
@@ -158,11 +184,11 @@ class Location extends ExternalLocationMap
 				$lastProcessedId = self::mapByNames($srvId, $step, $timeout);
 
 				if($_SESSION['SALE_HNDL_ADD_DLV_ETH_LOC_LAST'] <= 0)
-					$progress = $progress <= 90 ? ($progress + intval($step)+1) : $progress;
-				elseif($lastProcessedId <= 0)
+					$progress = $progress <= 90 ? $progress + 1 : 90;
+				elseif($lastProcessedId <= 0 || $lastProcessedId == $_SESSION['SALE_HNDL_ADD_DLV_ETH_LOC_LAST'])
 					$progress = 100;
 				else
-					$progress = $progress + round(75 * $lastProcessedId / $_SESSION['SALE_HNDL_ADD_DLV_ETH_LOC_LAST']);
+					$progress = 32 + round(60 * $lastProcessedId / $_SESSION['SALE_HNDL_ADD_DLV_ETH_LOC_LAST']);
 
 				if($progress < 100)
 				{
@@ -178,7 +204,7 @@ class Location extends ExternalLocationMap
 					$result->setData(array(
 						'STAGE' => 'finish',
 						'MESSAGE' => Loc::getMessage('SALE_DLVRS_ADDL_LOCATIONS_COMP_COMPLETE'),
-						'PROGRESS' => $progress
+						'PROGRESS' => 100
 					));
 				}
 
@@ -208,7 +234,7 @@ class Location extends ExternalLocationMap
 	{
 		$archiveFileName = self::downloadLocations();
 
-		if(strlen($archiveFileName) <= 0)
+		if($archiveFileName == '')
 			return '';
 
 		return  self::unpackLocations($archiveFileName);
@@ -253,7 +279,7 @@ class Location extends ExternalLocationMap
 	{
 		$countryName = self::getCountryName();
 
-		if(strlen($countryName) <= 0)
+		if($countryName == '')
 		{
 			return 0;
 		}
@@ -348,7 +374,7 @@ class Location extends ExternalLocationMap
 
 	protected static function saveCsvToTmpTable($path)
 	{
-		if(strlen($path) <=0)
+		if($path == '')
 			return false;
 
 		$srvId = static::getExternalServiceId();
@@ -362,7 +388,7 @@ class Location extends ExternalLocationMap
 		set_time_limit(0);
 		$content = File::getFileContents($path);
 
-		if(strtolower(SITE_CHARSET) != 'utf-8')
+		if(mb_strtolower(SITE_CHARSET) != 'utf-8')
 			$content = Encoding::convertEncoding($content, 'UTF-8', SITE_CHARSET);
 
 		if($content === false)
@@ -392,10 +418,10 @@ class Location extends ExternalLocationMap
 			if(!is_array($cols) || count($cols) != 6)
 				continue;
 
-			if(strlen($cols[0]) <= 0 || strlen($cols[1]) <= 0)
+			if($cols[0] == '' || $cols[1] == '')
 				continue;
 
-			if(strlen($values) > 0)
+			if($values <> '')
 				$values .= ', ';
 
 			$values .= "('".$sqlHelper->forSql($cols[0])."', '".$sqlHelper->forSql($cols[1])."', '".$sqlHelper->forSql($cols[2])."', '".$sqlHelper->forSql($cols[3])."', '".$sqlHelper->forSql($cols[4])."', '".$sqlHelper->forSql($cols[5])."', ".($imported+1).")";
@@ -411,7 +437,7 @@ class Location extends ExternalLocationMap
 			$i++;
 		}
 
-		if(strlen($values) > 0)
+		if($values <> '')
 			$con->queryExecute("INSERT INTO b_sale_hdale(CODE, NAME, PCITY, PSUBREGION, PREGION, PCOUNTRY, ID) VALUES ".$values);
 
 		$con->queryExecute("CREATE INDEX IX_BSHDALE_LOCATION_ID ON b_sale_hdale(LOCATION_ID)");

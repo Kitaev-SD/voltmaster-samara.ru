@@ -8,8 +8,8 @@
 
 namespace Bitrix\Rest\SessionAuth;
 
-
 use Bitrix\Main\Context;
+use Bitrix\Main\UserTable;
 
 class Auth
 {
@@ -18,6 +18,42 @@ class Auth
 	protected static $authQueryParams = array(
 		'sessid',
 	);
+
+	public static function isAccessAllowed(): bool
+	{
+		global $USER;
+
+		$externalAuthId = $USER->GetParam('EXTERNAL_AUTH_ID');
+
+		if ($USER->IsAdmin() || $externalAuthId === "__controller")
+		{
+			return true;
+		}
+
+		// fake user like as BOT, IMCONNECTOR, SHOP
+		$blackList = UserTable::getExternalUserTypes();
+		if (in_array($externalAuthId, $blackList, true))
+		{
+			return false;
+		}
+
+		if (!\Bitrix\Main\Loader::includeModule('intranet'))
+		{
+			return true;
+		}
+
+		if (\Bitrix\Intranet\Util::isIntranetUser())
+		{
+			return true;
+		}
+
+		if (\Bitrix\Intranet\Util::isExtranetUser())
+		{
+			return true;
+		}
+
+		return false;
+	}
 
 	public static function onRestCheckAuth(array $query, $scope, &$res)
 	{
@@ -36,20 +72,34 @@ class Auth
 		if($authKey !== null || Context::getCurrent()->getRequest()->getHeader('X-Bitrix-Csrf-Token') !== null)
 		{
 			static::checkHttpAuth();
+			static::checkCookieAuth();
 
 			if(check_bitrix_sessid() || $authKey === bitrix_sessid())
 			{
 				if($USER->isAuthorized())
 				{
-					$error = false;
-					$res = array(
-						'user_id' => $USER->GetID(),
-						'scope' => implode(',', \CRestUtil::getScopeList()),
-						'parameters_clear' => static::$authQueryParams,
-						'auth_type' => static::AUTH_TYPE,
-					);
+					if (self::isAccessAllowed())
+					{
+						$error = false;
+						$res = array(
+							'user_id' => $USER->GetID(),
+							'scope' => implode(',', \CRestUtil::getScopeList()),
+							'parameters_clear' => static::$authQueryParams,
+							'auth_type' => static::AUTH_TYPE,
+						);
 
-					self::setLastActivityDate($USER->GetID(), $query);
+						self::setLastActivityDate($USER->GetID(), $query);
+
+						if ($query['BX_SESSION_LOCK'] !== 'Y')
+						{
+							session_write_close();
+						}
+					}
+					else
+					{
+						$error = true;
+						$res = array('error' => 'access_denied', 'error_description' => 'Access denied for this type of user', 'additional' => array('type' => $USER->GetParam('EXTERNAL_AUTH_ID')));
+					}
 				}
 				else
 				{
@@ -112,6 +162,16 @@ class Auth
 			{
 				$APPLICATION->SetAuthResult($httpAuth);
 			}
+		}
+	}
+
+	protected static function checkCookieAuth()
+	{
+		global $USER;
+
+		if(!$USER->IsAuthorized())
+		{
+			$USER->LoginByCookies();
 		}
 	}
 }

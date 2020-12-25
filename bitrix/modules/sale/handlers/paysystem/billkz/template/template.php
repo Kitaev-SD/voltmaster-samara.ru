@@ -357,7 +357,7 @@ foreach ($columnList as $column)
 	if ($params['BILLKZ_COLUMN_'.$column.'_SHOW'] == 'Y')
 	{
 		$arCols[$column] = array(
-			'NAME' => $params['BILLKZ_COLUMN_'.$column.'_TITLE'],
+			'NAME' => htmlspecialcharsbx($params['BILLKZ_COLUMN_'.$column.'_TITLE']),
 			'SORT' => $params['BILLKZ_COLUMN_'.$column.'_SORT']
 		);
 	}
@@ -368,7 +368,7 @@ if ($params['USER_COLUMNS'])
 	foreach ($params['USER_COLUMNS'] as $id => $val)
 	{
 		$arCols[$id] = array(
-			'NAME' => $val['NAME'],
+			'NAME' => htmlspecialcharsbx($val['NAME']),
 			'SORT' => $val['SORT']
 		);
 	}

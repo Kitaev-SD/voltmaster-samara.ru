@@ -8,7 +8,18 @@ IncludeModuleLangFile($_SERVER["DOCUMENT_ROOT"]."/bitrix/modules/rest/install/pu
 
 $arMenu = array();
 
-if(SITE_TEMPLATE_ID == 'bitrix24' || \Bitrix\Main\ModuleManager::isModuleInstalled('bitrix24'))
+$extranetSite = (
+	\Bitrix\Main\Loader::includeModule('extranet')
+	&& \CExtranet::isExtranetSite(SITE_ID)
+);
+
+if(
+	!$extranetSite
+	&& (
+		SITE_TEMPLATE_ID == 'bitrix24'
+		|| \Bitrix\Main\ModuleManager::isModuleInstalled('bitrix24')
+	)
+)
 {
 	$arMenu[] = Array(
 		GetMessage("MENU_MARKETPLACE_ALL"),
@@ -19,15 +30,18 @@ if(SITE_TEMPLATE_ID == 'bitrix24' || \Bitrix\Main\ModuleManager::isModuleInstall
 	);
 }
 
-if(CModule::IncludeModule("rest"))
+if(
+	!$extranetSite
+	&& CModule::IncludeModule("rest")
+)
 {
-	if(\CRestUtil::isAdmin())
+	if (\CRestUtil::isAdmin())
 	{
 		$arMenu[] = Array(
-			GetMessage("MENU_MARKETPLACE_ADD"),
-			SITE_DIR."marketplace/local/",
+			GetMessage("MENU_MARKETPLACE_INSTALLED"),
+			SITE_DIR."marketplace/installed/",
 			Array(),
-			Array("menu_item_id" => "menu_marketplace_add"),
+			Array("menu_item_id" => "menu_marketplace_installed"),
 			""
 		);
 	}
@@ -115,19 +129,24 @@ if(CModule::IncludeModule("rest"))
 		$arMenu[] = Array(
 			GetMessage("MENU_MARKETPLACE_LOCAL"),
 			SITE_DIR."marketplace/local/list/",
-			Array(),
+			Array(
+				SITE_DIR."marketplace/local/edit/",
+			),
 			Array("menu_item_id" => "menu_marketplace_local"),
 			""
 		);
 	}
 
-	$arMenu[] = Array(
-		GetMessage("MENU_MARKETPLACE_HOOK"),
-		SITE_DIR."marketplace/hook/",
-		Array(),
-		Array("menu_item_id" => "menu_marketplace_hook"),
-		""
-	);
+	if ($USER->IsAuthorized())
+	{
+		$arMenu[] = Array(
+			GetMessage("MENU_MARKETPLACE_HOOK"),
+			SITE_DIR."marketplace/hook/",
+			Array(),
+			Array("menu_item_id" => "menu_marketplace_hook"),
+			""
+		);
+	}
 
 	$arMenu = array_merge($arMenu, $arMenuApps);
 }

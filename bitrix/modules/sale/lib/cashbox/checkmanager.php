@@ -132,15 +132,22 @@ final class CheckManager
 				if ($printResult->isSuccess())
 				{
 					$data = $printResult->getData();
-					$fields = array('EXTERNAL_UUID' => $data['UUID']);
+					CashboxCheckTable::update($checkId, ['EXTERNAL_UUID' => $data['UUID']]);
 				}
 				else
 				{
-					$fields = array('STATUS' => 'E', 'DATE_PRINT_END' => new Type\DateTime(), 'CNT_FAIL_PRINT' => 1);
-					$result->addErrors($printResult->getErrors());
+					static::savePrintResult(
+						$checkId,
+						[
+							'ID' => $checkId,
+							'ERROR' => [
+								'TYPE' =>  Errors\Error::TYPE,
+								'MESSAGE' => implode("\n", $printResult->getErrorMessages())
+							]
+						]
+					);
 				}
 
-				CashboxCheckTable::update($checkId, $fields);
 				$result->setId($checkId);
 
 				return $result;
@@ -261,8 +268,21 @@ final class CheckManager
 
 				CashboxCheckTable::update($checkId, $updatedFields);
 
+				/** @ToDO Will be removed after OrderCheckCollection is realized */
+				if (
+					class_exists('\Bitrix\Crm\Order\Order')
+					&& $order instanceof \Bitrix\Crm\Order\Order
+					&& $order->getDealBinding()
+				)
+				{
+					$order->addTimelineCheckEntryOnCreate($checkId, ['PRINTED' => 'N']);
+				}
+
 				if ($order !== null
-					&& ($payment !== null || $shipment !== null)
+					&& (
+						$payment !== null
+						|| $shipment !== null
+					)
 				)
 				{
 					$r = new Result();
@@ -295,13 +315,13 @@ final class CheckManager
 				}
 
 				$error = new Errors\Error($errorMessage);
+				Logger::addError($error->getMessage(), $check['CASHBOX_ID']);
 			}
 			else
 			{
 				$error = new Errors\Warning($errorMessage);
+				Logger::addWarning($error->getMessage(), $check['CASHBOX_ID']);
 			}
-
-			Manager::writeToLog($check['CASHBOX_ID'], $error);
 
 			$event = new Main\Event('sale', static::EVENT_ON_CHECK_PRINT_ERROR, array($data));
 			$event->send();
@@ -321,38 +341,47 @@ final class CheckManager
 
 			if ($updateResult->isSuccess())
 			{
-				if ($payment !== null || $shipment !== null)
+				self::addStatisticOnSuccessCheckPrint($checkId);
+
+				/** @ToDO Will be removed after OrderCheckCollection is realized */
+				if (
+					class_exists('\Bitrix\Crm\Order\Order')
+					&& $order instanceof \Bitrix\Crm\Order\Order
+					&& $order->getDealBinding()
+				)
 				{
-					$isSend = false;
-					$event = new Main\Event(
-						'sale',
-						static::EVENT_ON_CHECK_PRINT_SEND,
-						array('PAYMENT' => $payment, 'SHIPMENT' => $shipment, 'CHECK' => $check)
-					);
-					$event->send();
+					$order->addTimelineCheckEntryOnCreate($checkId, ['PRINTED' => 'Y']);
+				}
 
-					$eventResults = $event->getResults();
-					/** @var Main\EventResult $eventResult */
-					foreach($eventResults as $eventResult)
+				$isSend = false;
+				$event = new Main\Event(
+					'sale',
+					static::EVENT_ON_CHECK_PRINT_SEND,
+					array('PAYMENT' => $payment, 'SHIPMENT' => $shipment, 'CHECK' => $check)
+				);
+				$event->send();
+
+				$eventResults = $event->getResults();
+				/** @var Main\EventResult $eventResult */
+				foreach($eventResults as $eventResult)
+				{
+					if($eventResult->getType() == Main\EventResult::SUCCESS)
+						$isSend = true;
+				}
+
+				if (!$isSend)
+				{
+					if ($payment !== null)
 					{
-						if($eventResult->getType() == Main\EventResult::SUCCESS)
-							$isSend = true;
+						/** @var Sale\Notify $notifyClassName */
+						$notifyClassName = $registry->getNotifyClassName();
+						$notifyClassName::callNotify($payment, Sale\EventActions::EVENT_ON_CHECK_PRINT);
 					}
-
-					if (!$isSend)
+					elseif ($shipment !== null)
 					{
-						if ($payment !== null)
-						{
-							/** @var Sale\Notify $notifyClassName */
-							$notifyClassName = $registry->getNotifyClassName();
-							$notifyClassName::callNotify($payment, Sale\EventActions::EVENT_ON_CHECK_PRINT);
-						}
-						elseif ($shipment !== null)
-						{
-							/** @var Sale\Notify $notifyClassName */
-							$notifyClassName = $registry->getNotifyClassName();
-							$notifyClassName::callNotify($shipment, Sale\EventActions::EVENT_ON_CHECK_PRINT);
-						}
+						/** @var Sale\Notify $notifyClassName */
+						$notifyClassName = $registry->getNotifyClassName();
+						$notifyClassName::callNotify($shipment, Sale\EventActions::EVENT_ON_CHECK_PRINT);
 					}
 				}
 			}
@@ -363,6 +392,39 @@ final class CheckManager
 		}
 
 		return $result;
+	}
+
+	private function addStatisticOnSuccessCheckPrint($checkId)
+	{
+		$check = self::getObjectById($checkId);
+
+		$cashbox = Manager::getObjectById($check->getField('CASHBOX_ID'));
+		if ($cashbox)
+		{
+			AddEventToStatFile('sale', 'checkPrint', $checkId, $cashbox::getCode());
+		}
+	}
+
+	/**
+	 * @param $id
+	 * @throws Main\ArgumentException
+	 * @throws Main\ObjectPropertyException
+	 * @throws Main\SystemException
+	 */
+	public static function delete($id)
+	{
+		$r = CashboxCheckTable::delete($id);
+		if ($r->isSuccess())
+		{
+			$dbRes = Sale\Cashbox\Internals\Check2CashboxTable::query()
+				->addSelect('ID')
+				->where('CHECK_ID', $id);
+
+			while ($link = $dbRes->fetchObject())
+			{
+				$link->delete();
+			}
+		}
 	}
 
 	/**
@@ -453,8 +515,16 @@ final class CheckManager
 					'\Bitrix\Sale\Cashbox\AdvanceReturnCheck',
 					'\Bitrix\Sale\Cashbox\AdvanceReturnCashCheck',
 					'\Bitrix\Sale\Cashbox\CreditPaymentCheck',
+					'\Bitrix\Sale\Cashbox\CreditPaymentReturnCheck',
+					'\Bitrix\Sale\Cashbox\CreditPaymentReturnCashCheck',
 					'\Bitrix\Sale\Cashbox\CreditCheck',
 					'\Bitrix\Sale\Cashbox\CreditReturnCheck',
+					'\Bitrix\Sale\Cashbox\PrepaymentCheck',
+					'\Bitrix\Sale\Cashbox\PrepaymentReturnCheck',
+					'\Bitrix\Sale\Cashbox\PrepaymentReturnCashCheck',
+					'\Bitrix\Sale\Cashbox\FullPrepaymentCheck',
+					'\Bitrix\Sale\Cashbox\FullPrepaymentReturnCheck',
+					'\Bitrix\Sale\Cashbox\FullPrepaymentReturnCashCheck',
 				)
 			);
 		}
@@ -650,17 +720,39 @@ final class CheckManager
 	/**
 	 * @param Sale\Order $order
 	 * @return bool
+	 * @throws Main\ArgumentException
+	 * @throws Main\ArgumentNullException
 	 */
 	private static function isAutomaticEnabled(Sale\Order $order)
 	{
 		$shipmentCollection = $order->getShipmentCollection();
-		if (!$shipmentCollection->isExistsSystemShipment() && $shipmentCollection->count() > 1)
+		if (
+			(
+				$shipmentCollection->count() > 2
+				&& $shipmentCollection->isExistsSystemShipment()
+			)
+			||
+			(
+				$shipmentCollection->count() > 1
+				&& !$shipmentCollection->isExistsSystemShipment()
+			)
+		)
 		{
 			return false;
 		}
 
 		$paymentCollection = $order->getPaymentCollection();
-		if (!$paymentCollection->isExistsInnerPayment() && $paymentCollection->count() > 1)
+		if (
+			(
+				$paymentCollection->isExistsInnerPayment()
+				&& $paymentCollection->count() > 2
+			)
+			||
+			(
+				!$paymentCollection->isExistsInnerPayment()
+				&& $paymentCollection->count() > 1
+			)
+		)
 		{
 			return false;
 		}
@@ -671,6 +763,9 @@ final class CheckManager
 	/**
 	 * @param $entity
 	 * @return array
+	 * @throws Main\ArgumentException
+	 * @throws Main\ArgumentNullException
+	 * @throws Main\ArgumentTypeException
 	 */
 	private static function collate($entity)
 	{
@@ -761,24 +856,41 @@ final class CheckManager
 			}
 			else
 			{
-				if (Main\Config\Option::get('sale', 'use_advance_check_by_default', 'N') === 'Y'
-					|| $paymentCollection->isExistsInnerPayment())
+				$option = Main\Config\Option::get('sale', 'check_type_on_pay', 'sell');
+				if ($option === 'prepayment')
+				{
+					$checkType = ($entity->getSum() == $entity->getOrder()->getPrice()) ? FullPrepaymentCheck::getType() : PrepaymentCheck::getType();
+
+					$shipmentCollection = $order->getShipmentCollection()->getNotSystemItems();
+					/** @var Sale\Shipment $shipment */
+					foreach ($shipmentCollection as $shipment)
+					{
+						$relatedEntities[Check::SHIPMENT_TYPE_NONE][] = $shipment;
+					}
+
+					$map[] = array("TYPE" => $checkType, "ENTITIES" => $entities, "RELATED_ENTITIES" => $relatedEntities);
+				}
+				elseif ($option === 'advance')
 				{
 					$map[] = array("TYPE" => AdvancePaymentCheck::getType(), "ENTITIES" => $entities, "RELATED_ENTITIES" => $relatedEntities);
 				}
 				else
 				{
-					$shipmentCollection = $order->getShipmentCollection();
-					/** @var Sale\Shipment $shipment */
-					foreach ($shipmentCollection as $shipment)
+					if ($paymentCollection->isExistsInnerPayment())
 					{
-						if (!$shipment->isSystem())
+						$map[] = array("TYPE" => AdvancePaymentCheck::getType(), "ENTITIES" => $entities, "RELATED_ENTITIES" => $relatedEntities);
+					}
+					else
+					{
+						$shipmentCollection = $order->getShipmentCollection()->getNotSystemItems();
+						/** @var Sale\Shipment $shipment */
+						foreach ($shipmentCollection as $shipment)
 						{
 							$relatedEntities[Check::SHIPMENT_TYPE_NONE][] = $shipment;
 						}
-					}
 
-					$map[] = array("TYPE" => SellCheck::getType(), "ENTITIES" => $entities, "RELATED_ENTITIES" => $relatedEntities);
+						$map[] = array("TYPE" => SellCheck::getType(), "ENTITIES" => $entities, "RELATED_ENTITIES" => $relatedEntities);
+					}
 				}
 			}
 		}
@@ -790,8 +902,10 @@ final class CheckManager
 			$entities[] = $entity;
 			if ($order->isPaid())
 			{
-				if (Main\Config\Option::get('sale', 'use_advance_check_by_default', 'N') === 'N')
+				if (Main\Config\Option::get('sale', 'check_type_on_pay', 'sell') === 'sell')
+				{
 					return $map;
+				}
 
 				$paymentCollection = $order->getPaymentCollection();
 				foreach ($paymentCollection as $payment)
@@ -821,21 +935,23 @@ final class CheckManager
 	private static function canPrintCheck(Sale\Order $order)
 	{
 		$paymentCollection = $order->getPaymentCollection();
-		if ($paymentCollection)
+		if ($paymentCollection->isEmpty())
 		{
-			/** @var Sale\Payment $payment */
-			foreach ($paymentCollection as $payment)
-			{
-				if ($payment->isInner())
-					continue;
+			return false;
+		}
 
-				$service = $payment->getPaySystem();
-				if ($service === null
-					|| $service->getField("CAN_PRINT_CHECK") !== 'Y'
-				)
-				{
-					return false;
-				}
+		/** @var Sale\Payment $payment */
+		foreach ($paymentCollection as $payment)
+		{
+			if ($payment->isInner())
+				continue;
+
+			$service = $payment->getPaySystem();
+			if ($service === null
+				|| $service->getField("CAN_PRINT_CHECK") !== 'Y'
+			)
+			{
+				return false;
 			}
 		}
 
@@ -855,6 +971,14 @@ final class CheckManager
 	public static function getPrintableChecks(array $cashboxIds, array $orderIds = array())
 	{
 		$result = array();
+
+		$con = Main\Application::getConnection();
+		$dbLocRes = $con->query("SELECT GET_LOCK('get_check_list', 0) as L");
+		$locResult = $dbLocRes->fetch();
+		if ($locResult["L"] == "0")
+		{
+			return $result;
+		}
 
 		$filter = array(
 			'LINK_PARAMS' => '',
@@ -898,12 +1022,6 @@ final class CheckManager
 
 		if ($data = $dbRes->fetch())
 		{
-			$con = Main\Application::getConnection();
-			$dbLocRes = $con->query("SELECT GET_LOCK('get_check_list', 0) as L");
-			$locResult = $dbLocRes->fetch();
-			if ($locResult["L"] == "0")
-				return $result;
-
 			$i = 0;
 			do
 			{
@@ -953,9 +1071,9 @@ final class CheckManager
 				$result[$checkId]['CASHBOX_ID'] = Manager::chooseCashbox($item['CASHBOX_LIST']);
 				CashboxCheckTable::update($checkId, array('STATUS' => 'P', 'DATE_PRINT_START' => new Type\DateTime(), 'CASHBOX_ID' => $result[$checkId]['CASHBOX_ID']));
 			}
-
-			$con->query("SELECT RELEASE_LOCK('get_check_list')");
 		}
+
+		$con->query("SELECT RELEASE_LOCK('get_check_list')");
 
 		return $result;
 	}
@@ -1062,7 +1180,7 @@ final class CheckManager
 	public static function collectInfo(array $filter = array())
 	{
 		$result = array();
-		
+
 		$typeMap = CheckManager::getCheckTypeMap();
 
 		$dbRes = static::getList(
@@ -1111,6 +1229,9 @@ final class CheckManager
 	/**
 	 * @param $id
 	 * @return Check|null
+	 * @throws Main\ArgumentException
+	 * @throws Main\ObjectPropertyException
+	 * @throws Main\SystemException
 	 */
 	public static function getObjectById($id)
 	{

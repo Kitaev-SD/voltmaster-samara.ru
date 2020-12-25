@@ -23,28 +23,44 @@
 	{
 		this.closeButton = document.querySelector(".landing-template-preview-close");
 		this.createButton = document.querySelector(".landing-template-preview-create");
-		this.palette = document.querySelector(".landing-template-preview-palette");
-		this.paletteSiteColor = document.querySelector(".landing-template-preview-palette-sitecolor");
+		this.createByImportButton = document.querySelector(".landing-template-preview-create-by-import");
+		this.title = document.querySelector(".landing-template-preview-input-title");
+		this.description = document.querySelector(".landing-template-preview-input-description");
+		this.themesPalete = document.querySelector(".landing-template-preview-themes");
+		this.themesSiteColorNode = document.querySelector(".landing-template-preview-sitecolor");
 		this.imageContainer = document.querySelector(".preview-desktop-body-image");
 		this.loaderContainer = document.querySelector(".preview-desktop-body-loader-container");
 		this.previewFrame = document.querySelector(".preview-desktop-body-preview-frame");
+		this.baseUrlNode = document.querySelector(".landing-template-preview-base-url");
+		this.siteGroupPalette = document.querySelector(".landing-template-preview-site-group");
 		this.loader = new BX.Loader({});
 		this.messages = params.messages || {};
 		this.loaderText = null;
 		this.progressBar = null;
 		this.IsLoadedFrame = false;
-		this.createStore = false;
-		if (BX.type.isBoolean(params.createStore))
-			this.createStore = params.createStore;
 
+		this.baseUrl = '';
+		this.theme = '';
 		this.ajaxUrl = '';
 		this.ajaxParams = {};
+
+		this.createStore = BX.type.isBoolean(params.createStore)
+						? params.createStore
+						: false;
+		this.disableStoreRedirect = BX.type.isBoolean(params.disableStoreRedirect)
+						? params.disableStoreRedirect
+						: false;
+		this.disableClickHandler = BX.type.isBoolean(params.disableClickHandler)
+						? params.disableClickHandler
+						: false;
 
 		this.onCreateButtonClick = proxy(this.onCreateButtonClick, this);
 		this.onCancelButtonClick = proxy(this.onCancelButtonClick, this);
 		this.onFrameLoad = proxy(this.onFrameLoad, this);
 
 		this.init();
+
+		return this;
 	};
 
 	/**
@@ -65,46 +81,113 @@
 		 */
 		init: function()
 		{
-			var colorItems = slice(this.palette.children);
-			if(this.paletteSiteColor)
+			// themes
+			var colorItems = slice(this.themesPalete.children);
+			if(this.themesSiteColorNode)
 			{
-				colorItems = colorItems.concat(slice(this.paletteSiteColor.children));
+				colorItems = colorItems.concat(slice(this.themesSiteColorNode.children));
 			}
 			colorItems.forEach(this.initSelectableItem, this);
 
+			// site group
+			if(this.siteGroupPalette )
+			{
+				var siteGroupItems = slice(this.siteGroupPalette.children);
+				siteGroupItems.forEach(this.initSelectableItem, this);
+			}
+
 			bind(this.previewFrame, "load", this.onFrameLoad);
 			bind(this.closeButton, "click", this.onCancelButtonClick);
-			bind(this.createButton, "click", this.onCreateButtonClick);
 
-			void this.showPreview(data(this.getActiveColorNode(), "data-src"));
+			if (!this.disableClickHandler)
+			{
+				bind(this.createButton, "click", this.onCreateButtonClick);
+			}
+
+			this.setBaseUrl();
+			this.setTheme();
+			this.showPreview();
+		},
+
+		setBaseUrl: function(url) {
+			if(url === undefined)
+			{
+				this.baseUrl = data(this.baseUrlNode, "data-base-url");
+			}
+			else
+			{
+				this.baseUrl = url;
+			}
+		},
+
+		setTheme: function(theme) {
+			if(theme === undefined)
+			{
+				this.theme = data(this.getActiveColorNode(), "data-theme");
+			}
+			else
+			{
+				this.theme = theme;
+			}
+		},
+
+		createPreviewUrl: function() {
+			if(!this.baseUrl)
+			{
+				this.setBaseUrl();
+			}
+			if(!this.theme)
+			{
+				this.setTheme();
+			}
+
+			return addQueryParams(this.baseUrl, {theme: this.theme});
 		},
 
 		onFrameLoad: function() {
+			if (this.createStore)
+			{
+				new BX.Landing.SaveBtn(document.querySelector(".landing-template-preview-create"));
+			}
 			this.IsLoadedFrame = true;
 		},
 
 		getActiveColorNode: function()
 		{
-			var active = this.palette.querySelector(".active");
-			if(!active && this.paletteSiteColor)
+			var active = this.themesPalete.querySelector(".active");
+			if(!active && this.themesSiteColorNode)
 			{
-				active = this.paletteSiteColor.querySelector(".active");
+				active = this.themesSiteColorNode.querySelector(".active");
+			}
+			// by default - first
+			if(!active)
+			{
+				active = this.themesPalete.firstElementChild;
 			}
 
 			return active;
 		},
 
+		getActiveSiteGroupItem: function()
+		{
+			return this.siteGroupPalette.querySelector(".active");
+		},
+
 		/**
 		 * Shows preview
-		 * @param {string} src
+		 * @param {?string} src
 		 * @return {Promise<T>}
 		 */
 		showPreview: function(src)
 		{
+			if(src === undefined)
+			{
+				src = this.createPreviewUrl();
+			}
+
 			return this.showLoader()
 				.then(this.createFrameIfNeeded())
 				.then(this.loadPreview(src))
-				.then(this.delay(200))
 				.then(this.hideLoader());
 		},
 
@@ -116,22 +199,44 @@
 		{
 			return function()
 			{
-				new Promise(function(resolve) {
+				return new Promise(function(resolve) {
+					var createFrame = function() {
+						if (!this.previewFrame)
+						{
+							this.previewFrame = BX.create('iframe', {
+								props: {
+									className: 'preview-desktop-body-preview-frame'
+								}
+							});
 
-					if (!this.previewFrame.style.width)
+							this.imageContainer.appendChild(this.previewFrame);
+							bind(this.previewFrame, "load", this.onFrameLoad);
+						}
+
+						if (!this.previewFrame.style.width)
+						{
+							var containerWidth = this.imageContainer.clientWidth;
+
+							void style(this.previewFrame, {
+								"width": "1000px",
+								"height": "calc((100vh - 140px) * (100 / "+((containerWidth/1000)*100)+"))",
+								"transform": "scale("+(containerWidth/1000)+") translateZ(0)",
+								"transform-origin": "top left",
+								"border": "none"
+							});
+						}
+
+						resolve(this.previewFrame);
+					}.bind(this);
+
+					if (document.readyState !== "complete")
 					{
-						var containerWidth = this.imageContainer.clientWidth;
-
-						void style(this.previewFrame, {
-							"width": "1000px",
-							"height": "calc((100vh - 140px) * (100 / "+((containerWidth/1000)*100)+"))",
-							"transform": "scale("+(containerWidth/1000)+") translateZ(0)",
-							"transform-origin": "top left",
-							"border": "none"
-						});
+						BX.bind(window, 'load', createFrame.bind(this));
 					}
-
-					resolve(this.previewFrame);
+					else
+					{
+						createFrame();
+					}
 				}.bind(this));
 			}.bind(this)
 		},
@@ -214,12 +319,18 @@
 		{
 			var result = {};
 
-			if(this.paletteSiteColor && this.getActiveColorNode().parentElement === this.paletteSiteColor)
+			if(this.themesSiteColorNode && this.getActiveColorNode().parentElement === this.themesSiteColorNode)
 			{
 				// add theme_use_site flag
-				result[data(this.paletteSiteColor, "data-name")] = 'Y';
+				result[data(this.themesSiteColorNode, "data-name")] = 'Y';
 			}
-			result[data(this.palette, "data-name")] = data(this.getActiveColorNode(), "data-value");
+			if(this.siteGroupPalette)
+			{
+				result[data(this.siteGroupPalette, "data-name")] = data(this.getActiveSiteGroupItem(), "data-value");
+			}
+			result[data(this.themesPalete, "data-name")] = data(this.getActiveColorNode(), "data-value");
+			result[data(this.title, "data-name")] = this.title.value;
+			result[data(this.description, "data-name")] = this.description.value;
 
 			return result;
 		},
@@ -263,25 +374,32 @@
 
 				this.loaderContainer.appendChild(this.loaderText);
 				this.loaderContainer.appendChild(this.progressBar.getContainer());
-
 			}
 
 			if (this.isStore())
 			{
-				this.showLoader();
-				this.initCatalogParams();
-				this.createCatalog();
+				if (this.IsLoadedFrame)
+				{
+					this.showLoader();
+					this.initCatalogParams();
+					this.createCatalog();
+				}
 			}
 			else
 			{
 				this.showLoader()
 					.then(this.delay(200))
 					.then(function() {
-						top.location = this.getCreateUrl();
+						this.finalRedirectAjax(
+							this.getCreateUrl()
+						);
 					}.bind(this));
 			}
 		},
 
+		/**
+		 * Init params for create catalog.
+		 */
 		initCatalogParams: function()
 		{
 			if (this.createButton.hasAttribute('data-href'))
@@ -292,6 +410,9 @@
 			this.ajaxParams['start'] = 'Y';
 		},
 
+		/**
+		 * Base actions for create catalog.
+		 */
 		createCatalog: function()
 		{
 			if (this.ajaxUrl === '')
@@ -299,13 +420,19 @@
 				this.hideLoader();
 				return;
 			}
-			BX.ajax.loadJSON(
-				this.ajaxUrl,
-				this.ajaxParams,
-				BX.proxy(this.createCatalogResult, this)
-			);
+			BX.ajax({
+				'method': 'POST',
+				'dataType': 'json',
+				'url': this.ajaxUrl,
+				'data':  BX.ajax.prepareData(this.ajaxParams),
+				'onsuccess': BX.proxy(this.createCatalogResult, this)
+			})
 		},
 
+		/**
+		 * Result step in create catalog.
+		 * @param data
+		 */
 		createCatalogResult: function(data)
 		{
 			if (data.status === 'continue')
@@ -317,7 +444,37 @@
 			}
 			else
 			{
-				top.location = data.url;
+				this.finalRedirectAjax(data.url);
+			}
+		},
+
+		/**
+		 * Redirect to final URL or submit it by ajax and close slider.
+		 * @param url
+		 */
+		finalRedirectAjax: function(url)
+		{
+			if (this.disableStoreRedirect)
+			{
+				BX.ajax({
+					'method': 'POST',
+					'dataType': 'html',
+					'url': url,
+					'onsuccess': function()
+					{
+						if (typeof top.BX.SidePanel !== 'undefined')
+						{
+							setTimeout(function() {
+								top.BX.onCustomEvent('Landing:onDemoCreateStart');
+								top.BX.SidePanel.Instance.close();
+							}, 100);
+						}
+					}
+				});
+			}
+			else
+			{
+				window.location = url;
 			}
 		},
 
@@ -338,14 +495,25 @@
 		{
 			event.preventDefault();
 
+			// themes
 			if (
-				event.currentTarget.parentElement === this.palette ||
-				(this.paletteSiteColor && event.currentTarget.parentElement === this.paletteSiteColor)
+				event.currentTarget.parentElement === this.themesPalete ||
+				(this.themesSiteColorNode && event.currentTarget.parentElement === this.themesSiteColorNode)
 			)
 			{
 				removeClass(this.getActiveColorNode(), "active");
 				addClass(event.currentTarget, "active");
-				this.showPreview(data(this.getActiveColorNode(), "data-src"));
+				this.setTheme(data(event.currentTarget, 'data-theme'));
+				this.showPreview();
+			}
+
+			// site group
+			if (event.currentTarget.parentElement === this.siteGroupPalette)
+			{
+				removeClass(this.getActiveSiteGroupItem(), "active");
+				addClass(event.currentTarget, "active");
+				this.setBaseUrl(data(event.currentTarget, 'data-base-url'));
+				this.showPreview();
 			}
 		},
 

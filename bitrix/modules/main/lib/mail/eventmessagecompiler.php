@@ -70,7 +70,11 @@ class EventMessageCompiler
 		if(array_key_exists('ID', $arMessageParams['MESSAGE']))
 			$this->eventMessageId = $arMessageParams['MESSAGE']['ID'];
 
-		$this->siteFields = $this->getSiteFieldsArray($arMessageParams['SITE']);
+		$this->siteFields = $this->getSiteFieldsArray(
+			is_array($arMessageParams['SITE'])
+				? $arMessageParams['SITE']
+				: [$arMessageParams['SITE']]
+		);
 		$this->eventSiteFields = array_merge($this->siteFields, $this->eventFields);
 		foreach($this->eventSiteFields as $k => $v) $this->eventSiteFields[$k] = static::getFieldFlatValue($v);
 		$this->setMailCharset($arMessageParams['CHARSET']);
@@ -135,10 +139,23 @@ class EventMessageCompiler
 		$eventSiteFields = $this->eventSiteFields;
 		if($isHtml)
 		{
-			foreach ($eventSiteFields as $fieldKey => $fieldValue)
-				if (strpos($fieldValue, "<") === false)
+			foreach ($this->eventSiteFields as $fieldKey => $fieldValue)
+			{
+				$eventSiteFields["HTML_".$fieldKey] = nl2br(htmlspecialcharsbx($fieldValue, ENT_COMPAT, false));
+
+				if (mb_strpos($fieldValue, "<") === false)
+				{
 					$eventSiteFields[$fieldKey] = nl2br($fieldValue);
+				}
+			}
 		}
+		$eventSiteFields['MAIL_EVENTS_UNSUBSCRIBE_LINK'] = Tracking::getLinkUnsub(
+			'main',
+			[
+				'CODE' => mb_strtolower(trim(explode(',', $this->getMailTo())[0])),
+				'EVENT_NAME' => $this->eventMessageFields["EVENT_NAME"]
+			]
+		);
 		$themeCompiler->setParams($eventSiteFields);
 		// eval site template and body
 		$themeCompiler->execute();
@@ -269,7 +286,7 @@ class EventMessageCompiler
 		if(isset($messageFields["BCC"]) && $messageFields["BCC"]!='')
 		{
 			$bcc = $this->replaceTemplate($messageFields["BCC"], $arFields);
-			if(strpos($bcc, "@")!==false)
+			if(mb_strpos($bcc, "@") !== false)
 				$arMailFields["BCC"] = $bcc;
 		}
 
@@ -295,8 +312,8 @@ class EventMessageCompiler
 
 		foreach($arFields as $f=>$v)
 		{
-			if(substr($f, 0, 1) == "=")
-				$arMailFields[substr($f, 1)] = $v;
+			if(mb_substr($f, 0, 1) == "=")
+				$arMailFields[mb_substr($f, 1)] = $v;
 		}
 
 		foreach($arMailFields as $k=>$v)
@@ -306,8 +323,8 @@ class EventMessageCompiler
 		if(isset($this->event["DUPLICATE"]) && $this->event["DUPLICATE"]=="Y")
 		{
 			$all_bcc = Config\Option::get("main", "all_bcc", "");
-			if(strpos($all_bcc, "@")!==false)
-				$arMailFields["BCC"] .= (strlen($all_bcc)>0?(strlen($arMailFields["BCC"])>0?",":"").$all_bcc:"");
+			if(mb_strpos($all_bcc, "@") !== false)
+				$arMailFields["BCC"] .= ($all_bcc <> ''?($arMailFields["BCC"] <> ''?",":"").$all_bcc:"");
 		}
 
 		if(isset($this->event["EVENT_NAME"]))
@@ -388,7 +405,7 @@ class EventMessageCompiler
 		$str = str_replace("%", "%2", $str);
 		foreach($ar as $key=>$val)
 		{
-			if($bNewLineToBreak && strpos($val, "<") === false)
+			if($bNewLineToBreak && mb_strpos($val, "<") === false)
 				$val = nl2br($val);
 			$val = str_replace("%", "%2", $val);
 			$val = str_replace("#", "%1", $val);
@@ -401,7 +418,7 @@ class EventMessageCompiler
 	}
 
 	/**
-	 * @param $sites
+	 * @param array|string $sites Sites.
 	 * @return array
 	 * @throws \Bitrix\Main\ArgumentException
 	 * @throws \Bitrix\Main\ArgumentNullException
@@ -434,7 +451,7 @@ class EventMessageCompiler
 		$SERVER_NAME = Config\Option::get("main", "server_name", $GLOBALS["SERVER_NAME"]);
 		$DEFAULT_EMAIL_FROM = Config\Option::get("main", "email_from", "admin@".$GLOBALS["SERVER_NAME"]);
 
-		if(strlen($site_id)>0)
+		if($site_id <> '')
 		{
 			$result = \Bitrix\Main\SiteTable::getById($site_id);
 			if($arSite = $result->fetch())

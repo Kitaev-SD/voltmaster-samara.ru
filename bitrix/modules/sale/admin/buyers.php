@@ -15,12 +15,12 @@ if ($saleModulePermissions == "D")
 
 if(!CBXFeatures::IsFeatureEnabled('SaleAccounts'))
 {
-	require($DOCUMENT_ROOT."/bitrix/modules/main/include/prolog_admin_after.php");
+	require($_SERVER["DOCUMENT_ROOT"]."/bitrix/modules/main/include/prolog_admin_after.php");
 
 	ShowError(GetMessage("SALE_FEATURE_NOT_ALLOW"));
 
 	require($_SERVER["DOCUMENT_ROOT"]."/bitrix/modules/main/include/epilog_admin.php");
-	die();
+	return;
 }
 
 ClearVars();
@@ -42,7 +42,7 @@ while ($arGroups = $dbGroups->Fetch())
 	$arUsersGroups[] = $arGroups;
 
 $sTableID = "tbl_sale_buyers";
-$oSort = new CAdminSorting($sTableID, "LAST_LOGIN", "desc");
+$oSort = new CAdminUiSorting($sTableID, "LAST_LOGIN", "desc");
 global $by, $order;
 $lAdmin = new CAdminUiList($sTableID, $oSort);
 
@@ -169,17 +169,40 @@ $lAdmin->setFilterPresets($filterPresets);
 
 $lAdmin->AddFilter($filterFields, $arFilter);
 
-if (isset($arFilter["BUYER"]) && strlen($arFilter["BUYER"]) > 0)
+if (isset($arFilter["BUYER"]) && $arFilter["BUYER"] <> '')
 {
 	$nameSearch = trim($arFilter["BUYER"]);
-	$arFilter[] = array(
-		"LOGIC" => "OR",
-		"%USER.LOGIN" => $nameSearch,
-		"%USER.NAME" => $nameSearch,
-		"%USER.LAST_NAME" => $nameSearch,
-		"%USER.SECOND_NAME" => $nameSearch,
-		"%USER.EMAIL" => $nameSearch,
-	);
+	$searchFilter = \Bitrix\Main\UserUtils::getAdminSearchFilter([
+		'FIND' => $nameSearch
+	]);
+
+	$renameUserFields = function ($fields) use (&$renameUserFields)
+	{
+		$result = [];
+		foreach ($fields as $key => $value)
+		{
+			if (is_array($value))
+			{
+				$result[$key] = $renameUserFields($value);
+			}
+			else
+			{
+				if (mb_strpos($key, 'INDEX') !== false)
+				{
+					$key = str_replace('INDEX', 'USER.INDEX', $key);
+				}
+				elseif ($key !== 'LOGIC')
+				{
+					$namePosition = mb_strpos($key, preg_replace('/^\W+/', '', $key));
+					$key = mb_substr($key, 0, $namePosition)."USER.".mb_substr($key, $namePosition);
+				}
+				$result[$key] = $value;
+			}
+		}
+		return $result;
+	};
+
+	$arFilter = array_merge($arFilter, $renameUserFields($searchFilter));
 	unset($arFilter["BUYER"]);
 }
 
@@ -228,13 +251,17 @@ if ($publicMode && \Bitrix\Main\Loader::includeModule('crm'))
 	$sorting = $gridOptions->getSorting(['sort' => ['NAME' => 'ASC']]);
 
 	$by = key($sorting['sort']);
-	$order = strtoupper(current($sorting['sort'])) === 'ASC' ? 'ASC' : 'DESC';
+	$order = mb_strtoupper(current($sorting['sort'])) === 'ASC' ? 'ASC' : 'DESC';
 
 	$sortByUserField = isset($by) && in_array($by, $userFields);
 
 	if ($sortByUserField)
 	{
 		$userBy = $by;
+	}
+	elseif ($by === 'USER_ID')
+	{
+		$userBy = 'ID';
 	}
 	else
 	{
@@ -251,25 +278,68 @@ if ($publicMode && \Bitrix\Main\Loader::includeModule('crm'))
 
 	if ($searchString !== '')
 	{
-		$filter = array_merge($filter, \Bitrix\Main\UserUtils::getAdminSearchFilter(['FIND' => $searchString]));
+		$searchFields = ['FIND' => $searchString];
+		$filter = array_merge(\Bitrix\Main\UserUtils::getAdminSearchFilter($searchFields), $filter);
+	}
+
+	foreach ($arFilter as $key => $searchValue)
+	{
+		if (mb_strpos($key, 'USER.') === 0 || mb_strpos($key, '%USER.') === 0 || mb_strpos($key, '*USER.') === 0)
+		{
+			$field = str_replace('USER.', '', $key);
+			$filter[$field] = $searchValue;
+		}
 	}
 
 	$gridColumns = $gridOptions->getUsedColumns();
 	$selectColumns = array_merge($gridColumns, ['ID']);
 	$selectColumns = array_intersect($selectColumns, array_keys(\Bitrix\Main\UserTable::getMap()));
 
+	$navyParams = CDBResult::GetNavParams(CAdminUiResult::GetNavSize($sTableID));
+	$navyParams['PAGEN'] = (int)$navyParams['PAGEN'];
+	$navyParams['SIZEN'] = (int)$navyParams['SIZEN'];
+
+	$groupReference = new \Bitrix\Main\Entity\ReferenceField(
+		'GROUP',
+		'\Bitrix\Main\UserGroupTable',
+		['=ref.USER_ID' => 'this.ID'],
+		['join_type' => 'LEFT']
+	);
+
+	$query = (new \Bitrix\Main\Entity\Query(\Bitrix\Main\UserTable::getEntity()))
+		->registerRuntimeField('', $groupReference)
+		->addFilter('!=ID', \Bitrix\Crm\Order\Manager::getAnonymousUserID())
+		->addFilter('=GROUP.GROUP_ID', \Bitrix\Crm\Order\BuyerGroup::getSystemGroupId())
+		->countTotal(true);
+
+	$totalCount = $query->exec()->getCount();
+
+	if ($totalCount > 0)
+	{
+		$totalPages = ceil($totalCount / $navyParams['SIZEN']);
+
+		if ($navyParams['PAGEN'] > $totalPages)
+		{
+			$navyParams['PAGEN'] = $totalPages;
+		}
+
+		$navLimit = $navyParams['SIZEN'];
+		$navOffset = $navyParams['SIZEN'] * ($navyParams['PAGEN'] - 1);
+	}
+	else
+	{
+		$navyParams['PAGEN'] = 1;
+		$navLimit = $navyParams['SIZEN'];
+		$navOffset = 0;
+	}
+
 	$buyersData = \Bitrix\Main\UserTable::getList([
 		'select' => $selectColumns,
 		'filter' => $filter,
 		'order' => [$userBy => $order],
-		'runtime' => [
-			new \Bitrix\Main\Entity\ReferenceField(
-				'GROUP',
-				'\Bitrix\Main\UserGroupTable',
-				['=ref.USER_ID' => 'this.ID'],
-				['join_type' => 'LEFT']
-			),
-		],
+		'offset' => $navOffset,
+		'limit' => $navLimit,
+		'runtime' => [$groupReference],
 	]);
 	while ($user = $buyersData->Fetch())
 	{
@@ -373,7 +443,19 @@ if (!empty($userIdList) && is_array($userIdList))
 }
 
 $resultUsersList = new CAdminUiResult($buyersData, $sTableID);
-$resultUsersList->NavStart();
+
+if (isset($navyParams, $navLimit))
+{
+	$resultUsersList->NavStart($navLimit, $navyParams['SHOW_ALL'], $navyParams['PAGEN']);
+	$resultUsersList->NavRecordCount = $totalCount;
+	$resultUsersList->NavPageCount = $totalPages;
+	$resultUsersList->NavPageNomer = $navyParams['PAGEN'];
+}
+else
+{
+	$resultUsersList->NavStart();
+}
+
 $lAdmin->SetNavigationParams($resultUsersList, array("BASE_LINK" => $selfFolderUrl."sale_buyers.php"));
 
 while ($arBuyers = $resultUsersList->Fetch())
@@ -402,7 +484,7 @@ while ($arBuyers = $resultUsersList->Fetch())
 	if (in_array("GROUPS_ID", $arVisibleColumns))
 	{
 		$strUserGroup = '';
-		$arUserGroups = CUser::GetUserGroup($arBuyers["USER_ID"]);
+		$arUserGroups = CUser::GetUserGroup($userId);
 
 		foreach ($arUsersGroups as $arGroup)
 		{
@@ -428,7 +510,7 @@ while ($arBuyers = $resultUsersList->Fetch())
 		"LINK" => $profileUrl,
 		"DEFAULT" => true
 	);
-	
+
 	if ($publicMode)
 	{
 		$arActions[] = array(
@@ -440,10 +522,10 @@ while ($arBuyers = $resultUsersList->Fetch())
 
 	foreach($arSitesShop as $val)
 	{
-		$addOrderUrl = "sale_order_create.php?USER_ID=".$arBuyers["USER_ID"]."&SITE_ID=".$val["ID"]."&lang=".LANGUAGE_ID;
+		$addOrderUrl = "sale_order_create.php?USER_ID=".$userId."&SITE_ID=".$val["ID"]."&lang=".LANGUAGE_ID;
 		if ($publicMode)
 		{
-			$addOrderUrl = "/shop/orders/details/0/?USER_ID=".$arBuyers["USER_ID"]."&SITE_ID=".$val["ID"]."&lang=".LANGUAGE_ID;
+			$addOrderUrl = "/shop/orders/details/0/?USER_ID=".$userId."&SITE_ID=".$val["ID"]."&lang=".LANGUAGE_ID;
 		}
 		$arActions[] = array(
 			"ICON" => "view",
@@ -474,8 +556,14 @@ $lAdmin->CheckListMode();
 
 require_once($_SERVER["DOCUMENT_ROOT"]."/bitrix/modules/sale/prolog.php");
 require($_SERVER["DOCUMENT_ROOT"]."/bitrix/modules/main/include/prolog_admin_after.php");
-
-$lAdmin->DisplayFilter($filterFields);
-$lAdmin->DisplayList();
+if (!$publicMode && \Bitrix\Sale\Update\CrmEntityCreatorStepper::isNeedStub())
+{
+	$APPLICATION->IncludeComponent("bitrix:sale.admin.page.stub", ".default");
+}
+else
+{
+	$lAdmin->DisplayFilter($filterFields);
+	$lAdmin->DisplayList();
+}
 require($_SERVER["DOCUMENT_ROOT"]."/bitrix/modules/main/include/epilog_admin.php");
 ?>

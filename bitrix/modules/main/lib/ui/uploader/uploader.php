@@ -199,6 +199,7 @@ class Uploader
 		$params = is_array($params) ? $params : array($params);
 		$params["copies"] = (is_array($params["copies"]) ? $params["copies"] : array()) + $this->params["copies"];
 		$params["storage"] = (is_array($params["storage"]) ? $params["storage"] : array()) + $this->params["storage"];
+		$params["storage"]["moduleId"] = preg_replace("/[^a-z_-]/i", "_", $params["storage"]["moduleId"]);
 		$this->params = $params;
 		if (array_key_exists("controlId", $params))
 			$this->controlId = $params["controlId"];
@@ -301,7 +302,7 @@ class Uploader
 			$access = \CBXVirtualIo::GetInstance()->GetFile($directory->GetPath()."/.access.php");
 			$content = '<?$PERM["'.$directory->GetName().'"]["*"]="X";?>';
 
-			if (!$access->IsExists() || strpos($access->GetContents(), $content) === false)
+			if (!$access->IsExists() || mb_strpos($access->GetContents(), $content) === false)
 			{
 				if (($fd = $access->Open('ab')) && $fd)
 					fwrite($fd, $content);
@@ -497,8 +498,8 @@ class Uploader
 					$file["files"][$canvas] = File::createCanvas($source,
 						array(
 							"code" => $canvas,
-							"tmp_name" => substr($source["tmp_name"], 0, -7).$canvas,
-							"url" => substr($source["url"], 0, -7).$canvas
+							"tmp_name" => mb_substr($source["tmp_name"], 0, -7).$canvas,
+							"url" => mb_substr($source["url"], 0, -7).$canvas
 						), $canvasParams, $watermark);
 				}
 			}
@@ -534,10 +535,10 @@ class Uploader
 			);
 		}
 		else if ($io->FileExists($tmpName) && ($docRoot = \Bitrix\Main\Application::getInstance()->getContext()->getServer()->getDocumentRoot()) &&
-			strpos($tmpName, $docRoot) === 0)
+			mb_strpos($tmpName, $docRoot) === 0)
 		{
 			return array(
-				"tmp_url" => str_replace("//", "/", "/".substr($tmpName, strlen($docRoot))),
+				"tmp_url" => str_replace("//", "/", "/".mb_substr($tmpName, mb_strlen($docRoot))),
 				"tmp_name" => $tmpName
 			);
 		}

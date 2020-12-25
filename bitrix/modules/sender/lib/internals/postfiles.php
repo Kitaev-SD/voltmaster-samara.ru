@@ -171,11 +171,6 @@ class PostFiles
 
 		foreach($files as $index => $value)
 		{
-			if (is_numeric($index))
-			{
-				continue;
-			}
-
 			if (is_string($value) && preg_match("/^https?:\\/\\//", $value))
 			{
 				$result[$index] = \CFile::MakeFileArray($value);
@@ -194,11 +189,11 @@ class PostFiles
 				$isCheckedSuccess = false;
 				$io = \CBXVirtualIo::GetInstance();
 				$docRoot = Application::getDocumentRoot();
-				if(strpos($filePath, \CTempFile::GetAbsoluteRoot()) === 0)
+				if(mb_strpos($filePath, \CTempFile::GetAbsoluteRoot()) === 0)
 				{
 					$absPath = $filePath;
 				}
-				elseif(strpos($io->CombinePath($docRoot, $filePath), \CTempFile::GetAbsoluteRoot()) === 0)
+				elseif(mb_strpos($io->CombinePath($docRoot, $filePath), \CTempFile::GetAbsoluteRoot()) === 0)
 				{
 					$absPath = $io->CombinePath($docRoot, $filePath);
 				}
@@ -209,7 +204,7 @@ class PostFiles
 				}
 
 				$absPath = realpath(str_replace("\\", "/", $absPath));
-				if (strpos($absPath, realpath(\CTempFile::GetAbsoluteRoot())) !== 0)
+				if (mb_strpos($absPath, realpath(\CTempFile::GetAbsoluteRoot())) !== 0)
 				{
 					continue;
 				}
@@ -286,7 +281,7 @@ class PostFiles
 	 */
 	public static function saveFile(array $file)
 	{
-		if(strlen($file["name"]) <= 0 || intval($file["size"]) <= 0)
+		if($file["name"] == '' || intval($file["size"]) <= 0)
 		{
 			return null;
 		}

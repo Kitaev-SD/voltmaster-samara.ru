@@ -10,21 +10,55 @@ Loc::loadMessages(__FILE__);
 class Demos
 {
 	/**
+	 * Return true, if item of data is suitable by filter.
+	 * @param array $item One data element.
+	 * @param array $filter Filter for separate allowed items.
+	 * @return bool
+	 */
+	protected static function isItemSuitable(array $item, array $filter = [])
+	{
+		if ($filter)
+		{
+			foreach ($item as $key => $value)
+			{
+				$key = mb_strtoupper($key);
+				if (isset($filter[$key]))
+				{
+					$value = (array)$value;
+					$filter[$key] = (array)$filter[$key];
+					if (!array_intersect($value, $filter[$key]))
+					{
+						return false;
+					}
+				}
+			}
+		}
+
+		return true;
+	}
+
+	/**
 	 * Get demo items from files in component.
 	 * @param string $type Type of demo-template (page, store, etc...).
 	 * @param bool $page If true, list of pages, not site.
-	 * @return \Bitrix\Landing\PublicActionResult
+	 * @param array $filter Additional filter.
+	 * @return PublicActionResult
 	 */
-	protected static function getFilesList($type, $page = false)
+	protected static function getFilesList($type, $page = false, array $filter = [])
 	{
 		$result = new PublicActionResult();
+
+		if (!is_string($type))
+		{
+			return $result;
+		}
 
 		$componentName = 'bitrix:landing.demo';
 		$className = \CBitrixComponent::includeComponentClass($componentName);
 		$demoCmp = new $className;
 		$demoCmp->initComponent($componentName);
 		$demoCmp->arParams = array(
-			'TYPE' => strtoupper($type)
+			'TYPE' => mb_strtoupper($type)
 		);
 
 		if ($page)
@@ -38,11 +72,19 @@ class Demos
 
 		if (is_array($data))
 		{
-			foreach ($data as &$item)
+			foreach ($data as $key => &$item)
 			{
+				if (
+					!is_array($item) ||
+					!self::isItemSuitable($item, $filter)
+				)
+				{
+					unset($data[$key]);
+					continue;
+				}
 				if (isset($item['DATA']['items']))
 				{
-//					always convert to UTF-8 for REST
+					// always convert to UTF-8 for REST
 					$item['DATA']['encoded'] = true;
 					$item['DATA']['charset'] = 'UTF-8';
 					$item['DATA']['items'] = \Bitrix\Main\Text\Encoding::convertEncoding(
@@ -63,39 +105,48 @@ class Demos
 	/**
 	 * Get demo sites.
 	 * @param string $type Type of demo-template (page, store, etc...).
-	 * @return \Bitrix\Landing\PublicActionResult
+	 * @param array $filter Additional filter.
+	 * @return PublicActionResult
 	 */
-	public static function getSiteList($type)
+	public static function getSiteList($type, array $filter = [])
 	{
-		return self::getFilesList($type);
+		$filter = array_change_key_case($filter, CASE_UPPER);
+		return self::getFilesList($type, false, $filter);
 	}
 
 	/**
 	 * Get demo pages.
 	 * @param string $type Type of demo-template (page, store, etc...).
-	 * @return \Bitrix\Landing\PublicActionResult
+	 * @param array $filter Additional filter.
+	 * @return PublicActionResult
 	 */
-	public static function getPageList($type)
+	public static function getPageList($type, array $filter = [])
 	{
-		return self::getFilesList($type, true);
+		$filter = array_change_key_case($filter, CASE_UPPER);
+		return self::getFilesList($type, true, $filter);
 	}
 
 	/**
 	 * Get preview of url by code.
 	 * @param string $code Code of page.
 	 * @param string $type Code of content.
-	 * @return \Bitrix\Landing\PublicActionResult
+	 * @return PublicActionResult
 	 */
 	public static function getUrlPreview($code, $type)
 	{
 		$result = new PublicActionResult();
+
+		if (!is_string($code) || !is_string($type))
+		{
+			return $result;
+		}
 
 		$componentName = 'bitrix:landing.demo';
 		$className = \CBitrixComponent::includeComponentClass($componentName);
 		$demoCmp = new $className;
 		$demoCmp->initComponent($componentName);
 		$demoCmp->arParams = array(
-			'TYPE' => strtoupper($type)
+			'TYPE' => mb_strtoupper($type)
 		);
 
 		$result->setResult($demoCmp->getUrlPreview($code));
@@ -106,13 +157,16 @@ class Demos
 	/**
 	 * Register new demo template (site [and pages]).
 	 * @param array $data Full data from \Bitrix\Landing\Site::fullExport.
+	 * @param array $params Additional params.
 	 * @see \Bitrix\Landing\Site::fullExport
-	 * @return \Bitrix\Landing\PublicActionResult
+	 * @return PublicActionResult
 	 */
-	public static function register($data = array())
+	public static function register(array $data = array(), array $params = array())
 	{
 		$result = new PublicActionResult();
 		$error = new \Bitrix\Landing\Error;
+		$themeCode = null;
+		$themeCodeTypo = null;
 
 		// make line array from site and pages
 		if (
@@ -128,6 +182,42 @@ class Demos
 				$dataPages = array();
 			}
 			unset($data['items']);
+			// set theme codes from sites to pages
+			if (isset($data['fields']['ADDITIONAL_FIELDS']['THEME_CODE']))
+			{
+				$themeCode = $data['fields']['ADDITIONAL_FIELDS']['THEME_CODE'];
+			}
+			if (isset($data['fields']['ADDITIONAL_FIELDS']['THEME_CODE_TYPO']))
+			{
+				$themeCodeTypo = $data['fields']['ADDITIONAL_FIELDS']['THEME_CODE_TYPO'];
+			}
+			foreach ($dataPages as &$page)
+			{
+				if (
+					!isset($page['fields']) ||
+					!is_array($page['fields'])
+				)
+				{
+					$page['fields'] = array();
+				}
+				if (
+					!isset($page['fields']['ADDITIONAL_FIELDS']) ||
+					!is_array($page['fields']['ADDITIONAL_FIELDS'])
+				)
+				{
+					$page['fields']['ADDITIONAL_FIELDS'] = array();
+				}
+				if (!isset($page['fields']['ADDITIONAL_FIELDS']['THEME_CODE']))
+				{
+					$page['fields']['ADDITIONAL_FIELDS']['THEME_CODE'] = $themeCode;
+				}
+				if (!isset($page['fields']['ADDITIONAL_FIELDS']['THEME_CODE_TYPO']))
+				{
+					$page['fields']['ADDITIONAL_FIELDS']['THEME_CODE_TYPO'] = $themeCodeTypo;
+				}
+			}
+			unset($page);
+
 			$data['items'] = array_keys($dataPages);
 			$data['tpl_type'] = DemoCore::TPL_TYPE_SITE;
 			$data = array_merge([$data], $dataPages);
@@ -173,8 +263,17 @@ class Demos
 			$fields = array(
 				'XML_ID' => null,
 				'APP_CODE' => $appCode,
-				'TPL_TYPE' => DemoCore::TPL_TYPE_PAGE
+				'TPL_TYPE' => DemoCore::TPL_TYPE_PAGE,
+				'LANG' => []
 			);
+			if (isset($params['site_template_id']))
+			{
+				$fields['SITE_TEMPLATE_ID'] = $params['site_template_id'];
+			}
+			else
+			{
+				$fields['SITE_TEMPLATE_ID'] = '';
+			}
 			if (isset($item['code']))
 			{
 				$fields['XML_ID'] = trim($item['code']);
@@ -183,17 +282,44 @@ class Demos
 			{
 				$fields['TITLE'] = $item['name'];
 			}
+			if (isset($params['lang']))
+			{
+				$fields['LANG']['lang'] = $params['lang'];
+			}
+			if (isset($params['lang_original']))
+			{
+				$fields['LANG']['lang_original'] = $params['lang_original'];
+			}
+			if (isset($item['items']) && !is_array($item['items']))
+			{
+				$item['items'] = [];
+			}
 			foreach ($fieldCode as $code)
 			{
-				$codel = strtolower($code);
+				$codel = mb_strtolower($code);
 				if (isset($item[$codel]))
 				{
 					$fields[$code] = $item[$codel];
 				}
 			}
-			$fields['MANIFEST'] = serialize((array)$item);
+			// serialize and check content
+			$item = (array) $item;
+			$fields['LANG'] = (array) $fields['LANG'];
+			$fields['MANIFEST'] = serialize($item);
+			if ($fields['LANG'])
+			{
+				$fields['LANG'] = serialize($fields['LANG']);
+			}
+			else
+			{
+				unset($fields['LANG']);
+			}
+			if (isset($item['fields']['ADDITIONAL_FIELDS']))
+			{
+				unset($item['fields']['ADDITIONAL_FIELDS']);
+			}
 			\Bitrix\Landing\Manager::sanitize(
-				$fields['MANIFEST'],
+				serialize($item),
 				$bad
 			);
 			if ($bad)
@@ -244,7 +370,7 @@ class Demos
 			}
 			if ($res->isSuccess())
 			{
-				$return[] = $res->getId();
+				$return[] = (int)$res->getId();
 			}
 			else
 			{
@@ -263,7 +389,7 @@ class Demos
 	/**
 	 * Unregister demo template.
 	 * @param string $code Code of item.
-	 * @return \Bitrix\Landing\PublicActionResult
+	 * @return PublicActionResult
 	 */
 	public static function unregister($code)
 	{
@@ -271,6 +397,11 @@ class Demos
 		$error = new \Bitrix\Landing\Error;
 
 		$result->setResult(false);
+
+		if (!is_string($code))
+		{
+			return $result;
+		}
 
 		// search and delete
 		if ($code)
@@ -315,11 +446,12 @@ class Demos
 	/**
 	 * Get items of current app.
 	 * @param array $params Params ORM array.
-	 * @return \Bitrix\Landing\PublicActionResult
+	 * @return PublicActionResult
 	 */
-	public static function getList($params = array())
+	public static function getList(array $params = array())
 	{
 		$result = new PublicActionResult();
+		$params = $result->sanitizeKeys($params);
 
 		if (!is_array($params))
 		{
@@ -332,21 +464,30 @@ class Demos
 		{
 			$params['filter'] = array();
 		}
+
 		// set app code
 		if (($app = \Bitrix\Landing\PublicAction::restApplication()))
 		{
-			$params['filter']['APP_CODE'] = $app['CODE'];
-		}
-		else
-		{
-			$params['filter']['APP_CODE'] = false;
+			$params['filter']['=APP_CODE'] = $app['CODE'];
 		}
 
 		$data = array();
 		$res = DemoCore::getList($params);
 		while ($row = $res->fetch())
 		{
+			if (isset($row['DATE_CREATE']))
+			{
+				$row['DATE_CREATE'] = (string) $row['DATE_CREATE'];
+			}
+			if (isset($row['DATE_MODIFY']))
+			{
+				$row['DATE_MODIFY'] = (string) $row['DATE_MODIFY'];
+			}
 			$row['MANIFEST'] = unserialize($row['MANIFEST']);
+			if ($row['LANG'])
+			{
+				$row['LANG'] = unserialize($row['LANG']);
+			}
 			$data[] = $row;
 		}
 		$result->setResult($data);

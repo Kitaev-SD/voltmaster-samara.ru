@@ -1,11 +1,11 @@
 <section class="landing-block g-pt-50 g-pb-50">
 	<div class="container">
-		<div class="row">
-			<div class="landing-block-node-text-container js-animation slideInLeft col-md-6 g-pb-20 g-pb-0--md">
-				<h2 class="landing-block-node-title text-uppercase g-font-weight-700 g-font-size-26 mb-0 g-mb-15">
+		<div class="row landing-block-node-block">
+			<div class="landing-block-node-text-container js-animation slideInLeft col-md-6 col-lg-6 g-pb-20 g-pb-0--md">
+				<h2 class="landing-block-node-title landing-semantic-subtitle-medium text-uppercase g-font-weight-700 g-font-size-26 mb-0 g-mb-15">
 					Quality results with us
 				</h2>
-				<div class="landing-block-node-text g-color-gray-dark-v4">
+				<div class="landing-block-node-text landing-semantic-text-medium g-color-gray-dark-v4">
 					<p>
 						Aliquam mattis neque justo, non maximus dui ornare nec. Praesent efficitur velit nisl, sed
 						tincidunt mi imperdiet at. Cras urna libero, fringilla vitae luctus eu, egestas eget metus. Nam
@@ -28,7 +28,7 @@
 				</div>
 			</div>
 
-			<div class="col-md-6">
+			<div class="col-md-6 col-lg-6">
 				<img class="landing-block-node-img js-animation slideInRight img-fluid"
 					 src="https://cdn.bitrix24.site/bitrix/images/landing/business/540x356/img1.jpg">
 			</div>

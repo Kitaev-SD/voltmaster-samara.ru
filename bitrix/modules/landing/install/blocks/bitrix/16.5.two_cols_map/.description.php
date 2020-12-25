@@ -10,10 +10,11 @@ return [
 	'block' => [
 		'name' => Loc::getMessage("LANDING_BLOCK_16_5_TWO_COLS_MAP--NAME"),
 		'section' => ['contacts'],
-		'version' => '18.5.0',
+		'dynamic' => false,
+		'version' => '18.5.0', // old param for backward compatibility. Can used for old versions of module via repo. Do not delete!
 		'subtype' => 'map',
-		'subtype_params' =>[
-			'required' => 'google'
+		'subtype_params' => [
+			'required' => 'google',
 		],
 	],
 	'cards' => [
@@ -26,7 +27,7 @@ return [
 			'name' => Loc::getMessage("LANDING_BLOCK_16_5_TWO_COLS_MAP--SOCIAL"),
 			'label' => array('.landing-block-card-social-icon'),
 			'presets' => include __DIR__ . '/presets_social.php',
-		]
+		],
 	],
 	'nodes' => [
 		'.landing-block-node-map' => [
@@ -70,16 +71,16 @@ return [
 	],
 	'style' => [
 		'block' => [
-			'type' => ['block-default-wo-background-vh-animation']
+			'type' => ['block-default-wo-background'],
 		],
 		'nodes' => [
+			'.landing-block-node-map' => [
+				'name' => Loc::getMessage("LANDING_BLOCK_16_5_TWO_COLS_MAP--MAP"),
+				'type' => 'animation',
+			],
 			'.landing-block-node-address-col' => [
 				'name' => Loc::getMessage("LANDING_BLOCK_16_5_TWO_COLS_MAP--COL"),
-				'type' => 'bg',
-			],
-			'.landing-block-node-third-col' => [
-				'name' => Loc::getMessage("LANDING_BLOCK_16_5_TWO_COLS_MAP--COL"),
-				'type' => 'bg',
+				'type' => ['bg', 'animation'],
 			],
 			'.landing-block-node-address-subtitle' => [
 				'name' => Loc::getMessage("LANDING_BLOCK_16_5_TWO_COLS_MAP--SUBTITLE"),
@@ -111,9 +112,9 @@ return [
 				'name' => Loc::getMessage("LANDING_BLOCK_16_5_TWO_COLS_MAP--SOCIAL_LINK"),
 				'type' => ['background-color', 'background-hover'],
 			],
-		]
+		],
 	],
 	'assets' => [
 		'ext' => ['landing_google_maps_new'],
-	]
+	],
 ];

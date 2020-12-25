@@ -1,7 +1,6 @@
 <?
 //<title>Yandex</title>
 /** @global CUser $USER */
-/** @global CMain $APPLICATION */
 /** @var int $IBLOCK_ID */
 /** @var string $SETUP_SERVER_NAME */
 /** @var string $SETUP_FILE_NAME */
@@ -51,10 +50,10 @@ if (!isset($firstStep))
 $pageSize = 100;
 $navParams = array('nTopCount' => $pageSize);
 
-$SETUP_VARS_LIST = 'IBLOCK_ID,SITE_ID,V,XML_DATA,SETUP_SERVER_NAME,COMPANY_NAME,SETUP_FILE_NAME,USE_HTTPS,FILTER_AVAILABLE,DISABLE_REFERERS,MAX_EXECUTION_TIME,CHECK_PERMISSIONS';
+$SETUP_VARS_LIST = 'IBLOCK_ID,SITE_ID,V,XML_DATA,SETUP_SERVER_NAME,COMPANY_NAME,SETUP_FILE_NAME,USE_HTTPS,FILTER_AVAILABLE,DISABLE_REFERERS,EXPORT_CHARSET,MAX_EXECUTION_TIME,CHECK_PERMISSIONS';
 $INTERNAL_VARS_LIST = 'intMaxSectionID,boolNeedRootSection,arSectionIDs,arAvailGroups';
 
-global $USER, $APPLICATION;
+global $USER;
 $bTmpUserCreated = false;
 if (!CCatalog::IsUserExists())
 {
@@ -118,32 +117,28 @@ if (!function_exists("yandex_replace_special"))
 
 if (!function_exists("yandex_text2xml"))
 {
-	function yandex_text2xml($text, $bHSC = false, $bDblQuote = false)
+	function yandex_text2xml(string $text, array $options)
 	{
-		global $APPLICATION;
+		$text = htmlspecialcharsbx($text, ENT_QUOTES|ENT_XML1);
 
-		$bHSC = (true == $bHSC ? true : false);
-		$bDblQuote = (true == $bDblQuote ? true: false);
-
-		if ($bHSC)
-		{
-			$text = htmlspecialcharsbx($text);
-			if ($bDblQuote)
-				$text = str_replace('&quot;', '"', $text);
-		}
 		$text = preg_replace("/[\x1-\x8\xB-\xC\xE-\x1F]/", "", $text);
-		$text = str_replace("'", "&apos;", $text);
-		$text = $APPLICATION->ConvertCharset($text, LANG_CHARSET, 'windows-1251');
-		return $text;
+
+		$error = '';
+		return Main\Text\Encoding::convertEncoding($text, LANG_CHARSET, $options['CHARSET'], $error);
 	}
 }
 
 if (!function_exists('yandex_get_value'))
 {
-function yandex_get_value($arOffer, $param, $PROPERTY, $arProperties, $arUserTypeFormat, $usedProtocol)
+function yandex_get_value(
+	array $arOffer,
+	string $param,
+	$PROPERTY,
+	array $arProperties,
+	array $arUserTypeFormat,
+	array $options
+)
 {
-	global $iblockServerName;
-
 	$strProperty = '';
 	$bParam = (strncmp($param, 'PARAM_', 6) == 0);
 	if (isset($arProperties[$PROPERTY]) && !empty($arProperties[$PROPERTY]))
@@ -309,8 +304,8 @@ function yandex_get_value($arOffer, $param, $PROPERTY, $arProperties, $arUserTyp
 							{
 								if ($ar_file = CFile::GetFileArray($intValue))
 								{
-									if(substr($ar_file["SRC"], 0, 1) == "/")
-										$strFile = $usedProtocol.$iblockServerName.CHTTP::urnEncode($ar_file['SRC'], 'utf-8');
+									if(mb_substr($ar_file["SRC"], 0, 1) == "/")
+										$strFile = $options['PROTOCOL'].$options['SITE_NAME'].CHTTP::urnEncode($ar_file['SRC'], 'utf-8');
 									else
 										$strFile = $ar_file["SRC"];
 									$value .= ($value ? ', ' : '').$strFile;
@@ -326,8 +321,8 @@ function yandex_get_value($arOffer, $param, $PROPERTY, $arProperties, $arUserTyp
 						{
 							if ($ar_file = CFile::GetFileArray($arProperty['VALUE']))
 							{
-								if(substr($ar_file["SRC"], 0, 1) == "/")
-									$strFile = $usedProtocol.$iblockServerName.CHTTP::urnEncode($ar_file['SRC'], 'utf-8');
+								if(mb_substr($ar_file["SRC"], 0, 1) == "/")
+									$strFile = $options['PROTOCOL'].$options['SITE_NAME'].CHTTP::urnEncode($ar_file['SRC'], 'utf-8');
 								else
 									$strFile = $ar_file["SRC"];
 								$value = $strFile;
@@ -361,8 +356,8 @@ function yandex_get_value($arOffer, $param, $PROPERTY, $arProperties, $arUserTyp
 						if ($val != '')
 						{
 							$strProperty .= $strProperty ? "\n" : "";
-							$strProperty .= '<param name="'.yandex_text2xml($description[$key], true).'">'.
-								yandex_text2xml($val, true).'</param>';
+							$strProperty .= '<param name="'.yandex_text2xml($description[$key], $options).'">'.
+								yandex_text2xml($val, $options).'</param>';
 						}
 					}
 				}
@@ -371,15 +366,15 @@ function yandex_get_value($arOffer, $param, $PROPERTY, $arProperties, $arUserTyp
 			{
 				if ($value != '')
 				{
-					$strProperty .= '<param name="'.yandex_text2xml($iblockProperty['NAME'], true).'">'.
-						yandex_text2xml($value, true).'</param>';
+					$strProperty .= '<param name="'.yandex_text2xml($iblockProperty['NAME'], $options).'">'.
+						yandex_text2xml($value, $options).'</param>';
 				}
 			}
 		}
 		else
 		{
-			$param_h = yandex_text2xml($param, true);
-			$strProperty .= '<'.$param_h.'>'.yandex_text2xml($value, true).'</'.$param_h.'>';
+			$param_h = yandex_text2xml($param, $options);
+			$strProperty .= '<'.$param_h.'>'.yandex_text2xml($value, $options).'</'.$param_h.'>';
 		}
 
 		unset($iblockProperty);
@@ -393,6 +388,14 @@ if (!function_exists('yandexPrepareItems'))
 {
 	function yandexPrepareItems(array &$list, array $parents, array $options)
 	{
+		$descrField = 'PREVIEW_TEXT';
+		$descrTypeField = 'PREVIEW_TEXT_TYPE';
+		if (isset($options['DESCRIPTION']))
+		{
+			$descrField = $options['DESCRIPTION'];
+			$descrTypeField = $options['DESCRIPTION'].'_TYPE';
+		}
+
 		foreach (array_keys($list) as $index)
 		{
 			$row = &$list[$index];
@@ -405,7 +408,7 @@ if (!function_exists('yandexPrepareItems'))
 				{
 					if ($field == 'PREVIEW_TEXT' || $field == 'DETAIL_TEXT')
 						continue;
-					if (strncmp($field, 'CATALOG_', 8) == 0)
+					if (\CProductQueryBuilder::isValidField($field))
 						continue;
 					if (is_array($value))
 						continue;
@@ -461,16 +464,16 @@ if (!function_exists('yandexPrepareItems'))
 			}
 
 			$row['DESCRIPTION'] = '';
-			if ($row['PREVIEW_TEXT'] !== null)
+			if ($row[$descrField] !== null)
 			{
 				$row['DESCRIPTION'] = yandex_text2xml(
 					TruncateText(
-						$row['PREVIEW_TEXT_TYPE'] == 'html'
-						? strip_tags(preg_replace_callback("'&[^;]*;'", 'yandex_replace_special', $row['PREVIEW_TEXT']))
-						: preg_replace_callback("'&[^;]*;'", 'yandex_replace_special', $row['PREVIEW_TEXT']),
+						$row[$descrTypeField] == 'html'
+						? strip_tags(preg_replace_callback("'&[^;]*;'", 'yandex_replace_special', $row[$descrField]))
+						: preg_replace_callback("'&[^;]*;'", 'yandex_replace_special', $row[$descrField]),
 						$options['MAX_DESCRIPTION_LENGTH']
 					),
-					true
+					$options
 				);
 			}
 
@@ -546,9 +549,25 @@ if ($parametricFieldsExist)
 	unset($id);
 }
 
+$commonFields = [
+	'DESCRIPTION' => 'PREVIEW_TEXT'
+];
+if (!empty($XML_DATA['COMMON_FIELDS']) && is_array($XML_DATA['COMMON_FIELDS']))
+	$commonFields = array_merge($commonFields, $XML_DATA['COMMON_FIELDS']);
+$descrField = $commonFields['DESCRIPTION'];
+
 $propertyFields = array(
 	'ID', 'PROPERTY_TYPE', 'MULTIPLE', 'USER_TYPE'
 );
+
+$itemUrlConfig = [
+	'USE_DOMAIN' => true,
+	'REFERRER_SEPARATOR' => '?'
+];
+$offerUrlConfig = [
+	'USE_DOMAIN' => true,
+	'REFERRER_SEPARATOR' => '?'
+];
 
 $IBLOCK_ID = (int)$IBLOCK_ID;
 $db_iblock = CIBlock::GetByID($IBLOCK_ID);
@@ -578,6 +597,10 @@ else
 		$ar_iblock['PROPERTY'][$arProp['ID']] = $arProp;
 	}
 	unset($arProp, $rsProps);
+
+	$ar_iblock['DETAIL_PAGE_URL'] = (string)$ar_iblock['DETAIL_PAGE_URL'];
+	$itemUrlConfig['USE_DOMAIN'] = !(preg_match("/^(http|https):\\/\\//i", $ar_iblock['DETAIL_PAGE_URL']));
+	$itemUrlConfig['REFERRER_SEPARATOR'] = (mb_strpos($ar_iblock['DETAIL_PAGE_URL'], '?') === false ? '?' : '&amp;');
 }
 
 $SETUP_SERVER_NAME = (isset($SETUP_SERVER_NAME) ? trim($SETUP_SERVER_NAME) : '');
@@ -618,9 +641,6 @@ else
 		$arRunErrors[] = GetMessage('BX_CATALOG_EXPORT_YANDEX_ERR_BAD_SERVER_NAME');
 	}
 }
-
-global $iblockServerName;
-$iblockServerName = $site['SERVER_NAME'];
 
 $arProperties = array();
 if (isset($ar_iblock['PROPERTY']))
@@ -691,6 +711,17 @@ else
 			}
 			unset($arProp, $rsProps);
 			$arOfferIBlock['LID'] = $site['LID'];
+
+			$arOfferIBlock['DETAIL_PAGE_URL'] = (string)$arOfferIBlock['DETAIL_PAGE_URL'];
+			if ($arOfferIBlock['DETAIL_PAGE_URL'] == '#PRODUCT_URL#')
+			{
+				$offerUrlConfig = $itemUrlConfig;
+			}
+			else
+			{
+				$offerUrlConfig['USE_DOMAIN'] = !(preg_match("/^(http|https):\\/\\//i", $arOfferIBlock['DETAIL_PAGE_URL']));
+				$offerUrlConfig['REFERRER_SEPARATOR'] = (mb_strpos($arOfferIBlock['DETAIL_PAGE_URL'], '?') === false ? '?' : '&amp;');
+			}
 		}
 		else
 		{
@@ -869,6 +900,9 @@ if (empty($arRunErrors))
 $usedProtocol = (isset($USE_HTTPS) && $USE_HTTPS == 'Y' ? 'https://' : 'http://');
 $filterAvailable = (isset($FILTER_AVAILABLE) && $FILTER_AVAILABLE == 'Y');
 $disableReferers = (isset($DISABLE_REFERERS) && $DISABLE_REFERERS == 'Y');
+$exportCharset = (isset($EXPORT_CHARSET) && is_string($EXPORT_CHARSET) ? $EXPORT_CHARSET : '');
+if ($exportCharset != 'UTF-8')
+	$exportCharset = 'windows-1251';
 
 $vatExportSettings = array(
 	'ENABLE' => 'N',
@@ -918,14 +952,16 @@ if ($vatExport)
 
 $itemOptions = array(
 	'PROTOCOL' => $usedProtocol,
+	'CHARSET' => $exportCharset,
 	'SITE_NAME' => $site['SERVER_NAME'],
 	'SITE_DIR' => $site['DIR'],
+	'DESCRIPTION' => $descrField,
 	'MAX_DESCRIPTION_LENGTH' => 3000
 );
 
 $sectionFileName = '';
 $itemFileName = '';
-if (strlen($SETUP_FILE_NAME) <= 0)
+if ($SETUP_FILE_NAME == '')
 {
 	$arRunErrors[] = GetMessage("CATI_NO_SAVE_FILE");
 }
@@ -972,9 +1008,9 @@ if ($firstStep)
 			{
 				if (!$disableReferers)
 				{
-					fwrite($fp, 'if (!isset($_GET["referer1"]) || strlen($_GET["referer1"])<=0) $_GET["referer1"] = "yandext";'."\n");
+					fwrite($fp, 'if (!isset($_GET["referer1"]) || $_GET["referer1"] == "") $_GET["referer1"] = "yandext";'."\n");
 					fwrite($fp, '$strReferer1 = htmlspecialchars($_GET["referer1"]);'."\n");
-					fwrite($fp, 'if (!isset($_GET["referer2"]) || strlen($_GET["referer2"]) <= 0) $_GET["referer2"] = "";'."\n");
+					fwrite($fp, 'if (!isset($_GET["referer2"]) || $_GET["referer2"] == "") $_GET["referer2"] = "";'."\n");
 					fwrite($fp, '$strReferer2 = htmlspecialchars($_GET["referer2"]);'."\n");
 				}
 			}
@@ -984,15 +1020,30 @@ if ($firstStep)
 	if (empty($arRunErrors))
 	{
 		/** @noinspection PhpUndefinedVariableInspection */
-		fwrite($fp, 'header("Content-Type: text/xml; charset=windows-1251");'."\n");
-		fwrite($fp, 'echo "<"."?xml version=\"1.0\" encoding=\"windows-1251\"?".">"?>');
+		fwrite($fp, 'header("Content-Type: text/xml; charset='.$itemOptions['CHARSET'].'");'."\n");
+		fwrite($fp, 'echo "<"."?xml version=\"1.0\" encoding=\"'.$itemOptions['CHARSET'].'\"?".">"?>');
 		fwrite($fp, "\n".'<!DOCTYPE yml_catalog SYSTEM "shops.dtd">'."\n");
 		fwrite($fp, '<yml_catalog date="'.date("Y-m-d H:i").'">'."\n");
 		fwrite($fp, '<shop>'."\n");
 
-		fwrite($fp, '<name>'.$APPLICATION->ConvertCharset(htmlspecialcharsbx($site['SITE_NAME']), LANG_CHARSET, 'windows-1251')."</name>\n");
+		$charsetError = '';
 
-		fwrite($fp, '<company>'.$APPLICATION->ConvertCharset(htmlspecialcharsbx($site['COMPANY_NAME']), LANG_CHARSET, 'windows-1251')."</company>\n");
+		fwrite($fp,
+			'<name>'.Main\Text\Encoding::convertEncoding(
+				htmlspecialcharsbx($site['SITE_NAME'], ENT_QUOTES|ENT_XML1),
+				LANG_CHARSET,
+				$itemOptions['CHARSET'],
+				$charsetError).
+			"</name>\n"
+		);
+		fwrite($fp,
+			'<company>'.Main\Text\Encoding::convertEncoding(
+				htmlspecialcharsbx($site['COMPANY_NAME'], ENT_QUOTES|ENT_XML1),
+				LANG_CHARSET,
+				$itemOptions['CHARSET'],
+				$charsetError).
+			"</company>\n"
+		);
 		fwrite($fp, '<url>'.$usedProtocol.htmlspecialcharsbx($site['SERVER_NAME'])."</url>\n");
 		fwrite($fp, '<platform>1C-Bitrix</platform>'."\n");
 
@@ -1125,7 +1176,7 @@ if ($firstStep)
 		}
 
 		foreach ($arAvailGroups as $value)
-			$strTmpCat .= '<category id="'.$value['ID'].'"'.($value['IBLOCK_SECTION_ID'] > 0 ? ' parentId="'.$value['IBLOCK_SECTION_ID'].'"' : '').'>'.yandex_text2xml($value['NAME'], true).'</category>'."\n";
+			$strTmpCat .= '<category id="'.$value['ID'].'"'.($value['IBLOCK_SECTION_ID'] > 0 ? ' parentId="'.$value['IBLOCK_SECTION_ID'].'"' : '').'>'.yandex_text2xml($value['NAME'], $itemOptions).'</category>'."\n";
 		unset($value);
 
 		$intMaxSectionID += 100000000;
@@ -1177,12 +1228,13 @@ if (empty($arRunErrors))
 
 	$itemFields = array(
 		'ID', 'IBLOCK_ID', 'IBLOCK_SECTION_ID', 'NAME',
-		'PREVIEW_PICTURE', 'PREVIEW_TEXT', 'PREVIEW_TEXT_TYPE', 'DETAIL_PICTURE', 'DETAIL_PAGE_URL',
-		'CATALOG_AVAILABLE', 'CATALOG_TYPE'
+		'PREVIEW_PICTURE', $descrField, $descrField.'_TYPE', 'DETAIL_PICTURE', 'DETAIL_PAGE_URL',
+		'AVAILABLE', 'TYPE', 'VAT_ID', 'VAT_INCLUDED'
 	);
 	$offerFields = array(
 		'ID', 'IBLOCK_ID', 'IBLOCK_SECTION_ID', 'NAME',
-		'PREVIEW_PICTURE', 'PREVIEW_TEXT', 'PREVIEW_TEXT_TYPE', 'DETAIL_PICTURE', 'DETAIL_PAGE_URL'
+		'PREVIEW_PICTURE', $descrField, $descrField.'_TYPE', 'DETAIL_PICTURE', 'DETAIL_PAGE_URL',
+		'AVAILABLE', 'TYPE', 'VAT_ID', 'VAT_INCLUDED'
 	);
 
 	$allowedTypes = array();
@@ -1222,12 +1274,12 @@ if (empty($arRunErrors))
 	$filter['ACTIVE'] = 'Y';
 	$filter['ACTIVE_DATE'] = 'Y';
 	if ($filterAvailable)
-		$filter['CATALOG_AVAILABLE'] = 'Y';
+		$filter['AVAILABLE'] = 'Y';
 	$filter = array_merge($filter, $permissionFilter);
 
 	$offersFilter = array('ACTIVE' => 'Y', 'ACTIVE_DATE' => 'Y');
 	if ($filterAvailable)
-		$offersFilter['CATALOG_AVAILABLE'] = 'Y';
+		$offersFilter['AVAILABLE'] = 'Y';
 	$offersFilter = array_merge($offersFilter, $permissionFilter);
 
 	if (isset($allowedTypes[Catalog\ProductTable::TYPE_SKU]))
@@ -1273,8 +1325,8 @@ if (empty($arRunErrors))
 			$id = (int)$row['ID'];
 			$CUR_ELEMENT_ID = $id;
 
-			$row['CATALOG_TYPE'] = (int)$row['CATALOG_TYPE'];
-			$elementType = $row['CATALOG_TYPE'];
+			$row['TYPE'] = (int)$row['TYPE'];
+			$elementType = $row['TYPE'];
 			if (!isset($allowedTypes[$elementType]))
 				continue;
 
@@ -1400,6 +1452,9 @@ if (empty($arRunErrors))
 						foreach (array_keys($offers[$productId]) as $offerId)
 						{
 							$productOffer = $offers[$productId][$offerId];
+							$productOffer['VAT_ID'] = (int)$productOffer['VAT_ID'];
+							if ($productOffer['VAT_ID'] == 0)
+								$productOffer['VAT_ID'] = $offersCatalog['VAT_ID'];
 
 							$productOffer['PRICES'] = array();
 							if ($needDiscountCache)
@@ -1442,26 +1497,6 @@ if (empty($arRunErrors))
 									$pageIds,
 									array('IBLOCK_ID' => $arCatalog['IBLOCK_ID'], 'GET_BY_ID' => 'Y')
 								);
-							}
-
-							if (!$filterAvailable)
-							{
-								$iterator = Catalog\ProductTable::getList(array(
-									'select' => ($vatExport ? array('ID', 'AVAILABLE', 'VAT_ID', 'VAT_INCLUDED') : array('ID', 'AVAILABLE')),
-									'filter' => array('@ID' => $pageIds)
-								));
-								while ($row = $iterator->fetch())
-								{
-									$id = (int)$row['ID'];
-									$offerLinks[$id]['CATALOG_AVAILABLE'] = $row['AVAILABLE'];
-									if ($vatExport)
-									{
-										$row['VAT_ID'] = (int)$row['VAT_ID'];
-										$offerLinks[$id]['CATALOG_VAT_ID'] = ($row['VAT_ID'] > 0 ? $row['VAT_ID'] : $offersCatalog['VAT_ID']);
-										$offerLinks[$id]['CATALOG_VAT_INCLUDED'] = $row['VAT_INCLUDED'];
-									}
-								}
-								unset($id, $row, $iterator);
 							}
 
 							// load vat cache
@@ -1604,7 +1639,7 @@ if (empty($arRunErrors))
 				if (!isset($row['CATEGORY_ID']))
 					continue;
 
-				if ($row['CATALOG_TYPE'] == Catalog\ProductTable::TYPE_SKU && !empty($row['OFFERS']))
+				if ($row['TYPE'] == Catalog\ProductTable::TYPE_SKU && !empty($row['OFFERS']))
 				{
 					$minOfferId = null;
 					$minOfferPrice = null;
@@ -1668,15 +1703,15 @@ if (empty($arRunErrors))
 
 					foreach ($row['OFFERS'] as $offer)
 					{
-						$available = ' available="'.($offer['CATALOG_AVAILABLE'] == 'Y' ? 'true' : 'false').'"';
+						$available = ' available="'.($offer['AVAILABLE'] == 'Y' ? 'true' : 'false').'"';
 						$itemsContent .= '<offer id="'.$offer['ID'].'"'.$productFormat.$available.">\n";
 						unset($available);
 
 						$referer = '';
 						if (!$disableReferers)
-							$referer = (strpos($offer['DETAIL_PAGE_URL'], '?') === false ? '?' : '&amp;').'r1=<?=$strReferer1; ?>&amp;r2=<?=$strReferer2; ?>';
+							$referer = $offerUrlConfig['REFERRER_SEPARATOR'].'r1=<?=$strReferer1; ?>&amp;r2=<?=$strReferer2; ?>';
 
-						$itemsContent .= "<url>".$usedProtocol.$site['SERVER_NAME'].htmlspecialcharsbx($offer['DETAIL_PAGE_URL']).$referer."</url>\n";
+						$itemsContent .= "<url>".($offerUrlConfig['USE_DOMAIN'] ? $usedProtocol.$site['SERVER_NAME'] : '').htmlspecialcharsbx($offer['DETAIL_PAGE_URL']).$referer."</url>\n";
 						unset($referer);
 
 						$minPrice = $offer['RESULT_PRICE']['MIN_PRICE'];
@@ -1685,8 +1720,8 @@ if (empty($arRunErrors))
 						if ($minPrice < $fullPrice)
 							$itemsContent .= "<oldprice>".$fullPrice."</oldprice>\n";
 						$itemsContent .= "<currencyId>".$offer['RESULT_PRICE']['CURRENCY']."</currencyId>\n";
-						if ($vatExport && isset($vatList[$offer['CATALOG_VAT_ID']]))
-							$itemsContent .= "<vat>".$vatList[$offer['CATALOG_VAT_ID']]."</vat>\n";
+						if ($vatExport && isset($vatList[$offer['VAT_ID']]))
+							$itemsContent .= "<vat>".$vatList[$offer['VAT_ID']]."</vat>\n";
 
 						$itemsContent .= "<categoryId>".$row['CATEGORY_ID']."</categoryId>\n";
 
@@ -1704,7 +1739,7 @@ if (empty($arRunErrors))
 									if ($yandexFormat == 'vendor.model' || $yandexFormat == 'artist.title')
 										continue;
 
-									$itemsContent .= "<name>".yandex_text2xml($offer['NAME'], true)."</name>\n";
+									$itemsContent .= "<name>".yandex_text2xml($offer['NAME'], $itemOptions)."</name>\n";
 									break;
 								case 'description':
 									$itemsContent .= "<description>".
@@ -1722,7 +1757,7 @@ if (empty($arRunErrors))
 												$prop_id,
 												$arProperties,
 												$arUserTypeFormat,
-												$usedProtocol
+												$itemOptions
 											);
 											if ($value == '')
 											{
@@ -1732,7 +1767,7 @@ if (empty($arRunErrors))
 													$prop_id,
 													$arProperties,
 													$arUserTypeFormat,
-													$usedProtocol
+													$itemOptions
 												);
 											}
 											if ($value != '')
@@ -1751,7 +1786,7 @@ if (empty($arRunErrors))
 											||
 											$key == 'title' && $yandexFormat == 'artist.title'
 										)
-											$itemsContent .= "<".$key.">".yandex_text2xml($offer['NAME'], true)."</".$key.">\n";
+											$itemsContent .= "<".$key.">".yandex_text2xml($offer['NAME'], $itemOptions)."</".$key.">\n";
 									}
 									else
 									{
@@ -1761,7 +1796,7 @@ if (empty($arRunErrors))
 											$fields[$key],
 											$arProperties,
 											$arUserTypeFormat,
-											$usedProtocol
+											$itemOptions
 										);
 										if ($value == '')
 										{
@@ -1771,7 +1806,7 @@ if (empty($arRunErrors))
 												$fields[$key],
 												$arProperties,
 												$arUserTypeFormat,
-												$usedProtocol
+												$itemOptions
 											);
 										}
 										if ($value != '')
@@ -1803,7 +1838,7 @@ if (empty($arRunErrors))
 											$fields[$key],
 											$arProperties,
 											$arUserTypeFormat,
-											$usedProtocol
+											$itemOptions
 										);
 										if ($value == '')
 										{
@@ -1813,7 +1848,7 @@ if (empty($arRunErrors))
 												$fields[$key],
 												$arProperties,
 												$arUserTypeFormat,
-												$usedProtocol
+												$itemOptions
 											);
 										}
 										if ($value != '')
@@ -1829,9 +1864,9 @@ if (empty($arRunErrors))
 				}
 				elseif (isset($simpleIdsList[$id]) && !empty($row['PRICES']))
 				{
-					$row['CATALOG_VAT_ID'] = (int)$row['CATALOG_VAT_ID'];
-					if ($row['CATALOG_VAT_ID'] == 0)
-						$row['CATALOG_VAT_ID'] = $arCatalog['VAT_ID'];
+					$row['VAT_ID'] = (int)$row['VAT_ID'];
+					if ($row['VAT_ID'] == 0)
+						$row['VAT_ID'] = $arCatalog['VAT_ID'];
 
 					$fullPrice = 0;
 					$minPrice = 0;
@@ -1858,23 +1893,23 @@ if (empty($arRunErrors))
 					if ($minPrice <= 0)
 						continue;
 
-					$available = ' available="'.($row['CATALOG_AVAILABLE'] == 'Y' ? 'true' : 'false').'"';
+					$available = ' available="'.($row['AVAILABLE'] == 'Y' ? 'true' : 'false').'"';
 					$itemsContent .= '<offer id="'.$row['ID'].'"'.$productFormat.$available.">\n";
 					unset($available);
 
 					$referer = '';
 					if (!$disableReferers)
-						$referer = (strpos($row['DETAIL_PAGE_URL'], '?') === false ? '?' : '&amp;').'r1=<?=$strReferer1; ?>&amp;r2=<?=$strReferer2; ?>';
+						$referer = $itemUrlConfig['REFERRER_SEPARATOR'].'r1=<?=$strReferer1; ?>&amp;r2=<?=$strReferer2; ?>';
 
-					$itemsContent .= "<url>".$usedProtocol.$site['SERVER_NAME'].htmlspecialcharsbx($row['DETAIL_PAGE_URL']).$referer."</url>\n";
+					$itemsContent .= "<url>".($itemUrlConfig['USE_DOMAIN'] ? $usedProtocol.$site['SERVER_NAME'] : '').htmlspecialcharsbx($row['DETAIL_PAGE_URL']).$referer."</url>\n";
 					unset($referer);
 
 					$itemsContent .= "<price>".$minPrice."</price>\n";
 					if ($minPrice < $fullPrice)
 						$itemsContent .= "<oldprice>".$fullPrice."</oldprice>\n";
 					$itemsContent .= "<currencyId>".$minPriceCurrency."</currencyId>\n";
-					if ($vatExport && isset($vatList[$row['CATALOG_VAT_ID']]))
-						$itemsContent .= "<vat>".$vatList[$row['CATALOG_VAT_ID']]."</vat>\n";
+					if ($vatExport && isset($vatList[$row['VAT_ID']]))
+						$itemsContent .= "<vat>".$vatList[$row['VAT_ID']]."</vat>\n";
 
 					$itemsContent .= "<categoryId>".$row['CATEGORY_ID']."</categoryId>\n";
 
@@ -1890,7 +1925,7 @@ if (empty($arRunErrors))
 								if ($yandexFormat == 'vendor.model' || $yandexFormat == 'artist.title')
 									continue;
 
-								$itemsContent .= "<name>".yandex_text2xml($row['NAME'], true)."</name>\n";
+								$itemsContent .= "<name>".yandex_text2xml($row['NAME'], $itemOptions)."</name>\n";
 								break;
 							case 'description':
 								$itemsContent .= "<description>".$row['DESCRIPTION']."</description>\n";
@@ -1906,7 +1941,7 @@ if (empty($arRunErrors))
 											$prop_id,
 											$arProperties,
 											$arUserTypeFormat,
-											$usedProtocol
+											$itemOptions
 										);
 										if ($value != '')
 											$itemsContent .= $value."\n";
@@ -1924,7 +1959,7 @@ if (empty($arRunErrors))
 										||
 										$key == 'title' && $yandexFormat == 'artist.title'
 									)
-										$itemsContent .= "<".$key.">".yandex_text2xml($row['NAME'], true)."</".$key.">\n";
+										$itemsContent .= "<".$key.">".yandex_text2xml($row['NAME'], $itemOptions)."</".$key.">\n";
 								}
 								else
 								{
@@ -1934,7 +1969,7 @@ if (empty($arRunErrors))
 										$fields[$key],
 										$arProperties,
 										$arUserTypeFormat,
-										$usedProtocol
+										$itemOptions
 									);
 									if ($value != '')
 										$itemsContent .= $value."\n";
@@ -1965,7 +2000,7 @@ if (empty($arRunErrors))
 										$fields[$key],
 										$arProperties,
 										$arUserTypeFormat,
-										$usedProtocol
+										$itemOptions
 									);
 									if ($value != '')
 										$itemsContent .= $value."\n";
@@ -1990,6 +2025,7 @@ if (empty($arRunErrors))
 				'SECTION_CHAINS' => true,
 				'PROPERTIES' => true
 			));
+			/** @noinspection PhpDeprecationInspection */
 			\CCatalogProduct::ClearCache();
 		}
 
@@ -2019,7 +2055,7 @@ if (empty($arRunErrors))
 		$process = true;
 		$content = '';
 		if ($boolNeedRootSection)
-			$content .= '<category id="'.$intMaxSectionID.'">'.yandex_text2xml(GetMessage('YANDEX_ROOT_DIRECTORY'), true).'</category>'."\n";
+			$content .= '<category id="'.$intMaxSectionID.'">'.yandex_text2xml(GetMessage('YANDEX_ROOT_DIRECTORY'), $itemOptions).'</category>'."\n";
 		$content .= "</categories>\n";
 		$content .= "<offers>\n";
 

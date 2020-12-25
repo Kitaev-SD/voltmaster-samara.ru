@@ -202,7 +202,7 @@ class CGlobalCondCtrl
 			BT_COND_LOGIC_CONT => array(
 				'ID' => BT_COND_LOGIC_CONT,
 				'OP' => array(
-					'N' => 'false !== strpos(#FIELD#, #VALUE#)',
+					'N' => 'false !== mb_strpos(#FIELD#, #VALUE#)',
 					'Y' => 'CGlobalCondCtrl::LogicContain(#FIELD#, #VALUE#)'
 				),
 				'PARENT' => ' || ',
@@ -213,7 +213,7 @@ class CGlobalCondCtrl
 			BT_COND_LOGIC_NOT_CONT => array(
 				'ID' => BT_COND_LOGIC_NOT_CONT,
 				'OP' => array(
-					'N' => 'false === strpos(#FIELD#, #VALUE#)',
+					'N' => 'false === mb_strpos(#FIELD#, #VALUE#)',
 					'Y' => 'CGlobalCondCtrl::LogicNotContain(#FIELD#, #VALUE#)'
 				),
 				'PARENT' => ' && ',
@@ -430,14 +430,14 @@ class CGlobalCondCtrl
 						{
 							foreach ($arOneCondition['value'] as &$strOneValue)
 							{
-								$strOneValue = substr($strOneValue, 0, 1);
+								$strOneValue = mb_substr($strOneValue, 0, 1);
 							}
 							if (isset($strOneValue))
 								unset($strOneValue);
 						}
 						else
 						{
-							$arOneCondition['value'] = substr($arOneCondition['value'], 0, 1);
+							$arOneCondition['value'] = mb_substr($arOneCondition['value'], 0, 1);
 						}
 						break;
 					case 'string':
@@ -448,14 +448,14 @@ class CGlobalCondCtrl
 						{
 							foreach ($arOneCondition['value'] as &$strOneValue)
 							{
-								$strOneValue = substr($strOneValue, 0, $intMaxLen);
+								$strOneValue = mb_substr($strOneValue, 0, $intMaxLen);
 							}
 							if (isset($strOneValue))
 								unset($strOneValue);
 						}
 						else
 						{
-							$arOneCondition['value'] = substr($arOneCondition['value'], 0, $intMaxLen);
+							$arOneCondition['value'] = mb_substr($arOneCondition['value'], 0, $intMaxLen);
 						}
 						break;
 					case 'text':
@@ -583,14 +583,14 @@ class CGlobalCondCtrl
 						{
 							foreach ($arOneCondition['value'] as &$strOneValue)
 							{
-								$strOneValue = substr($strOneValue, 0, 1);
+								$strOneValue = mb_substr($strOneValue, 0, 1);
 							}
 							if (isset($strOneValue))
 								unset($strOneValue);
 						}
 						else
 						{
-							$arOneCondition['value'] = substr($arOneCondition['value'], 0, 1);
+							$arOneCondition['value'] = mb_substr($arOneCondition['value'], 0, 1);
 						}
 						break;
 					case 'string':
@@ -601,14 +601,14 @@ class CGlobalCondCtrl
 						{
 							foreach ($arOneCondition['value'] as &$strOneValue)
 							{
-								$strOneValue = substr($strOneValue, 0, $intMaxLen);
+								$strOneValue = mb_substr($strOneValue, 0, $intMaxLen);
 							}
 							if (isset($strOneValue))
 								unset($strOneValue);
 						}
 						else
 						{
-							$arOneCondition['value'] = substr($arOneCondition['value'], 0, $intMaxLen);
+							$arOneCondition['value'] = mb_substr($arOneCondition['value'], 0, $intMaxLen);
 						}
 						break;
 					case 'text':
@@ -1274,14 +1274,14 @@ class CGlobalCondCtrl
 								{
 									foreach ($arOneCondition[$strID] as &$strOneValue)
 									{
-										$strOneValue = substr($strOneValue, 0, 1);
+										$strOneValue = mb_substr($strOneValue, 0, 1);
 									}
 									if (isset($strOneValue))
 										unset($strOneValue);
 								}
 								else
 								{
-									$arOneCondition[$strID] = substr($arOneCondition[$strID], 0, 1);
+									$arOneCondition[$strID] = mb_substr($arOneCondition[$strID], 0, 1);
 								}
 								break;
 							case 'string':
@@ -1292,14 +1292,14 @@ class CGlobalCondCtrl
 								{
 									foreach ($arOneCondition[$strID] as &$strOneValue)
 									{
-										$strOneValue = substr($strOneValue, 0, $intMaxLen);
+										$strOneValue = mb_substr($strOneValue, 0, $intMaxLen);
 									}
 									if (isset($strOneValue))
 										unset($strOneValue);
 								}
 								else
 								{
-									$arOneCondition[$strID] = substr($arOneCondition[$strID], 0, $intMaxLen);
+									$arOneCondition[$strID] = mb_substr($arOneCondition[$strID], 0, $intMaxLen);
 								}
 								break;
 							case 'text':
@@ -1441,14 +1441,14 @@ class CGlobalCondCtrl
 								{
 									foreach ($arOneCondition[$strName] as &$strOneValue)
 									{
-										$strOneValue = substr($strOneValue, 0, 1);
+										$strOneValue = mb_substr($strOneValue, 0, 1);
 									}
 									if (isset($strOneValue))
 										unset($strOneValue);
 								}
 								else
 								{
-									$arOneCondition[$strName] = substr($arOneCondition[$strName], 0, 1);
+									$arOneCondition[$strName] = mb_substr($arOneCondition[$strName], 0, 1);
 								}
 								break;
 							case 'string':
@@ -1459,14 +1459,14 @@ class CGlobalCondCtrl
 								{
 									foreach ($arOneCondition[$strName] as &$strOneValue)
 									{
-										$strOneValue = substr($strOneValue, 0, $intMaxLen);
+										$strOneValue = mb_substr($strOneValue, 0, $intMaxLen);
 									}
 									if (isset($strOneValue))
 										unset($strOneValue);
 								}
 								else
 								{
-									$arOneCondition[$strName] = substr($arOneCondition[$strName], 0, $intMaxLen);
+									$arOneCondition[$strName] = mb_substr($arOneCondition[$strName], 0, $intMaxLen);
 								}
 								break;
 							case 'text':
@@ -2098,7 +2098,7 @@ class CGlobalCondCtrl
 		{
 			foreach ($arField as &$mxOneValue)
 			{
-				if (strpos($mxOneValue, $mxValue) !== false)
+				if (mb_strpos($mxOneValue, $mxValue) !== false)
 				{
 					$boolResult = true;
 					break;
@@ -2119,7 +2119,7 @@ class CGlobalCondCtrl
 		{
 			foreach ($arField as &$mxOneValue)
 			{
-				if (strpos($mxOneValue, $mxValue) !== false)
+				if (mb_strpos($mxOneValue, $mxValue) !== false)
 				{
 					$boolResult = false;
 					break;
@@ -2927,7 +2927,7 @@ class CCatalogCondCtrlIBlockFields extends CCatalogCondCtrlComplex
 				'LOGIC' => static::GetLogic(array(BT_COND_LOGIC_EQ, BT_COND_LOGIC_NOT_EQ)),
 				'JS_VALUE' => array(
 					'type' => 'multiDialog',
-					'popup_url' => 'cat_product_search_dialog.php',
+					'popup_url' => self::getAdminSection().'cat_product_search_dialog.php',
 					'popup_params' => array(
 						'lang' => LANGUAGE_ID,
 						'caller' => 'discount_rules',
@@ -2949,7 +2949,7 @@ class CCatalogCondCtrlIBlockFields extends CCatalogCondCtrlComplex
 				'LOGIC' => static::GetLogic(array(BT_COND_LOGIC_EQ, BT_COND_LOGIC_NOT_EQ)),
 				'JS_VALUE' => array(
 					'type' => 'popup',
-					'popup_url' => 'cat_iblock_search.php',
+					'popup_url' => self::getAdminSection().'cat_iblock_search.php',
 					'popup_params' => array(
 						'lang' => LANGUAGE_ID,
 						'discount' => 'Y'
@@ -2971,7 +2971,7 @@ class CCatalogCondCtrlIBlockFields extends CCatalogCondCtrlComplex
 				'LOGIC' => static::GetLogic(array(BT_COND_LOGIC_EQ, BT_COND_LOGIC_NOT_EQ)),
 				'JS_VALUE' => array(
 					'type' => 'popup',
-					'popup_url' => 'iblock_section_search.php',
+					'popup_url' => self::getAdminSection().'iblock_section_search.php',
 					'popup_params' => array(
 						'lang' => LANGUAGE_ID,
 						'discount' => 'Y',
@@ -3244,6 +3244,7 @@ class CCatalogCondCtrlIBlockFields extends CCatalogCondCtrlComplex
 				$control['FIELD_TABLE'] = false;
 			$control['MULTIPLE'] = 'N';
 			$control['GROUP'] = 'N';
+			$control['ENTITY_ID'] = -1;
 		}
 		unset($control);
 		$arControlList['CondIBSection']['MULTIPLE'] = 'Y';
@@ -3429,6 +3430,15 @@ class CCatalogCondCtrlIBlockFields extends CCatalogCondCtrlComplex
 
 		return (!$boolError ? $arResult : false);
 	}
+
+	/**
+	 * @return string
+	 */
+	private static function getAdminSection()
+	{
+		//TODO: need use \CAdminPage::getSelfFolderUrl, but in general it is impossible now
+		return (defined('SELF_FOLDER_URL') ? SELF_FOLDER_URL : '/bitrix/admin/');
+	}
 }
 
 class CCatalogCondCtrlIBlockProps extends CCatalogCondCtrlComplex
@@ -3558,7 +3568,7 @@ class CCatalogCondCtrlIBlockProps extends CCatalogCondCtrlComplex
 									$arLogic = static::GetLogic(array(BT_COND_LOGIC_EQ, BT_COND_LOGIC_NOT_EQ));
 									$arValue = array(
 										'type' => 'popup',
-										'popup_url' => 'iblock_element_search.php',
+										'popup_url' => self::getAdminSection().'iblock_element_search.php',
 										'popup_params' => array(
 											'lang' => LANGUAGE_ID,
 											'IBLOCK_ID' => $arProp['LINK_IBLOCK_ID'],
@@ -3581,7 +3591,7 @@ class CCatalogCondCtrlIBlockProps extends CCatalogCondCtrlComplex
 									$arLogic = static::GetLogic(array(BT_COND_LOGIC_EQ, BT_COND_LOGIC_NOT_EQ));
 									$arValue = array(
 										'type' => 'popup',
-										'popup_url' => 'iblock_section_search.php',
+										'popup_url' => self::getAdminSection().'iblock_section_search.php',
 										'popup_params' => $popupParams,
 										'param_id' => 'n'
 									);
@@ -3597,7 +3607,8 @@ class CCatalogCondCtrlIBlockProps extends CCatalogCondCtrlComplex
 							'MODULE_ID' => 'catalog',
 							'MODULE_ENTITY' => 'iblock',
 							'ENTITY' => 'ELEMENT_PROPERTY',
-							'IBLOCK_ID' => $intIBlockID,
+							'ENTITY_ID' => $intIBlockID,
+							'IBLOCK_ID' => $intIBlockID, // deprecated
 							'PROPERTY_ID' => $arProp['ID'],
 							'FIELD' => 'PROPERTY_'.$arProp['ID'].'_VALUE',
 							'FIELD_TABLE' => $intIBlockID.':'.$arProp['ID'],
@@ -3745,6 +3756,56 @@ class CCatalogCondCtrlIBlockProps extends CCatalogCondCtrlComplex
 			}
 		}
 		return (!$boolError ? $arResult : false);
+	}
+
+	public static function Check($arOneCondition, $arParams, $arControl, $boolShow)
+	{
+		$result = parent::Check($arOneCondition, $arParams, $arControl, $boolShow);
+		if (self::checkActiveProperty($arControl))
+			return $result;
+		$boolShow = ($boolShow === true);
+		if ($boolShow)
+		{
+			$result['err_cond'] = 'Y';
+			if (isset($result['err_cond_mess']))
+				$result['err_cond_mess'] .= '. '.Loc::getMessage('BT_MOD_CATALOG_COND_CMP_IBLOCK_PROPERTY_NOT_ACTIVE');
+			else
+				$result['err_cond_mess'] = Loc::getMessage('BT_MOD_CATALOG_COND_CMP_IBLOCK_PROPERTY_NOT_ACTIVE');
+		}
+		else
+		{
+			$result = false;
+		}
+		return $result;
+	}
+
+	/**
+	 * @return string
+	 */
+	private static function getAdminSection()
+	{
+		//TODO: need use \CAdminPage::getSelfFolderUrl, but in general it is impossible now
+		return (defined('SELF_FOLDER_URL') ? SELF_FOLDER_URL : '/bitrix/admin/');
+	}
+
+	/**
+	 * @param array $control
+	 * @return bool
+	 */
+	private static function checkActiveProperty(array $control)
+	{
+		$iterator = Iblock\PropertyTable::getList([
+			'select' => ['ID', 'IBLOCK_ID'],
+			'filter' => [
+				'=IBLOCK_ID' => $control['IBLOCK_ID'],
+				'=ID' => $control['PROPERTY_ID'],
+				'=ACTIVE' => 'Y'
+			]
+		]);
+		$row = $iterator->fetch();
+		$result = !empty($row);
+		unset($row, $iterator);
+		return $result;
 	}
 }
 
@@ -5067,12 +5128,25 @@ class CGlobalCondTree
 			$entityID .= (is_array($control['FIELD']) ? implode('-', $control['FIELD']) : $control['FIELD']);
 			if (!isset($this->usedEntity[$entityID]))
 			{
-				$this->usedEntity[$entityID] = array(
+				$row = [
 					'MODULE' => (!empty($control['MODULE_ID']) ? $control['MODULE_ID'] : $control['MODULE_ENTITY']),
 					'ENTITY' => $control['ENTITY'],
 					'FIELD_ENTITY' => $control['FIELD'],
 					'FIELD_TABLE' => (!empty($control['FIELD_TABLE']) ? $control['FIELD_TABLE'] : $control['FIELD'])
-				);
+				];
+				if (isset($control['ENTITY_ID']))
+				{
+					$row['ENTITY_ID'] = $control['ENTITY_ID'];
+				}
+				if (isset($control['ENTITY_VALUE']) || isset($control['ENTITY_ID']))
+				{
+					$row['ENTITY_VALUE'] = (isset($control['ENTITY_VALUE'])
+						? $control['ENTITY_VALUE']
+						: $control['ENTITY_ID']
+					);
+				}
+				$this->usedEntity[$entityID] = $row;
+				unset($row);
 			}
 			unset($entityID);
 		}

@@ -76,9 +76,19 @@ class ChainElement
 		return $this->value;
 	}
 
+	/**
+	 * @param $name
+	 *
+	 * @return mixed|null
+	 */
 	public function getParameter($name)
 	{
-		return $this->parameters[$name];
+		if (array_key_exists($name, $this->parameters))
+		{
+			return $this->parameters[$name];
+		}
+
+		return null;
 	}
 
 	public function setParameter($name, $value)
@@ -218,7 +228,7 @@ class ChainElement
 			$expr = $this->value->getExpression();
 
 			// insert talias
-			if (strpos($expr, '%%TABLE_ALIAS') !== false)
+			if (mb_strpos($expr, '%%TABLE_ALIAS') !== false)
 			{
 				$expr = str_replace('%%TABLE_ALIAS', $helper->quote($this->getParameter('talias')), $expr);
 			}

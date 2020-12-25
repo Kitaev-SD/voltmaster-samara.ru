@@ -1,10 +1,9 @@
 <?
 if(!defined("B_PROLOG_INCLUDED") || B_PROLOG_INCLUDED!==true) die();
 
-CModule::IncludeModule("search");
-$isSearchInstalled = true;//CModule::IncludeModule("search");
+$isSearchInstalled = CModule::IncludeModule("search");
 
-if(!isset($arParams["PAGE"]) || strlen($arParams["PAGE"])<=0)
+if(!isset($arParams["PAGE"]) || $arParams["PAGE"] == '')
 	$arParams["PAGE"] = "#SITE_DIR#search/index.php";
 
 $arResult["CATEGORIES"] = array();
@@ -30,9 +29,8 @@ if(
 	if($arParams["USE_LANGUAGE_GUESS"] !== "N")
 	{
 		$arLang = CSearchLanguage::GuessLanguage($query);
-		if(is_array($arLang) && $arLang["from"] != $arLang["to"]){
+		if(is_array($arLang) && $arLang["from"] != $arLang["to"])
 			$arResult["alt_query"] = CSearchLanguage::ConvertKeyboardLayout($query, $arLang["from"], $arLang["to"]);
-		}
 	}
 
 	$arResult["query"] = $query;
@@ -55,7 +53,7 @@ if(
 		$arResult["alt_query"] = str_ireplace("ьлз", 'MKP', $q_lower);
 	}
 	//------------ CUSTOM END ---------------------------------------------
-	
+
 	$arResult["phrase"] = stemming_split($query, LANGUAGE_ID);
 
 	$arParams["NUM_CATEGORIES"] = intval($arParams["NUM_CATEGORIES"]);
@@ -75,7 +73,7 @@ if(
 		{
 			foreach($arParams["CATEGORY_".$i] as $categoryCode)
 			{
-				if ((strpos($categoryCode, 'custom_') !== 0))
+				if ((mb_strpos($categoryCode, 'custom_') !== 0))
 				{
 					$bCustom = false;
 					break;
@@ -84,7 +82,7 @@ if(
 		}
 		else
 		{
-			$bCustom = (strpos($arParams["CATEGORY_".$i], 'custom_') === 0);
+			$bCustom = (mb_strpos($arParams["CATEGORY_".$i], 'custom_') === 0);
 		}
 
 		if ($bCustom)
@@ -162,57 +160,6 @@ if(
 					}
 				}
 			}
-			#____________________________________________________________________________________________________________
-			# -------- ВНИМАНИЕ! Это костыль! ---------------------------------------------------------------------------
-			# Если при смене раскладки поиск не выдал результата, т.е. массив $arResult["CATEGORIES"][0]["ITEMS"] пустой, 
-			# то запускается поиск с исходным запросом (без смены раскладки)
-			if(empty($arResult["CATEGORIES"][0]["ITEMS"])) {
-				$arResult["alt_query"] = $query;
-				$obTitle = new CSearchTitle;
-				$obTitle->setMinWordLength($_REQUEST["l"]);
-				if($obTitle->Search(
-					$arResult["alt_query"]? $arResult["alt_query"]: $arResult["query"]
-					,$arParams["TOP_COUNT"]
-					,$exFILTER
-					,false
-					,$arParams["ORDER"]
-				))
-				{
-					while($ar = $obTitle->Fetch())
-					{
-						$j++;
-						if($j > $arParams["TOP_COUNT"])
-						{
-							$params = array("q" => $arResult["alt_query"]? $arResult["alt_query"]: $arResult["query"]);
-
-							$url = CHTTP::urlAddParams(
-									str_replace("#SITE_DIR#", SITE_DIR, $arParams["PAGE"])
-									,$params
-									,array("encode"=>true)
-								).CSearchTitle::MakeFilterUrl("f", $exFILTER);
-
-							$arResult["CATEGORIES"][$i]["ITEMS"][] = array(
-								"NAME" => GetMessage("CC_BST_MORE"),
-								"URL" => htmlspecialcharsex($url),
-								"TYPE" => "all"
-							);
-							break;
-						}
-						else
-						{
-							$arResult["CATEGORIES"][$i]["ITEMS"][] = array(
-								"NAME" => $ar["NAME"],
-								"URL" => htmlspecialcharsbx($ar["URL"]),
-								"MODULE_ID" => $ar["MODULE_ID"],
-								"PARAM1" => $ar["PARAM1"],
-								"PARAM2" => $ar["PARAM2"],
-								"ITEM_ID" => $ar["ITEM_ID"],
-							);
-						}
-					}
-				}
-			}
-			# -------- ВНИМАНИЕ! Это костыль! END --------------------------------------
 
 			if(!$j)
 			{
@@ -328,6 +275,16 @@ if(
 		}
 		*/
 	}
+
+	$arResult['CATEGORIES_ITEMS_EXISTS'] = false;
+	foreach ($arResult["CATEGORIES"] as $category)
+	{
+		if (!empty($category['ITEMS']) && is_array($category['ITEMS']))
+		{
+			$arResult['CATEGORIES_ITEMS_EXISTS'] = true;
+			break;
+		}
+	}
 }
 
 $arResult["FORM_ACTION"] = htmlspecialcharsbx(str_replace("#SITE_DIR#", SITE_DIR, $arParams["PAGE"]));
@@ -353,4 +310,3 @@ else
 	CUtil::InitJSCore(array('ajax'));
 	$this->IncludeComponentTemplate();
 }
-?>

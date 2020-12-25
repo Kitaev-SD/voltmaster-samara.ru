@@ -88,9 +88,16 @@ BX.ajax = function(config)
 	if (!config.cache && config.method == 'GET')
 		config.url = BX.ajax._uncache(config.url);
 
-	if (config.method == 'POST' && config.preparePost)
+	if (config.method == 'POST')
 	{
-		config.data = BX.ajax.prepareData(config.data);
+		if (config.preparePost)
+		{
+			config.data = BX.ajax.prepareData(config.data);
+		}
+		else if (getLastContentTypeHeader(config.headers) === 'application/json')
+		{
+			config.data = JSON.stringify(config.data);
+		}
 	}
 
 	var bXHR = true;
@@ -394,9 +401,10 @@ BX.ajax.processRequestData = function(data, config)
 	{
 		case 'JSON':
 
-			BX.addCustomEvent(config.xhr, 'onParseJSONFailure', BX.proxy(BX.ajax._onParseJSONFailure, config));
-			result = BX.parseJSON(data, config.xhr);
-			BX.removeCustomEvent(config.xhr, 'onParseJSONFailure', BX.proxy(BX.ajax._onParseJSONFailure, config));
+			var context = config.xhr || {};
+			BX.addCustomEvent(context, 'onParseJSONFailure', BX.proxy(BX.ajax._onParseJSONFailure, config));
+			result = BX.parseJSON(data, context);
+			BX.removeCustomEvent(context, 'onParseJSONFailure', BX.proxy(BX.ajax._onParseJSONFailure, config));
 
 			if(!!result && BX.type.isArray(result['bxjs']))
 			{
@@ -682,7 +690,14 @@ BX.ajax.promise = function(config)
 	};
 
 	var xhr = BX.ajax(config);
-	if (!xhr)
+	if (xhr)
+	{
+		if (typeof config.onrequeststart === 'function')
+		{
+			config.onrequeststart(xhr);
+		}
+	}
+	else
 	{
 		result.reject({
 			reason: "init",
@@ -771,10 +786,23 @@ BX.ajax.loadJSON = function(url, data, callback, callback_failure)
 	});
 };
 
+var getLastContentTypeHeader = function (headers) {
+	if (!BX.Type.isArray(headers))
+	{
+		return null;
+	}
+	var lastHeader = headers
+		.filter(function (header) {
+			return header.name === 'Content-Type';
+		})
+		.pop();
+
+	return lastHeader ? lastHeader.value : null;
+};
 
 var prepareAjaxGetParameters = function(config)
 {
-	var getParameters = {};
+	var getParameters = config.getParameters || {};
 	if (BX.type.isNotEmptyString(config.analyticsLabel))
 	{
 		getParameters.analyticsLabel = config.analyticsLabel;
@@ -814,7 +842,25 @@ var prepareAjaxConfig = function(config)
 {
 	config = BX.type.isPlainObject(config) ? config : {};
 
-	if (config.data instanceof FormData)
+	if (typeof config.json !== 'undefined')
+	{
+		if (!BX.type.isPlainObject(config.json))
+		{
+			throw new Error('Wrong `config.json`, plain object expected.')
+		}
+
+		config.headers = config.headers || [];
+		config.headers.push({name: 'Content-Type', value: 'application/json'});
+		config.headers.push({name: 'X-Bitrix-Csrf-Token', value: BX.bitrix_sessid()});
+		if (BX.message.SITE_ID)
+		{
+			config.headers.push({name: 'X-Bitrix-Site-Id', value: BX.message.SITE_ID});
+		}
+
+		config.data = config.json;
+		config.preparePost = false;
+	}
+	else if (config.data instanceof FormData)
 	{
 		config.preparePost = false;
 
@@ -854,6 +900,25 @@ var buildAjaxPromiseToRestoreCsrf = function(config, withoutRestoringCsrf)
 {
 	withoutRestoringCsrf = withoutRestoringCsrf || false;
 	var originalConfig = BX.clone(config);
+	var request = null;
+
+	var onrequeststart = config.onrequeststart;
+	config.onrequeststart = function(xhr) {
+		request = xhr;
+		if (BX.type.isFunction(onrequeststart))
+		{
+			onrequeststart(xhr);
+		}
+	};
+	var onrequeststartOrig = originalConfig.onrequeststart;
+	originalConfig.onrequeststart = function(xhr) {
+		request = xhr;
+		if (BX.type.isFunction(onrequeststartOrig))
+		{
+			onrequeststartOrig(xhr);
+		}
+	};
+
 	var promise = BX.ajax.promise(config);
 
 	return promise.then(function(response) {
@@ -909,6 +974,44 @@ var buildAjaxPromiseToRestoreCsrf = function(config, withoutRestoringCsrf)
 		}
 
 		return ajaxReject;
+	}).then(function(response){
+
+		var assetsLoaded = new BX.Promise();
+
+		var headers = request.getAllResponseHeaders().trim().split(/[\r\n]+/);
+		var headerMap = {};
+		headers.forEach(function (line) {
+			var parts = line.split(': ');
+			var header = parts.shift().toLowerCase();
+			headerMap[header] = parts.join(': ');
+		});
+
+		if (!headerMap['x-process-assets'])
+		{
+			assetsLoaded.fulfill(response);
+
+			return assetsLoaded;
+		}
+
+		var assets = BX.prop.getObject(BX.prop.getObject(response, "data", {}), "assets", {});
+		var promise = new Promise(function(resolve, reject) {
+			var css = BX.prop.getArray(assets, "css", []);
+			BX.load(css, function(){
+				BX.loadScript(
+					BX.prop.getArray(assets, "js", []),
+					resolve
+				);
+			});
+		});
+		promise.then(function(){
+			var strings = BX.prop.getArray(assets, "string", []);
+			var stringAsset = strings.join('\n');
+			BX.html(null, stringAsset).then(function(){
+				assetsLoaded.fulfill(response);
+			});
+		});
+
+		return assetsLoaded;
 	});
 };
 
@@ -919,6 +1022,7 @@ var buildAjaxPromiseToRestoreCsrf = function(config, withoutRestoringCsrf)
  * @param {?string|?Object} [config.analyticsLabel]
  * @param {string} [config.method='POST']
  * @param {Object} [config.data]
+ * @param {?Object} [config.getParameters]
  * @param {?Object} [config.headers]
  * @param {?Object} [config.timeout]
  * @param {Object} [config.navigation]
@@ -931,7 +1035,6 @@ BX.ajax.runAction = function(action, config)
 	getParameters.action = action;
 
 	var url = '/bitrix/services/main/ajax.php?' + BX.ajax.prepareData(getParameters);
-
 	return buildAjaxPromiseToRestoreCsrf({
 		method: config.method,
 		dataType: 'json',
@@ -939,7 +1042,8 @@ BX.ajax.runAction = function(action, config)
 		data: config.data,
 		timeout: config.timeout,
 		preparePost: config.preparePost,
-		headers: config.headers
+		headers: config.headers,
+		onrequeststart: config.onrequeststart
 	});
 };
 
@@ -953,6 +1057,7 @@ BX.ajax.runAction = function(action, config)
  * @param {string} [config.method='POST']
  * @param {string} [config.mode='ajax'] Ajax or class.
  * @param {Object} [config.data]
+ * @param {?Object} [config.getParameters]
  * @param {?array} [config.headers]
  * @param {?number} [config.timeout]
  * @param {Object} [config.navigation]
@@ -975,7 +1080,8 @@ BX.ajax.runComponentAction = function (component, action, config)
 		data: config.data,
 		timeout: config.timeout,
 		preparePost: config.preparePost,
-		headers: config.headers
+		headers: config.headers,
+		onrequeststart: (config.onrequeststart ? config.onrequeststart : null)
 	});
 };
 

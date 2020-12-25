@@ -240,7 +240,7 @@ abstract class StatusBase
 
 		foreach ($names as $name)
 		{
-			$operations[] = 'sale_status_'.strtolower($name);
+			$operations[] = 'sale_status_'.mb_strtolower($name);
 		}
 
 		return $operations;
@@ -266,7 +266,7 @@ abstract class StatusBase
 
 			while ($row = $result->fetch())
 			{
-				$statusList[] = $row['ID'];
+				$statusList[$row['ID']] = $row['ID'];
 			}
 		}
 

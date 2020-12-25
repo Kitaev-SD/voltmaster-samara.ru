@@ -24,15 +24,18 @@ class Transport
 	const METHOD_GET_LAST = 'get_last';
 	const METHOD_GET_DEV = 'get_dev';
 	const METHOD_GET_BEST = 'get_best';
+	const METHOD_GET_SALE_OUT = 'get_sale_out';
 	const METHOD_GET_BUY = 'get_buy';
 	const METHOD_GET_UPDATES = 'get_updates';
 	const METHOD_GET_CATEGORIES = 'get_categories';
 	const METHOD_GET_CATEGORY = 'get_category';
 	const METHOD_GET_TAG = 'get_tag';
 	const METHOD_GET_APP = 'get_app';
+	const METHOD_GET_APP_PUBLIC = 'get_app_public';
 	const METHOD_GET_INSTALL = 'get_app_install';
 	const METHOD_SET_INSTALL = 'is_installed';
 	const METHOD_SEARCH_APP = 'search_app';
+	const METHOD_FILTER_APP = 'search_app_adv';
 
 	protected static $instance = null;
 
@@ -106,6 +109,8 @@ class Transport
 		{
 			$request = Context::getCurrent()->getRequest();
 			$fields['host_name'] = $request->getHttpHost();
+			@include($_SERVER['DOCUMENT_ROOT'] . '/bitrix/license_key.php');
+			$fields['license_key'] = ($LICENSE_KEY == 'DEMO') ? 'DEMO' : md5('BITRIX' . $LICENSE_KEY . 'LICENCE');
 		}
 
 		return Encoding::convertEncoding($fields, LANG_CHARSET, 'utf-8');

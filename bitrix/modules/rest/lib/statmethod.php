@@ -10,6 +10,7 @@ use Bitrix\Main;
  * <ul>
  * <li> ID int mandatory
  * <li> NAME string(255) mandatory
+ * <li> METHOD_TYPE enum optional default 'M'
  * </ul>
  *
  * @package Bitrix\Rest
@@ -17,6 +18,12 @@ use Bitrix\Main;
 
 class StatMethodTable extends Main\Entity\DataManager
 {
+	const METHOD_TYPE_METHOD = 'M';
+	const METHOD_TYPE_EVENT = 'E';
+	const METHOD_TYPE_PLACEMENT = 'P';
+	const METHOD_TYPE_ROBOT = 'R';
+	const METHOD_TYPE_ACTIVITY = 'A';
+
 	protected static $methodCache = null;
 
 	/**
@@ -47,6 +54,17 @@ class StatMethodTable extends Main\Entity\DataManager
 				'required' => true,
 				'validation' => array(__CLASS__, 'validateName'),
 			),
+			'METHOD_TYPE' => array(
+				'data_type' => 'enum',
+				'required' => false,
+				'values' => array(
+					self::METHOD_TYPE_METHOD,
+					self::METHOD_TYPE_EVENT,
+					self::METHOD_TYPE_PLACEMENT,
+					self::METHOD_TYPE_ROBOT,
+					self::METHOD_TYPE_ACTIVITY,
+				),
+			),
 		);
 	}
 	/**
@@ -68,7 +86,7 @@ class StatMethodTable extends Main\Entity\DataManager
 		return static::$methodCache[$methodName];
 	}
 
-	public static function checkList($methodList)
+	public static function checkList($methodList, $methodType = self::METHOD_TYPE_METHOD)
 	{
 		static::loadFromCache();
 
@@ -77,7 +95,7 @@ class StatMethodTable extends Main\Entity\DataManager
 		{
 			if(!array_key_exists($method, static::$methodCache))
 			{
-				static::addMethod($method);
+				static::addMethod($method, $methodType);
 				$update = true;
 			}
 		}
@@ -89,49 +107,52 @@ class StatMethodTable extends Main\Entity\DataManager
 
 	}
 
-	protected static function addMethod($methodName)
+	protected static function addMethod($methodName, $methodType)
 	{
 		$connection = Main\Application::getConnection();
 		$helper = $connection->getSqlHelper();
 
 		$sqlTableName = static::getTableName();
 		$sqlMethodName = $helper->forSql($methodName);
+		$sqlMethodType = in_array(
+			$methodType, [
+				static::METHOD_TYPE_METHOD,
+				static::METHOD_TYPE_EVENT,
+				static::METHOD_TYPE_PLACEMENT,
+				static::METHOD_TYPE_ROBOT,
+				static::METHOD_TYPE_ACTIVITY,
+			]
+		) ? $methodType : self::METHOD_TYPE_METHOD;
 
-		$query = "INSERT IGNORE INTO {$sqlTableName} (NAME) VALUES ('{$sqlMethodName}')";
+		$query = "INSERT IGNORE INTO {$sqlTableName} (NAME, METHOD_TYPE) VALUES ('{$sqlMethodName}', '{$sqlMethodType}')";
 		$connection->query($query);
 	}
 
 	protected static function loadFromCache($force = false)
 	{
+		$managedCache = Main\Application::getInstance()->getManagedCache();
+		$cacheId = 'stat_method_cache';
+
 		if($force)
 		{
 			static::$methodCache = null;
+			$managedCache->clean($cacheId);
 		}
 
 		if(static::$methodCache === null)
 		{
-			static::$methodCache = array();
-
-			$cacheId = 'stat_method_cache';
-
-			$managedCache = Main\Application::getInstance()->getManagedCache();
-			if($force)
-			{
-				$managedCache->clean($cacheId);
-			}
-
 			if($managedCache->read(86400, $cacheId))
 			{
 				static::$methodCache = $managedCache->get($cacheId);
 			}
 			else
 			{
+				static::$methodCache = array();
 				$dbRes = static::getList();
 				while($method = $dbRes->fetch())
 				{
 					static::$methodCache[$method['NAME']] = $method['ID'];
 				}
-
 				$managedCache->set($cacheId, static::$methodCache);
 			}
 		}

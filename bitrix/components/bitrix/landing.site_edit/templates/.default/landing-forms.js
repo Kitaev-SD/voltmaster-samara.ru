@@ -1,3 +1,9 @@
+function deleteAccessRow(link)
+{
+	landingAccessSelected[BX.data(BX(link), 'id')] = false;
+	BX.remove(BX.findParent(BX(link), {tag: 'tr'}, true));
+}
+
 (function() {
 
 	'use strict';
@@ -5,115 +11,74 @@
 	BX.namespace('BX.Landing');
 
 	/**
-	 * For change domain name.
-	 */
-	BX.Landing.EditDomainForm = function (node, params)
-	{
-		this.domain = node.querySelector('.ui-domain-input-btn-js');
-		this.postfix = node.querySelectorAll('.ui-postfix');
-		this.domains = node.querySelectorAll('.ui-domainname');
-		this.content = params.content || '';
-		this.messages = params.messages || {};
-		this.popup = BX.Landing.UI.Tool.ActionDialog.getInstance();
-
-		BX.bind(this.domain, 'click', BX.delegate(this.editDomain, this));
-	};
-	BX.Landing.EditDomainForm.prototype =
-	{
-		editDomain: function (event)
-		{
-			event.stopPropagation();
-
-			var promise = this.popup.show({
-				title: this.messages.title,
-				content: this.content,
-				contentColor: 'grey'
-			});
-			this.content.style.display = 'block';
-
-			promise
-				.then(function()
-					{
-						var domainName = '';
-						for (var i = 0, c = this.postfix.length; i < c; i++)
-						{
-							if (
-								this.postfix[i].checked &&
-								typeof this.domains[i] !== 'undefined'
-							)
-							{
-								this.domains[i].value = BX.util.trim(this.domains[i].value);
-								if (this.domains[i].value !== '')
-								{
-									domainName = this.domains[i].value + this.postfix[i].value;
-								}
-							}
-						}
-						if (domainName === '')
-						{
-							alert(this.messages.errorEmpty);
-							this.editDomain(event);
-						}
-						else
-						{
-							BX('ui-domainname-title').textContent = domainName;
-							BX('ui-domainname-text').value = domainName;
-						}
-					}.bind(this),
-					function()
-					{
-					}
-				);
-		}
-	};
-
-	/**
 	 * For edit title.
 	 */
-	BX.Landing.EditTitleForm = function (node, additionalWidth, isEventTargetNode)
+	BX.Landing.EditTitleForm = function (node, additionalWidth, isEventTargetNode, display)
 	{
 		this.btn = node.querySelector('.ui-title-input-btn-js');
 		this.label = node.querySelector('.ui-editable-field-label-js');
 		this.input = node.querySelector('.ui-editable-field-input-js');
 		this.additionalWidth = additionalWidth || 0;
+		this.input.IsWidthSet = false;
+		this.display = display;
 
 		this.hideInput = this.hideInput.bind(this);
 		this.showInput = this.showInput.bind(this);
 
-		if(isEventTargetNode)
+		if(isEventTargetNode) {
 			BX.bind(node, 'click', this.showInput);
-		else
+		} else {
 			BX.bind(this.btn, 'click', this.showInput);
+		}
+
+		this.input.setAttribute("data-height", this.label.offsetHeight);
 	};
+
 	BX.Landing.EditTitleForm.prototype =
 	{
 		showInput : function (event)
 		{
 			event.stopPropagation();
 
-			this.input.style.width = this.label.offsetWidth + this.additionalWidth + 17 + 'px';
+			if(!this.input.IsWidthSet)
+			{
+				this.input.style.width = this.label.offsetWidth + this.additionalWidth + 17 + 'px';
+			}
+
 			if(this.input.tagName === 'TEXTAREA')
 			{
-				this.input.style.height = this.label.offsetHeight + 'px';
+				this.input.style.height = this.input.getAttribute("data-height") + 'px';
 			}
 			this.label.style.display = 'none';
 			this.btn.style.display = 'none';
 			this.input.style.display = 'block';
+
 			this.input.focus();
 
-			BX.bind(document, 'click', this.hideInput);
+			this.input.IsWidthSet = true;
+
+			BX.bind(document, 'mousedown', this.hideInput);
 		},
 		hideInput : function (event)
 		{
-			if(event.target == this.input)
+			if(event.target === this.input)
 				return;
 
 			this.label.textContent = this.input.value;
-			this.label.style.display = 'inline-block';
-			this.input.style.display = 'none';
-			this.btn.style.display = 'block';
 
-			BX.unbind(document, 'click', this.hideInput);
+			if (this.display) {
+				this.label.style.display = 'inline-block';
+			} else {
+				this.label.style.display = 'inline';
+			}
+
+			this.input.style.display = 'none';
+			this.btn.style.display = 'inline-block';
+
+			this.input.IsWidthSet = false;
+			this.input.setAttribute("data-height", this.label.offsetHeight);
+
+			BX.unbind(document, 'mousedown', this.hideInput);
 		}
 	};
 
@@ -126,6 +91,7 @@
 		this.toggleBtn = node.querySelector('.landing-form-collapse-block-js');
 		this.formInner = node.querySelector('.landing-form-inner-js');
 		this.tableWparp = node.querySelector('.landing-form-table-wrap-js');
+		this.sectionWrap = node.querySelector('.landing-additional-alt-promo-wrap');
 		this.startHeight = 0;
 		this.endHeight = 0;
 		this.isHidden = true;
@@ -134,7 +100,36 @@
 		this.setHeightAuto = this.setHeightAuto.bind(this);
 		this.removeClassName = this.removeClassName.bind(this);
 
+
+		this.attributeMainOption = 'data-landing-main-option';
+		this.attributeOption = 'data-landing-additional-option';
+		this.attributeDetail = 'data-landing-additional-detail';
+
+		var sectionList = this.sectionWrap.children;
+		sectionList = BX.convert.nodeListToArray(sectionList);
+		sectionList.forEach(this.initSection, this);
+
 		BX.bind(this.toggleBtn, 'click', this.clickHandler);
+
+		if(window.location.hash)
+		{
+			var anchor = window.location.hash.substr(1);
+
+			sectionList.forEach(function (section) {
+				var id = section.getAttribute(this.attributeOption);
+
+				if (id === anchor)
+				{
+					BX.fireEvent(section, 'click');
+				}
+			}, this);
+
+			var neededMainOption = this.formInner.querySelector('[' + this.attributeMainOption + '="' + anchor + '"]');
+			if(neededMainOption)
+			{
+				this.highlightSection(neededMainOption);
+			}
+		}
 	};
 	BX.Landing.ToggleFormFields.prototype =
 	{
@@ -150,7 +145,8 @@
 
 			this.isHidden = false;
 		},
-		closeRows  : function ()
+
+		closeRows : function ()
 		{
 			this.formInner.style.height = this.endHeight + 'px';
 
@@ -162,6 +158,7 @@
 
 			this.isHidden = true;
 		},
+
 		clickHandler : function ()
 		{
 			if(this.isHidden)
@@ -169,15 +166,51 @@
 			else
 				this.closeRows();
 		},
+
 		setHeightAuto : function ()
 		{
 			this.formInner.style.height = 'auto';
 			BX.unbind(this.formInner, 'transitionend', this.setHeightAuto);
 		},
+
 		removeClassName : function ()
 		{
 			this.form.classList.remove('landing-form-collapsed-open');
 			BX.unbind(this.formInner, 'transitionend', this.removeClassName);
+		},
+
+		initSection : function (section)
+		{
+			BX.bind(section, "click", BX.delegate(function(e){
+				e.stopPropagation();
+				this.showSection(section);
+			}, this))
+		},
+
+		showSection : function(section)
+		{
+			this.showRows();
+			var id = section.getAttribute(this.attributeOption);
+			var detailNode = this.formInner.querySelector('[' + this.attributeDetail + '="' + id + '"]');
+			this.highlightSection(detailNode);
+		},
+
+		highlightSection: function(node)
+		{
+			BX.addClass(node, "landing-form-hidden-row-highlight");
+
+			setTimeout(function(){
+				var position = BX.pos(node);
+
+				window.scrollTo({
+					top: position.top,
+					behavior: "smooth"
+				});
+			}, 300);
+
+			setTimeout(function(){
+				BX.removeClass(node, "landing-form-hidden-row-highlight");
+			}, 1500);
 		}
 	};
 
@@ -281,107 +314,6 @@
 	};
 
 	/**
-	 * Domain name popup.
-	 */
-	BX.Landing.DomainNamePopup = function(params)
-	{
-		var messages = params.messages || {};
-		var dialog = new BX.Landing.EditDomainForm(BX('ui-editable-domain'), {
-			messages: {
-				title: messages.title || '',
-				errorEmpty: messages.errorEmpty || ''
-			},
-			content: BX('ui-editable-domain-content')
-		});
-		BX.addCustomEvent(dialog.popup.popup, 'onPopupShow', function(obj)
-		{
-			var inp = obj.contentContainer.querySelector('#landing-form-domain-name-field');
-			var textNode1 = obj.contentContainer.querySelector('#landing-form-domain-name-text');
-			var textNode2 = obj.contentContainer.querySelector('#landing-form-domain-any-name-text');
-
-			// keyup domain name
-			BX.bind(inp, 'keyup', BX.debounce(function()
-			{
-				var domainName = inp.value;
-
-				// fill instruction
-				var fillInstruction = function(domainName)
-				{
-					var domainParts = inp.value.split('.');
-					var domainRe = /^(com|net|org)\.[a-z]{2}$/;
-
-					textNode2.parentNode.style.display = 'none';
-
-					textNode1.textContent = domainName ? domainName : 'landing.mydomain';
-
-					if (
-						(domainParts.length === 2) ||
-						(domainParts.length === 3 && domainParts[0] === 'www') ||
-						(domainParts.length === 3 && (domainParts[1] + '.' + domainParts[2]).match(domainRe))
-					)
-					{
-						textNode2.parentNode.style.display = 'table-row';
-						if ((domainParts.length === 3 && domainParts[0] === 'www'))
-						{
-							textNode2.textContent = domainParts[1] + '.' + domainParts[2];
-						}
-						else
-						{
-
-							textNode1.textContent = 'www.' + domainName;
-							textNode2.textContent = domainName;
-						}
-					}
-
-					textNode1.textContent = BX.util.trim(textNode1.textContent) + '.';
-					textNode2.textContent = BX.util.trim(textNode2.textContent) + '.';
-				};
-
-				if (domainName.match(/[^a-z0-9\.\-]+/i) === null)
-				{
-					fillInstruction(domainName);
-				}
-				else
-				{
-					BX.ajax({
-						url: '/bitrix/tools/landing/ajax.php?action=Domain::punycode',
-						method: 'POST',
-						data: {
-							data: {
-								domain: domainName
-							},
-							sessid: BX.message('bitrix_sessid')
-						},
-						dataType: 'json',
-						onsuccess: function (data) {
-							if (typeof data.result !== 'undefined')
-							{
-								if (data.result !== false)
-								{
-									fillInstruction(data.result);
-								}
-							}
-						}
-					});
-				}
-
-			}, 200));
-
-			BX.fireEvent(inp, 'keyup');
-
-			// domain type
-			var inpList = obj.contentContainer.querySelectorAll('input.ui-domainname');
-			for(var i=0; i<inpList.length; i++)
-			{
-				BX.bind(inpList[i], 'focus', function ()
-				{
-					this.parentNode.parentNode.querySelector('input').checked = true;
-				})
-			}
-		});
-	};
-
-	/**
 	 * Favicon change.
 	 */
 	BX.Landing.Favicon = function()
@@ -459,6 +391,10 @@
 	BX.Landing.Custom503 = function()
 	{
 		var select = BX('landing-form-503-select');
+		if (!select)
+		{
+			return;
+		}
 		BX.bind(select, 'change', function ()
 		{
 			if(this.value === '')
@@ -477,6 +413,74 @@
 	};
 
 	/**
+	 * Copyright on/off.
+	 */
+	BX.Landing.Copyright = function()
+	{
+		BX.bind(BX('checkbox-copyright'), 'change', function ()
+		{
+			var formAction = BX('landing-site-set-form').getAttribute('action');
+			formAction = formAction.replace(/&feature_copyright=[YN]/, '');
+			formAction += '&feature_copyright=' + (this.checked ? 'Y' : 'N');
+			BX('landing-site-set-form').setAttribute('action', formAction)
+		});
+	};
+
+	/**
+	 * Rights.
+	 */
+	BX.Landing.Access = function(params)
+	{
+		var selected = landingAccessSelected;
+		var name = 'RIGHTS';
+		var tbl = BX('landing-' + name.toLowerCase() + '-table');
+		var select = params.select;
+		var inc = params.inc;
+
+		BX.Access.Init({
+			other: {
+				disabled_cr: true
+			}
+		});
+
+		BX.Access.SetSelected(selected, name);
+
+		function showForm()
+		{
+			BX.Access.ShowForm({callback: function(obSelected)
+				{
+					for (var provider in obSelected)
+					{
+						if (obSelected.hasOwnProperty(provider))
+						{
+							for (var id in obSelected[provider])
+							{
+								if (obSelected[provider].hasOwnProperty(id))
+								{
+									var cnt = tbl.rows.length;
+									var row = tbl.insertRow(cnt-1);
+									row.classList.add("landing-form-rights");
+
+									selected[id] = true;
+									row.insertCell(-1);
+									row.insertCell(-1);
+										row.cells[0].innerHTML = BX.Access.GetProviderName(provider) + ' ' +
+										obSelected[provider][id].name + ':' +
+										'<input type="hidden" name="fields[' + name + '][ACCESS_CODE][]" value="' + id + '">';
+									row.cells[0].classList.add("landing-form-rights-right");
+									row.cells[1].classList.add("landing-form-rights-left");
+									row.cells[1].innerHTML = select.replace('#inc#', inc++) + ' ' + '<a href="javascript:void(0);" onclick="deleteAccessRow(this);" data-id="' + id + '" class="landing-form-rights-delete"></a>';
+								}
+							}
+						}
+					}
+				}, bind: name})
+		}
+
+		BX('landing-rights-form').addEventListener('click', showForm.bind(this));
+	};
+
+	/**
 	 * Layout.
 	 */
 	BX.Landing.Layout = function(params)
@@ -486,6 +490,8 @@
 		var layouts = document.querySelectorAll('.landing-form-layout-item');
 		var detailLayoutContainer = document.querySelector('.landing-form-layout-detail');
 		var layoutForm = document.querySelector('.landing-form-page-layout');
+		var gaSendClickCheckbox = document.getElementById('field-gacounter_send_click-use');
+		var gaSendClickSelect = document.getElementById('field-gacounter_click_type-use');
 		layouts = Array.prototype.slice.call(layouts, 0);
 		params.messages = params.messages || {};
 
@@ -549,6 +555,17 @@
 			var saveRefs = BX('layout-tplrefs').value.split(',');
 			area = [];
 			layoutBlockContainer.innerHTML = '';
+			var rebuildHiddenField = function()
+			{
+				var refs = '';
+				for (var i= 0, c = area.length; i < c; i++)
+				{
+					refs += (i+1) + ':' +
+						(area[i].getValue() ? area[i].getValue().substr(8) : 0) +
+						',';
+				}
+				BX('layout-tplrefs').value = refs;
+			};
 			for (var i = 0; i < blocks; i++)
 			{
 				var block = BX.create('div', {
@@ -594,17 +611,8 @@
 							'=TYPE': params.type
 						}
 					},
-					onInput: function()
-					{
-						var refs = '';
-						for (var i= 0, c = area.length; i < c; i++)
-						{
-							refs += (i+1) + ':' +
-									(area[i].getValue() ? area[i].getValue().substr(8) : 0) +
-									',';
-						}
-						BX('layout-tplrefs').value = refs;
-					}
+					onInit: BX.delegate(rebuildHiddenField),
+					onInput: BX.delegate(rebuildHiddenField)
 				});
 
 				area[i] = layoutField;
@@ -635,19 +643,43 @@
 
 		var arrowContainer = document.querySelector('.landing-form-select-buttons');
 		var layoutContainer = document.querySelector('.landing-form-list-inner');
-		var layoutWithoutRight = BX('layout-radio-6');
-		arrowContainer.addEventListener('click', handleArrowClick.bind(this));
+		arrowContainer.addEventListener('click', handlerOnArrowClick.bind(this));
 
-		function handleArrowClick(event) {
-			if(event.target.classList.contains('landing-form-select-next')) {
+		function handlerOnArrowClick(event) {
+			if (event.target.classList.contains('landing-form-select-next'))
+			{
 				layoutContainer.classList.add('landing-form-list-inner-prev');
-			} else {
+			}
+			else
+			{
 				layoutContainer.classList.remove('landing-form-list-inner-prev');
 			}
 		}
 
-		if(layoutWithoutRight.checked) {
-			layoutContainer.classList.add('landing-form-list-inner-prev');
+		function checkGaSendClickCheckbox() {
+
+			var parentNode = gaSendClickCheckbox.closest('.ui-checkbox-hidden-input-inner');
+
+			if (gaSendClickCheckbox.checked)
+			{
+				gaSendClickSelect.classList.add('ui-select-gacounter-show');
+				parentNode.classList.add('ui-checkbox-hidden-input-inner-gacounter');
+			}
+			else
+			{
+				gaSendClickSelect.classList.remove('ui-select-gacounter-show');
+				parentNode.classList.remove('ui-checkbox-hidden-input-inner-gacounter');
+			}
+		}
+
+		if (gaSendClickCheckbox)
+		{
+			gaSendClickCheckbox.addEventListener('click', function()
+			{
+				checkGaSendClickCheckbox();
+			}.bind(this));
+
+			checkGaSendClickCheckbox();
 		}
 	};
 
@@ -657,11 +689,17 @@
 
 	BX.Landing.Metrika = function()
 	{
+		if (!BX('field-gacounter_counter-use'))
+		{
+			return;
+		}
+
 		var inputGa = BX('field-gacounter_counter-use');
 		var inputGaClick = BX('field-gacounter_send_click-use');
 		var inputGaShow = BX('field-gacounter_send_show-use');
 
-		if(inputGa.value === '') {
+		if (inputGa.value === '')
+		{
 			inputGaClick.disabled = true;
 			inputGaShow.disabled = true;
 		}
@@ -669,13 +707,16 @@
 		inputGa.addEventListener('input', onInput.bind(this));
 
 		function onInput() {
-			if(inputGa.value === '') {
+			if (inputGa.value === '')
+			{
 				inputGaClick.disabled = true;
 				inputGaClick.checked = false;
 
 				inputGaShow.disabled = true;
 				inputGaShow.checked = false;
-			} else {
+			}
+			else
+			{
 				inputGaClick.disabled = false;
 				inputGaShow.disabled = false;
 			}
@@ -710,12 +751,106 @@
 	BX.Landing.IblockSelect.prototype = {
 
 		init: function(section) {
-			if(!BX("settings_iblock_id").value) {
+			if (!BX("settings_iblock_id").value)
+			{
 				section.classList.add("landing-form-field-section-hidden");
-			} else {
+			}
+			else
+			{
 				section.classList.remove("landing-form-field-section-hidden");
 			}
 		}
+	};
+
+	/**
+	 * Cookies.
+	 */
+	BX.Landing.Cookies = function(params)
+	{
+		this.bgPickerBtn = document.querySelector('.landing-form-cookies-color-bg');
+		this.textPickerBtn = document.querySelector('.landing-form-cookies-color-text');
+		this.simplePreview = document.querySelector('.landing-form-cookies-settings-type-simple');
+		this.advancedPreview = document.querySelector('.landing-form-cookies-settings-type-advanced');
+		this.positions = document.querySelectorAll('.landing-form-cookies-position-item');
+
+		this.bgPicker = new BX.ColorPicker({
+			bindElement: this.bgPickerBtn,
+			popupOptions: {angle: false, offsetTop: 5},
+			onColorSelected: this.onBgColorSelected.bind(this),
+			colors: BX.Landing.ColorPicker.prototype.setColors()
+		});
+
+		this.textPicker = new BX.ColorPicker({
+			bindElement: this.textPickerBtn,
+			popupOptions: {angle: false, offsetTop: 5},
+			onColorSelected: this.onTextColorSelected.bind(this),
+			colors: BX.Landing.ColorPicker.prototype.setColors()
+		});
+
+		this.setSelectedBgColor(this.bgPickerBtn.value);
+		this.setSelectedTextColor(this.textPickerBtn.value);
+
+		this.bindEvents();
+	};
+
+	BX.Landing.Cookies.prototype = {
+
+		bindEvents: function () {
+			this.positions.forEach(function (position) {
+				position.addEventListener('click', this.onSelectCookiesPosition.bind(this));
+			}.bind(this));
+
+			this.bgPickerBtn.addEventListener('click', this.showBgPicker.bind(this));
+			this.textPickerBtn.addEventListener('click', this.showTextPicker.bind(this));
+		},
+
+		onBgColorSelected: function() {
+			var color = this.bgPicker.getSelectedColor();
+			this.setSelectedBgColor(color);
+		},
+
+		onTextColorSelected: function() {
+			var color = this.textPicker.getSelectedColor();
+			this.setSelectedTextColor(color);
+		},
+
+		onSelectCookiesPosition: function(event) {
+			this.positions.forEach(function (position) {
+				if (position.classList.contains('landing-form-cookies-position-item-selected'))
+				{
+					position.classList.remove('landing-form-cookies-position-item-selected');
+				}
+			}.bind(this));
+			event.currentTarget.classList.add('landing-form-cookies-position-item-selected');
+		},
+
+		showBgPicker: function() {
+			this.bgPicker.open();
+		},
+
+		showTextPicker: function() {
+			this.textPicker.open();
+		},
+
+		setSelectedBgColor: function(color) {
+			this.bgPickerBtn.style.background = color;
+			this.bgPickerBtn.value = color;
+			this.simplePreview.style.background = color;
+			this.advancedPreview.style.background = color;
+		},
+
+		setSelectedTextColor: function(color) {
+			this.textPickerBtn.style.background = color;
+			this.textPickerBtn.value = color;
+			this.advancedPreview.style.color = color;
+
+			var svgList = document.querySelectorAll('.landing-form-cookies-settings-preview-svg');
+			svgList.forEach(function(svg)
+			{
+				svg.style.fill = color;
+			});
+		}
+
 	}
 
 })();

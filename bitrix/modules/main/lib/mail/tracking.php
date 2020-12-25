@@ -155,7 +155,7 @@ class Tracking
 			$uri .= "/tools/track_mail_$opCode.php";
 		}
 
-		$uri = $uri . (strpos($uri, "?") === false ? "?" : "&");
+		$uri = $uri . (mb_strpos($uri, "?") === false ? "?" : "&");
 		$uri .= 'tag=' . urlencode($tag);
 
 		return $uri;
@@ -247,6 +247,18 @@ class Tracking
 			}
 		}
 
+		if (empty($data['MODULE_ID']) || $data['MODULE_ID'] === 'main')
+		{
+			if (empty($subscription['main']))
+			{
+				$subscription['main'] = [];
+			}
+			$subscription['main'] = array_merge(
+				$subscription['main'],
+				EventManager::onMailEventSubscriptionList($data)
+			);
+		}
+
 		if(array_key_exists('MODULE_ID', $data))
 			$subscription = $subscription[$data['MODULE_ID']];
 
@@ -296,6 +308,11 @@ class Tracking
 			}
 		}
 
+		if (!empty($data['MODULE_ID']) && $data['MODULE_ID'] === 'main')
+		{
+			return EventManager::onMailEventSubscriptionDisable($data);
+		}
+
 		return true;
 	}
 
@@ -307,6 +324,11 @@ class Tracking
 	 */
 	public static function click(array $data)
 	{
+		if (Main\Config\Option::get('main', 'track_outgoing_emails_click', 'Y') != 'Y')
+		{
+			return false;
+		}
+
 		if(array_key_exists('MODULE_ID', $data))
 			$filter = array($data['MODULE_ID']);
 		else
@@ -391,6 +413,11 @@ class Tracking
 	 */
 	public static function read(array $data)
 	{
+		if (Main\Config\Option::get('main', 'track_outgoing_emails_read', 'Y') != 'Y')
+		{
+			return false;
+		}
+
 		if(array_key_exists('MODULE_ID', $data))
 			$filter = array($data['MODULE_ID']);
 		else

@@ -1071,14 +1071,14 @@
 		var filter = create("div", {props: {className: "landing-ui-popup-filter"}});
 		var filterInput = create("input", {
 			props: {className: "landing-ui-popup-filter-input"},
-			attrs: {placeholder: BX.message("LANDING_MENU_ITEM_FILTER")},
+			attrs: {placeholder: BX.Landing.Loc.getMessage("LANDING_MENU_ITEM_FILTER")},
 			events: {"input": onInput}
 		});
 		var emptyResult = create("div", {
 			props: {className: "landing-ui-popup-filter-empty"},
 			children: [create("span", {
 				props: {className: "landing-ui-popup-filter-empty-text"},
-				html: BX.message("LANDING_MENU_ITEM_FILTER_EMPTY")
+				html: BX.Landing.Loc.getMessage("LANDING_MENU_ITEM_FILTER_EMPTY")
 			})],
 			attrs: {hidden: true}
 		});
@@ -1731,44 +1731,48 @@
 		});
 	};
 
-	/**
-	 * Makes user friendly file size
-	 * @param {Number} size
-	 * @return {*}
-	 */
-	BX.Landing.Utils.fileSize = function(size)
-	{
-		var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-		var mysize;
-
-		sizes.forEach(function(unit, id) {
-			var s = Math.pow(1024, id);
-			var fixed;
-
-			if (size >= s)
-			{
-				fixed = String((size / s).toFixed(1));
-
-				if (fixed.indexOf('.0') === fixed.length - 2)
-				{
-					fixed = fixed.slice(0, -2);
-				}
-
-				mysize = fixed + ' ' + unit;
-			}
-		});
-
-		if (!mysize)
-		{
-			mysize = '0 ' + sizes[0];
-		}
-
-		return mysize;
-	};
-
 	BX.Landing.Utils.getFileName = function(path)
 	{
 		return path.split('\\').pop().split('/').pop();
+	};
+
+	BX.Landing.Utils.getSelectedElement = function() {
+		var range, sel, container;
+		if (document.selection)
+		{
+			range = document.selection.createRange();
+			return range.parentElement();
+		}
+		else
+		{
+			sel = window.getSelection();
+			if (sel.getRangeAt)
+			{
+				if (sel.rangeCount > 0)
+				{
+					range = sel.getRangeAt(0);
+				}
+			}
+			else
+			{
+				// Old WebKit
+				range = document.createRange();
+				range.setStart(sel.anchorNode, sel.anchorOffset);
+				range.setEnd(sel.focusNode, sel.focusOffset);
+
+				if (range.collapsed !== sel.isCollapsed) {
+					range.setStart(sel.focusNode, sel.focusOffset);
+					range.setEnd(sel.anchorNode, sel.anchorOffset);
+				}
+			}
+
+			if (range)
+			{
+				container = range["endContainer"];
+
+				return container.nodeType === 3 ? container.parentNode : container;
+			}
+		}
 	};
 
 	/**

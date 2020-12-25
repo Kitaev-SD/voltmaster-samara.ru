@@ -9,7 +9,6 @@ namespace Bitrix\Sender\Connector;
 
 use Bitrix\Sender\Recipient;
 
-
 abstract class Base
 {
 	protected $fieldPrefix;
@@ -259,6 +258,14 @@ abstract class Base
 		$personalizeListTmp = $this->getPersonalizeList();
 		foreach($personalizeListTmp as $tag)
 		{
+			if(!empty($tag['ITEMS']))
+			{
+				foreach ($tag['ITEMS'] as $item)
+				{
+					$personalizeList[$item['CODE']] = $item['CODE'];
+				}
+				continue;
+			}
 			if(strlen($tag['CODE']) > 0)
 			{
 				$personalizeList[] = $tag['CODE'];
@@ -342,12 +349,33 @@ abstract class Base
 	public abstract function getCode();
 
 	/**
+	 *
+	 *
 	 * @return array|\Bitrix\Main\DB\Result|\CAllDBResult
 	 */
 	public abstract function getData();
 
 	/**
+	 * @param array $selectList
+	 *
+	 * @return array|\Bitrix\Main\DB\Result|\CAllDBResult
+	 */
+	public function getDataWithCustomSelect($selectList = [])
+	{
+		return static::getData();
+	}
+
+	/**
 	 * @return string
 	 */
 	public abstract function getForm();
+
+	/**
+	 * Get fields for statistic
+	 * @return array
+	 */
+	public function getStatFields()
+	{
+		return [];
+	}
 }

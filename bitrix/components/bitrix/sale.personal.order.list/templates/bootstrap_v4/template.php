@@ -28,7 +28,7 @@ if (!empty($arResult['ERRORS']['FATAL']))
 				<div class="alert alert-danger"><?=$arResult['ERRORS']['FATAL'][$component::E_NOT_AUTHORIZED]?></div>
 			</div>
 			<? $authListGetParams = array(); ?>
-			<div class="col-md-8 offset-md-2 col-lg-6 offset-lg-3" id="catalog-subscriber-auth-form" style="<?=$authStyle?>">
+			<div class="col-md-8 offset-md-2 col-lg-6 offset-lg-3">
 				<?$APPLICATION->AuthForm('', false, false, 'N', false);?>
 			</div>
 		</div>
@@ -140,7 +140,7 @@ else
 					<?=Loc::getMessage('SPOL_TPL_ORDER')?>
 					<?=Loc::getMessage('SPOL_TPL_NUMBER_SIGN').$order['ORDER']['ACCOUNT_NUMBER']?>
 					<?=Loc::getMessage('SPOL_TPL_FROM_DATE')?>
-					<?=$order['ORDER']['DATE_INSERT']->format($arParams['ACTIVE_DATE_FORMAT'])?>,
+					<?=$order['ORDER']['DATE_INSERT_FORMATED']?>,
 					<?=count($order['BASKET_ITEMS']);?>
 					<?
 					$count = count($order['BASKET_ITEMS']) % 10;
@@ -184,7 +184,8 @@ else
 								"allow_inner" => $arParams['ALLOW_INNER'],
 								"refresh_prices" => $arParams['REFRESH_PRICES'],
 								"path_to_payment" => $arParams['PATH_TO_PAYMENT'],
-								"only_inner_full" => $arParams['ONLY_INNER_FULL']
+								"only_inner_full" => $arParams['ONLY_INNER_FULL'],
+								"return_url" => $arResult['RETURN_URL'],
 							);
 						}
 						?>
@@ -209,7 +210,7 @@ else
 											$paymentSubTitle = Loc::getMessage('SPOL_TPL_BILL')." ".Loc::getMessage('SPOL_TPL_NUMBER_SIGN').htmlspecialcharsbx($payment['ACCOUNT_NUMBER']);
 											if(isset($payment['DATE_BILL']))
 											{
-												$paymentSubTitle .= " ".Loc::getMessage('SPOL_TPL_FROM_DATE')." ".$payment['DATE_BILL']->format($arParams['ACTIVE_DATE_FORMAT']);
+												$paymentSubTitle .= " ".Loc::getMessage('SPOL_TPL_FROM_DATE')." ".$payment['DATE_BILL_FORMATED'];
 											}
 											$paymentSubTitle .=",";
 											echo $paymentSubTitle;
@@ -245,13 +246,13 @@ else
 											foreach ($payment['CHECK_DATA'] as $checkInfo)
 											{
 												$title = Loc::getMessage('SPOL_CHECK_NUM', array('#CHECK_NUMBER#' => $checkInfo['ID']))." - ". htmlspecialcharsbx($checkInfo['TYPE_NAME']);
-												if (strlen($checkInfo['LINK']))
+												if($checkInfo['LINK'] <> '')
 												{
 													$link = $checkInfo['LINK'];
 													$listCheckLinks .= "<div><a href='$link' target='_blank'>$title</a></div>";
 												}
 											}
-											if (strlen($listCheckLinks) > 0)
+											if ($listCheckLinks <> '')
 											{
 												?>
 												<div class="sale-order-list-payment-check">
@@ -278,7 +279,7 @@ else
 										?>
 									</div>
 									<?
-									if ($payment['PAID'] === 'N' && $payment['IS_CASH'] !== 'Y')
+									if ($payment['PAID'] === 'N' && $payment['IS_CASH'] !== 'Y' && $payment['ACTION_FILE'] !== 'cash')
 									{
 										if ($order['ORDER']['IS_ALLOW_PAY'] == 'N')
 										{
@@ -362,7 +363,7 @@ else
 											$shipmentSubTitle = Loc::getMessage('SPOL_TPL_NUMBER_SIGN').htmlspecialcharsbx($shipment['ACCOUNT_NUMBER']);
 											if ($shipment['DATE_DEDUCTED'])
 											{
-												$shipmentSubTitle .= " ".Loc::getMessage('SPOL_TPL_FROM_DATE')." ".$shipment['DATE_DEDUCTED']->format($arParams['ACTIVE_DATE_FORMAT']);
+												$shipmentSubTitle .= " ".Loc::getMessage('SPOL_TPL_FROM_DATE')." ".$shipment['DATE_DEDUCTED_FORMATED'];
 											}
 
 											if ($shipment['FORMATED_DELIVERY_PRICE'])
@@ -414,7 +415,7 @@ else
 									?>
 								</div>
 								<?
-								if (strlen($shipment['TRACKING_URL']) > 0)
+								if ($shipment['TRACKING_URL'] <> '')
 								{
 									?>
 									<div class="col-md-2 col-md-offset-1 col-sm-12 sale-order-list-shipment-button-container">
@@ -444,9 +445,16 @@ else
 							<div class="col-auto sale-order-list-repeat-container">
 								<a class="g-font-size-15 sale-order-list-repeat-link" href="<?=htmlspecialcharsbx($order["ORDER"]["URL_TO_COPY"])?>"><?=Loc::getMessage('SPOL_TPL_REPEAT_ORDER')?></a>
 							</div>
-							<div class="col-auto sale-order-list-cancel-container">
-								<a class="g-font-size-15 sale-order-list-cancel-link" href="<?=htmlspecialcharsbx($order["ORDER"]["URL_TO_CANCEL"])?>"><?=Loc::getMessage('SPOL_TPL_CANCEL_ORDER')?></a>
-							</div>
+							<?
+							if ($order['ORDER']['CAN_CANCEL'] !== 'N')
+							{
+								?>
+								<div class="col-auto sale-order-list-cancel-container">
+									<a class="g-font-size-15 sale-order-list-cancel-link" href="<?=htmlspecialcharsbx($order["ORDER"]["URL_TO_CANCEL"])?>"><?=Loc::getMessage('SPOL_TPL_CANCEL_ORDER')?></a>
+								</div>
+								<?
+							}
+							?>
 						</div>
 					</div>
 				</div>
@@ -489,7 +497,7 @@ else
 					<span class="text-nowrap"><?= $order['ORDER']['DATE_INSERT'] ?>,</span>
 					<?= count($order['BASKET_ITEMS']); ?>
 					<?
-					$count = substr(count($order['BASKET_ITEMS']), -1);
+					$count = mb_substr(count($order['BASKET_ITEMS']), -1);
 					if ($count == '1')
 					{
 						echo Loc::getMessage('SPOL_TPL_GOOD');
@@ -553,7 +561,8 @@ else
 			"url" => CUtil::JSEscape($this->__component->GetPath().'/ajax.php'),
 			"templateFolder" => CUtil::JSEscape($templateFolder),
 			"templateName" => $this->__component->GetTemplateName(),
-			"paymentList" => $paymentChangeData
+			"paymentList" => $paymentChangeData,
+			"returnUrl" => CUtil::JSEscape($arResult["RETURN_URL"]),
 		);
 		$javascriptParams = CUtil::PhpToJSObject($javascriptParams);
 		?>

@@ -3,6 +3,7 @@ namespace Bitrix\Sale\Helpers\Order\Builder;
 
 use Bitrix\Sale\BasketItem;
 use Bitrix\Sale\Fuser;
+use Bitrix\Sale;
 
 class BasketBuilderNew implements IBasketBuilderDelegate
 {
@@ -11,7 +12,13 @@ class BasketBuilderNew implements IBasketBuilderDelegate
 	public function __construct(BasketBuilder $builder)
 	{
 		$this->builder = $builder;
-		$basket = \Bitrix\Sale\Basket::create($this->builder->getOrder()->getSiteId());
+
+		$registry = Sale\Registry::getInstance(Sale\Registry::REGISTRY_TYPE_ORDER);
+
+		/** @var Sale\Basket $basketClass */
+		$basketClass = $registry->getBasketClassName();
+
+		$basket = $basketClass::create($this->builder->getOrder()->getSiteId());
 		$res = $this->builder->getOrder()->setBasket($basket);
 
 		if(!$res->isSuccess())
@@ -31,7 +38,14 @@ class BasketBuilderNew implements IBasketBuilderDelegate
 
 	public function getItemFromBasket($basketCode, $productData)
 	{
-		$item = $this->builder->getBasket()->getExistsItem($productData["MODULE"], $productData["OFFER_ID"], $productData["PROPS"]);
+		if(empty($productData['MANUALLY_EDITED']))
+		{
+			$item = $this->builder->getBasket()->getExistsItem($productData["MODULE"], $productData["OFFER_ID"], $productData["PROPS"]);
+		}
+		else
+		{
+			$item = $this->builder->getBasket()->getItemByBasketCode($basketCode);
+		}
 
 		if($item == null && $basketCode != BasketBuilder::BASKET_CODE_NEW)
 		{

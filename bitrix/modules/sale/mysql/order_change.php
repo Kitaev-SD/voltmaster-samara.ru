@@ -15,9 +15,9 @@ class CSaleOrderChange extends CAllSaleOrderChange
 
 		foreach ($arFields as $key => $value)
 		{
-			if (substr($key, 0, 1)=="=")
+			if (mb_substr($key, 0, 1) == "=")
 			{
-				$arFields[substr($key, 1)] = $value;
+				$arFields[mb_substr($key, 1)] = $value;
 				unset($arFields[$key]);
 			}
 		}
@@ -48,13 +48,13 @@ class CSaleOrderChange extends CAllSaleOrderChange
 			CSaleHelper::WriteToLog("CSaleOrderChange - Update", array("ID" => $ID, "arFields" => $arFields), "SOCU2");
 		}
 
-		$ID = IntVal($ID);
+		$ID = intval($ID);
 
 		foreach ($arFields as $key => $value)
 		{
-			if (substr($key, 0, 1)=="=")
+			if (mb_substr($key, 0, 1) == "=")
 			{
-				$arFields[substr($key, 1)] = $value;
+				$arFields[mb_substr($key, 1)] = $value;
 				unset($arFields[$key]);
 			}
 		}
@@ -71,7 +71,7 @@ class CSaleOrderChange extends CAllSaleOrderChange
 		return $ID;
 	}
 
-	function GetList($arOrder = array("ID"=>"DESC"), $arFilter = array(), $arGroupBy = false, $arNavStartParams = false, $arSelectFields = array())
+	static function GetList($arOrder = array("ID"=>"DESC"), $arFilter = array(), $arGroupBy = false, $arNavStartParams = false, $arSelectFields = array())
 	{
 		if (array_key_exists("DATE_CREATE_FROM", $arFilter))
 		{

@@ -10,16 +10,16 @@
 					</font><br>
 					<?if (is_object($GLOBALS["USER"]) && $GLOBALS["USER"]->IsAdmin()):?>
 						</form>
-						<form method="post" action="/bitrix/admin/site_checker.php?tabControl_active_tab=edit5#edit5">
+						<form method="post" action="https://www.1c-bitrix.ru/support/">
 							<?
 							$strSupportErrorText = "";
 							$strSupportErrorText .= "File: ".__FILE__."\n";
 
-							if (strlen($error_position)>0)
+							if ($error_position <> '')
 								$strSupportErrorText .= "[".$error_position."]\n";
-							if (strlen($strSql)>0)
+							if ($strSql <> '')
 								$strSupportErrorText .= "Query: ".$strSql."\n";
-							if (isset($this) && is_object($this) && strlen($this->db_Error)>0)
+							if (isset($this) && is_object($this) && $this->db_Error <> '')
 								$strSupportErrorText .= "[".$this->db_Error."]\n";
 
 							$d = Bitrix\Main\Diag\Helper::getBackTrace();
@@ -38,6 +38,7 @@
 							?>
 							<input type="hidden" name="last_error_query" value="<?= htmlspecialcharsbx($strSupportErrorText) ?>">
 							<?echo bitrix_sessid_post();?>
+							<input type="hidden" name="send_ticket" value="Y">
 							<input type="submit" value="Send error report to support">
 						</form>
 					<?endif;?>

@@ -4,8 +4,10 @@ namespace Bitrix\Report\VisualConstructor;
 
 use Bitrix\Report\VisualConstructor\Handler\BaseWidget;
 use Bitrix\Report\VisualConstructor\Handler\EmptyReport;
+use Bitrix\Report\VisualConstructor\Views\Component\Grid;
 use Bitrix\Report\VisualConstructor\Views\Component\GroupedDataGrid;
 use Bitrix\Report\VisualConstructor\Views\JsComponent\Activity;
+use Bitrix\Report\VisualConstructor\Views\JsComponent\AmChart\ColumnLogarithmic;
 use Bitrix\Report\VisualConstructor\Views\JsComponent\AmChart\DonutDiagram;
 use Bitrix\Report\VisualConstructor\Views\JsComponent\AmChart\Funnel;
 use Bitrix\Report\VisualConstructor\Views\JsComponent\AmChart\LinearGraph;
@@ -70,11 +72,13 @@ class EventHandler
 			new PieDiagram(),
 			new DonutDiagram(),
 			new Column(),
+			new ColumnLogarithmic(),
 			new Stack(),
 			new LinearGraph(),
 			new SmoothedGraph(),
 			new Number(),
 			new NumberBlock(),
+			new Grid(),
 //			new NumberBlockWithFormula(),
 			new Funnel(),
 			new MultiDirectional(),

@@ -3,7 +3,6 @@ namespace Bitrix\Main\Type;
 
 use Bitrix\Main;
 use Bitrix\Main\Context;
-use Bitrix\Main\DB;
 
 class DateTime extends Date
 {
@@ -32,22 +31,21 @@ class DateTime extends Date
 				$format = static::getFormat();
 			}
 
-			$parsedValue = date_parse_from_format($format, $time);
-			//Ignore errors when format is longer than date
-			//or date string is longer than format
-			if ($parsedValue['error_count'] > 1)
+			$parsedValue = $this->parse($format, $time);
+
+			if($parsedValue === false)
 			{
-				if (
-					current($parsedValue['errors']) !== 'Trailing data'
-					&& current($parsedValue['errors']) !== 'Data missing'
-				)
-				{
-					throw new Main\ObjectException("Incorrect date/time: ".$time);
-				}
+				throw new Main\ObjectException("Incorrect date/time: ".$time);
+			}
+
+			$microseconds = 0;
+			if($parsedValue['fraction'] > 0)
+			{
+				$microseconds = intval($parsedValue['fraction'] * 1000000);
 			}
 
 			$this->value->setDate($parsedValue['year'], $parsedValue['month'], $parsedValue['day']);
-			$this->value->setTime($parsedValue['hour'], $parsedValue['minute'], $parsedValue['second']);
+			$this->value->setTime($parsedValue['hour'], $parsedValue['minute'], $parsedValue['second'], $microseconds);
 
 			if (
 				isset($parsedValue["relative"])
@@ -58,6 +56,49 @@ class DateTime extends Date
 				$this->value->add(new \DateInterval("PT".$parsedValue["relative"]["second"]."S"));
 			}
 		}
+	}
+
+	/**
+	 * @param string $format
+	 * @param string $time
+	 * @return array|bool
+	 */
+	protected function parse($format, $time)
+	{
+		$parsedValue = date_parse_from_format($format, $time);
+
+		//Ignore errors when format is longer than date
+		//or date string is longer than format
+		if ($parsedValue['error_count'] > 1)
+		{
+			$error = current($parsedValue['errors']);
+
+			if ($error === 'A two digit second could not be found')
+			{
+				//possibly missed seconds with am/pm format
+				$timestamp = strtotime($time);
+
+				if ($timestamp === false)
+				{
+					return false;
+				}
+
+				return [
+					"year" => date("Y", $timestamp),
+					"month" => date("n", $timestamp),
+					"day" => date("j", $timestamp),
+					"hour" => date("G", $timestamp),
+					"minute" => date("i", $timestamp),
+					"second" => date("s", $timestamp),
+				];
+			}
+			if ($error !== 'Trailing data' && $error !== 'Data missing')
+			{
+				return false;
+			}
+		}
+
+		return $parsedValue;
 	}
 
 	/**
@@ -122,12 +163,13 @@ class DateTime extends Date
 	 * @param int $hour Hour value.
 	 * @param int $minute Minute value.
 	 * @param int $second Second value.
+	 * @param int $microseconds Microseconds value.
 	 *
 	 * @return DateTime
 	 */
-	public function setTime($hour, $minute, $second = 0)
+	public function setTime($hour, $minute, $second = 0, $microseconds = 0)
 	{
-		$this->value->setTime($hour, $minute, $second);
+		$this->value->setTime($hour, $minute, $second, $microseconds);
 		return $this;
 	}
 
@@ -198,9 +240,13 @@ class DateTime extends Date
 	 *
 	 * @return string
 	 */
-	protected static function getCultureFormat(Context\Culture $culture)
+	protected static function getCultureFormat(Context\Culture $culture = null)
 	{
-		return $culture->getDateTimeFormat();
+		if($culture)
+		{
+			return $culture->getDateTimeFormat();
+		}
+		return "DD.MM.YYYY HH:MI:SS";
 	}
 
 	/**
@@ -214,7 +260,7 @@ class DateTime extends Date
 	{
 		/** @var DateTime $d */
 		$d = new static();
-		$d->value = $datetime;
+		$d->value = clone $datetime;
 		return $d;
 	}
 

@@ -2,7 +2,11 @@
 namespace Bitrix\Rest;
 
 use Bitrix\Main;
+use Bitrix\Main\Data\Cache;
+use Bitrix\Main\EventResult;
 use Bitrix\Main\Localization\Loc;
+use Bitrix\Rest\Marketplace\Client;
+use Bitrix\Main\ORM\Fields\Relations\OneToMany;
 
 Loc::loadMessages(__FILE__);
 
@@ -42,14 +46,23 @@ class AppTable extends Main\Entity\DataManager
 	const TRIALED = 'Y';
 	const NOT_TRIALED = 'N';
 
+	const TYPE_STANDARD = 'N';
+	const TYPE_ONLY_API = 'A';
+	const TYPE_CONFIGURATION = 'C';
+	const TYPE_SMART_ROBOTS = 'R';
+
 	const STATUS_LOCAL = 'L';
 	const STATUS_FREE = 'F';
 	const STATUS_PAID = 'P';
 	const STATUS_DEMO = 'D';
 	const STATUS_TRIAL = 'T';
+	const STATUS_SUBSCRIPTION = 'S';
 
 	const PAID_NOTIFY_DAYS = 30;
 	const PAID_GRACE_PERIOD = -14;
+
+	const CACHE_TTL = 86400;
+	const CACHE_PATH = '/rest/app/';
 
 	private static $skipRemoteUpdate = false;
 
@@ -132,6 +145,7 @@ class AppTable extends Main\Entity\DataManager
 					static::STATUS_PAID,
 					static::STATUS_DEMO,
 					static::STATUS_TRIAL,
+					static::STATUS_SUBSCRIPTION,
 				),
 			),
 			'DATE_FINISH' => array(
@@ -189,6 +203,8 @@ class AppTable extends Main\Entity\DataManager
 					'=ref.LANGUAGE_ID' => new Main\DB\SqlExpression('?s', static::getLicenseLanguage()),
 				),
 			),
+			(new OneToMany('LANG_ALL', AppLangTable::class, 'APP'))
+				->configureJoinType('left')
 		);
 	}
 
@@ -407,6 +423,34 @@ class AppTable extends Main\Entity\DataManager
 		}
 	}
 
+	public static function checkUninstallAvailability($appId, $clean = 0)
+	{
+		$event = new Main\Event('rest', 'onBeforeApplicationUninstall', [
+			'ID' => $appId,
+			'CLEAN' => $clean
+		]);
+		$event->send();
+
+		$result = new Main\ErrorCollection();
+		if ($event->getResults())
+		{
+			/** @var \Bitrix\Main\EventResult $eventResult */
+			foreach ($event->getResults() as $eventResult)
+			{
+				if($eventResult->getType() === EventResult::ERROR)
+				{
+					$eventResultData = $eventResult->getParameters();
+					if ($eventResultData instanceof Main\Error)
+					{
+						$result->add([$eventResultData]);
+					}
+				}
+			}
+		}
+
+		return $result;
+	}
+
 	public static function updateAppStatusInfo()
 	{
 		$appList = OAuthService::getEngine()->getClient()->getApplicationList();
@@ -432,20 +476,21 @@ class AppTable extends Main\Entity\DataManager
 			{
 				if(array_key_exists($app['client_id'], $localApps))
 				{
-					$dateFinish = $localApps[$app['client_id']]['DATE_FINISH']
+					$dateFinishLocal = $localApps[$app['client_id']]['DATE_FINISH']
 						? $localApps[$app['client_id']]['DATE_FINISH']->getTimestamp()
 						: '';
+					$dateFinishRemote = $app['date_finish'] ? Main\Type\Date::createFromTimestamp($app['date_finish'])->getTimestamp() : '';
 
 					if(
 						$localApps[$app['client_id']]['STATUS'] !== $app['status']
-						|| $app['date_finish'] != $dateFinish
+						|| $dateFinishRemote != $dateFinishLocal
 					)
 					{
-						$dateFinish = $app['date_finish'] ? Main\Type\Date::createFromTimestamp($app['date_finish']) : '';
-
 						$appFields = array(
 							'STATUS' => $app['status'],
-							'DATE_FINISH' => $dateFinish,
+							'DATE_FINISH' => $app['date_finish']
+								? Main\Type\Date::createFromTimestamp($app['date_finish'])
+								: '',
 						);
 
 						static::setSkipRemoteUpdate(true);
@@ -895,5 +940,40 @@ class AppTable extends Main\Entity\DataManager
 		}
 
 		return array_values($permissionList);
+	}
+
+	public static function canUninstallByType($code, $version = false)
+	{
+		$result = true;
+
+		$type = static::getAppType($code, $version);
+		if($type == static::TYPE_CONFIGURATION)
+		{
+			$appList = \Bitrix\Rest\Configuration\Helper::getInstance()->getBasicAppList();
+			if(in_array($code, $appList))
+			{
+				$result = false;
+			}
+		}
+
+		return $result;
+	}
+
+	public static function getAppType($code, $version = false)
+	{
+		$result = false;
+		$cache = Cache::createInstance();
+		if ($cache->initCache(static::CACHE_TTL, 'appType'.md5($code.$version), static::CACHE_PATH))
+		{
+			$result = $cache->getVars();
+		}
+		elseif ($cache->startDataCache())
+		{
+			$appDetailInfo = Client::getInstall($code, $version);
+			$result = ($appDetailInfo['ITEMS']['TYPE'])?:false;
+			$cache->endDataCache($result);
+		}
+
+		return $result;
 	}
 }

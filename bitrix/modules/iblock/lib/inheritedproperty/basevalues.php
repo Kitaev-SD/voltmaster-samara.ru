@@ -188,7 +188,7 @@ abstract class BaseValues
 			DELETE FROM b_iblock_element_iprop
 			WHERE IPROP_ID = ".$ipropertyId."
 		");
-		ValuesQueue::deleteAll($this->iblockId);
+		ValuesQueue::deleteAll();
 	}
 
 	/**
@@ -210,7 +210,7 @@ abstract class BaseValues
 		foreach ($rows as $row)
 		{
 			$values = "('".implode("', '", $row)."')";
-			$bodySize += strlen($values);
+			$bodySize += mb_strlen($values);
 			$body[] = $values;
 			if ($bodySize > $maxBodySize)
 			{

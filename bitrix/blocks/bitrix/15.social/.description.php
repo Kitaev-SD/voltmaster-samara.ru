@@ -10,6 +10,7 @@ return array(
 	'block' => array(
 		'name' => Loc::getMessage('LANDING_BLOCK_15.SOCIAL_NAME'),
 		'section' => array('social'),
+		'dynamic' => false,
 	),
 	'cards' => array(
 		'.landing-block-node-list-item' => array(
@@ -22,11 +23,22 @@ return array(
 		'.landing-block-node-list-item-link' => array(
 			'name' => Loc::getMessage('LANDING_BLOCK_15.SOCIAL_NODES_LANDINGBLOCKNODELIST_ITEM_LINK'),
 			'type' => 'link',
+			'allowInlineEdit' => false,
 		),
 		'.landing-block-node-list-item-icon' => array(
 			'name' => Loc::getMessage('LANDING_BLOCK_15.SOCIAL_NODES_LANDINGBLOCKNODELISTIMG'),
 			'type' => 'icon',
 		),
 	),
-	'style' => array(),
+	'style' => array(
+		'block' => [
+			'type' => ['block-default', 'block-border']
+		],
+		'nodes' => [
+			'.landing-block-node-list-item-link' => array(
+				'name' => Loc::getMessage('LANDING_BLOCK_15.SOCIAL_NODES_LANDINGBLOCKNODELIST'),
+				'type' => ['margins', 'paddings'],
+			),
+		],
+	),
 );

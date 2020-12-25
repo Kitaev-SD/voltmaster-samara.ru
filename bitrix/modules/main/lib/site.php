@@ -7,10 +7,9 @@
  */
 namespace Bitrix\Main;
 
-use Bitrix\Main\Entity;
 use Bitrix\Main\IO;
 
-class SiteTable extends Entity\DataManager
+class SiteTable extends ORM\Data\DataManager
 {
 	private static $documentRootCache = array();
 
@@ -25,7 +24,7 @@ class SiteTable extends Entity\DataManager
 		if (!isset(self::$documentRootCache[$siteId]))
 		{
 			$ar = SiteTable::getRow(array("filter" => array("LID" => $siteId)));
-			if ($ar && ($docRoot = $ar["DOC_ROOT"]) && (strlen($docRoot) > 0))
+			if ($ar && ($docRoot = $ar["DOC_ROOT"]) && ($docRoot <> ''))
 			{
 				if (!IO\Path::isAbsolute($docRoot))
 					$docRoot = IO\Path::combine(Application::getDocumentRoot(), $docRoot);

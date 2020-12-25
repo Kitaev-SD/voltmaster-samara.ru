@@ -10,12 +10,6 @@ Loc::loadMessages(__FILE__);
 class Theme extends \Bitrix\Landing\Hook\Page
 {
 	/**
-	 * Relative (dir template) pathes for themes and typograph.
-	 */
-	const THEME_RELATIVE_PATH = '/themes/';
-	const THEME_TYPO_RELATIVE_PATH = '/themes-typo/';
-	
-	/**
 	 * Map of the field.
 	 * @return array
 	 */
@@ -32,32 +26,6 @@ class Theme extends \Bitrix\Landing\Hook\Page
 						)
 					),
 					self::getColorCodes()
-				),
-			)),
-			'CODE_TYPO' => new Field\Select('CODE_TYPO', array(
-				'title' => Loc::getMessage('LANDING_HOOK_THEMETYPO'),
-				'options' => array(
-					'2business' => Loc::getMessage('LANDING_HOOK_THEMETYPO_BUSINESS_NEW'),
-					'gym' => Loc::getMessage('LANDING_HOOK_THEMETYPO-GYM'),
-					'3corporate' => Loc::getMessage('LANDING_HOOK_THEMETYPO_CORPORATE_NEW'),
-					'app' => Loc::getMessage('LANDING_HOOK_THEMETYPO-APP'),
-					'consulting' => Loc::getMessage('LANDING_HOOK_THEMETYPO-CONSULTING'),
-					'accounting' => Loc::getMessage('LANDING_HOOK_THEMETYPO-ACCOUNTING'),
-					'courses' => Loc::getMessage('LANDING_HOOK_THEMETYPO-COURSES'),
-					'spa' => Loc::getMessage('LANDING_HOOK_THEMETYPO-SPA'),
-					'charity' => Loc::getMessage('LANDING_HOOK_THEMETYPO-CHARITY'),
-					'1construction' => Loc::getMessage('LANDING_HOOK_THEMETYPO_CONSTRUCTION_NEW'),
-					'travel' => Loc::getMessage('LANDING_HOOK_THEMETYPO-TRAVEL'),
-					'architecture' => Loc::getMessage('LANDING_HOOK_THEMETYPO-ARCHITECTURE'),
-					'event' => Loc::getMessage('LANDING_HOOK_THEMETYPO-EVENT'),
-					'lawyer' => Loc::getMessage('LANDING_HOOK_THEMETYPO-LAWYER'),
-					'music' => Loc::getMessage('LANDING_HOOK_THEMETYPO-MUSIC'),
-					'real-estate' => Loc::getMessage('LANDING_HOOK_THEMETYPO-REALESTATE'),
-					'restaurant' => Loc::getMessage('LANDING_HOOK_THEMETYPO-RESTAURANT'),
-					'shipping' => Loc::getMessage('LANDING_HOOK_THEMETYPO-SHIPPING'),
-					'agency' => Loc::getMessage('LANDING_HOOK_THEMETYPO-AGENCY'),
-					'wedding' => Loc::getMessage('LANDING_HOOK_THEMETYPO-WEDDING'),
-					'photography' => Loc::getMessage('LANDING_HOOK_THEMETYPO-PHOTOGRAPHY'),
 				),
 			)),
 		);
@@ -144,7 +112,7 @@ class Theme extends \Bitrix\Landing\Hook\Page
 			),
 			'real-estate' => array(
 				'name' => Loc::getMessage('LANDING_HOOK_THEMECODE-REALESTATE'),
-				'color' => '#e74c3c',
+				'color' => '#f74c3c',
 				'base' => true
 			),
 			'restaurant' => array(
@@ -170,6 +138,38 @@ class Theme extends \Bitrix\Landing\Hook\Page
 			),
 		);
 
+		$event = new \Bitrix\Main\Event('landing', 'onGetThemeColors', array(
+			'colors' => $colors
+		));
+		$event->send();
+		foreach ($event->getResults() as $result)
+		{
+			if ($result->getType() != \Bitrix\Main\EventResult::ERROR)
+			{
+				if (($modified = $result->getModified()))
+				{
+					if (isset($modified['colors']))
+					{
+						$colors = $modified['colors'];
+					}
+				}
+			}
+		}
+
+		if (
+			!is_array($colors) ||
+			empty($colors)
+		)
+		{
+			$colors = [
+				'1construction' => [
+					'name' => Loc::getMessage('LANDING_HOOK_THEMECODE_CONSTRUCTION_NEW'),
+					'color' => '#f7b70b',
+					'base' => true
+				]
+			];
+		}
+
 		return $colors;
 	}
 	
@@ -190,8 +190,5 @@ class Theme extends \Bitrix\Landing\Hook\Page
 	{
 		$code = \htmlspecialcharsbx(trim($this->fields['CODE']));
 		\Bitrix\Landing\Manager::setThemeId($code);
-		
-		$codeTypo = \htmlspecialcharsbx(trim($this->fields['CODE_TYPO']));
-		\Bitrix\Landing\Manager::setThemeTypoId($codeTypo);
 	}
 }

@@ -170,7 +170,7 @@ class CAllCatalogProduct
 		$arMsg = array();
 		$boolResult = true;
 
-		$ACTION = strtoupper($ACTION);
+		$ACTION = mb_strtoupper($ACTION);
 		$ID = (int)$ID;
 		if ($ACTION == "ADD" && (!is_set($arFields, "ID") || (int)$arFields["ID"]<=0))
 		{
@@ -248,7 +248,7 @@ class CAllCatalogProduct
 		if ((is_set($arFields, "PRICE_TYPE") || $ACTION=="ADD") && ($arFields["PRICE_TYPE"] != "R") && ($arFields["PRICE_TYPE"] != "T"))
 			$arFields["PRICE_TYPE"] = "S";
 
-		if ((is_set($arFields, "RECUR_SCHEME_TYPE") || $ACTION=="ADD") && (strlen($arFields["RECUR_SCHEME_TYPE"]) <= 0 || !in_array($arFields["RECUR_SCHEME_TYPE"], Catalog\ProductTable::getPaymentPeriods(false))))
+		if ((is_set($arFields, "RECUR_SCHEME_TYPE") || $ACTION=="ADD") && ($arFields["RECUR_SCHEME_TYPE"] == '' || !in_array($arFields["RECUR_SCHEME_TYPE"], Catalog\ProductTable::getPaymentPeriods(false))))
 		{
 			$arFields["RECUR_SCHEME_TYPE"] = self::TIME_PERIOD_DAY;
 		}
@@ -555,18 +555,18 @@ class CAllCatalogProduct
 		$field = (string)$field;
 		if ($field == '')
 			return false;
-		$field = strtoupper($field);
+		$field = mb_strtoupper($field);
 		if (strncmp($field, 'CATALOG_', 8) != 0)
 			return false;
 
 		$iNum = 0;
-		$field = substr($field, 8);
-		$p = strrpos($field, '_');
+		$field = mb_substr($field, 8);
+		$p = mb_strrpos($field, '_');
 		if ($p !== false && $p > 0)
 		{
-			$iNum = (int)substr($field, $p+1);
+			$iNum = (int)mb_substr($field, $p + 1);
 			if ($iNum > 0)
-				$field = substr($field, 0, $p);
+				$field = mb_substr($field, 0, $p);
 		}
 		return array(
 			'FIELD' => $field,
@@ -639,7 +639,7 @@ class CAllCatalogProduct
 					$arAllProps = array();
 					do
 					{
-						$strID = (strlen($arProp["CODE"])>0 ? $arProp["CODE"] : $arProp["ID"]);
+						$strID = ($arProp["CODE"] <> '' ? $arProp["CODE"] : $arProp["ID"]);
 						if (is_array($arProp["VALUE"]))
 						{
 							foreach ($arProp["VALUE"] as &$strOneValue)
@@ -1040,7 +1040,8 @@ class CAllCatalogProduct
 						'>=QUANTITY_TO' => $quantity,
 						'=QUANTITY_TO' => null
 					)
-				)
+				),
+				'order' => array('CATALOG_GROUP_ID' => 'ASC')
 			));
 			while ($row = $iterator->fetch())
 			{
@@ -1121,7 +1122,7 @@ class CAllCatalogProduct
 				$arDiscounts = CCatalogDiscount::GetDiscount(
 					$intProductID,
 					$intIBlockID,
-					$priceData['CATALOG_GROUP_ID'],
+					array($priceData['CATALOG_GROUP_ID']),
 					$arUserGroups,
 					$renewal,
 					$siteID,
@@ -1459,7 +1460,7 @@ class CAllCatalogProduct
 			return false;
 		}
 
-		\Bitrix\Main\Type\Collection::sortByColumn($priceList, 'BASKET_CODE');
+		Main\Type\Collection::sortByColumn($priceList, ['BASKET_CODE' => SORT_ASC, 'CATALOG_GROUP_ID' => SORT_ASC]);
 
 		$vatList = CCatalogProduct::GetVATDataByIDList(array_keys($products));
 		if (!empty($vatList))
@@ -1588,7 +1589,7 @@ class CAllCatalogProduct
 				$discountList[$priceData['PRODUCT_ID']] = \CCatalogDiscount::GetDiscount(
 					$productId,
 					$iblockListId[$priceData['PRODUCT_ID']],
-					$priceData['CATALOG_GROUP_ID'],
+					array($priceData['CATALOG_GROUP_ID']),
 					$arUserGroups,
 					$renewal,
 					$siteID,
@@ -1964,6 +1965,49 @@ class CAllCatalogProduct
 		}
 		unset($intItemID);
 		return $boolFlag;
+	}
+
+	/**
+	 * @deprecated deprecated since catalog 18.7.0
+	 * @see \CProductQueryBuilder::makeQuery()
+	 *
+	 * @param array $order
+	 * @param array $filter
+	 * @param array $select
+	 * @return array
+	 */
+	public static function GetQueryBuildArrays($order, $filter, $select)
+	{
+		$result = [
+			'SELECT' => '',
+			'FROM' => '',
+			'WHERE' => '',
+			'ORDER' => []
+		];
+
+		$getListParameters = [];
+		if (!empty($select) && is_array($select))
+			$getListParameters['select'] = $select;
+		if (!empty($filter) && is_array($filter))
+			$getListParameters['filter'] = $filter;
+		if (!empty($order) && is_array($order))
+			$getListParameters['order'] = $order;
+
+		$query = \CProductQueryBuilder::makeQuery($getListParameters);
+		if (!empty($query))
+		{
+			if (!empty($query['select']))
+				$result['SELECT'] = ', '.implode(', ', $query['select']).' ';
+			if (!empty($query['join']))
+				$result['FROM'] = ' '.implode(' ', $query['join']).' ';
+			if (!empty($query['filter']))
+				$result['WHERE'] = ' and '.implode(' and ', $query['filter']);
+			if (!empty($query['order']))
+				$result['ORDER'] = $query['order'];
+		}
+		unset($query);
+
+		return $result;
 	}
 
 	/**
@@ -2502,6 +2546,8 @@ class CAllCatalogProduct
 	{
 		$possibleSalePrice = null;
 
+		$registry = Sale\Registry::getInstance(Sale\Registry::REGISTRY_TYPE_ORDER);
+
 		if (empty($priceData))
 			return $possibleSalePrice;
 
@@ -2528,7 +2574,10 @@ class CAllCatalogProduct
 		}
 		if ($basket === null)
 		{
-			$basket = Sale\Basket::create($siteID);
+			/** @var Sale\Basket $basketClassName */
+			$basketClassName = $registry->getBasketClassName();
+
+			$basket = $basketClassName::create($siteID);
 			$basketItem = $basket->createItem('catalog', $intProductID);
 		}
 
@@ -2540,7 +2589,7 @@ class CAllCatalogProduct
 			'PRICE' => $priceData['PRICE'],
 			'BASE_PRICE' => $priceData['PRICE'],
 			'DISCOUNT_PRICE' => 0,
-			'CURRENCY' => $priceData['PRICE'],
+			'CURRENCY' => $priceData['CURRENCY'],
 			'CAN_BUY' => 'Y',
 			'DELAY' => 'N',
 			'PRICE_TYPE_ID' => (int)$priceData['CATALOG_GROUP_ID']
@@ -2563,6 +2612,7 @@ class CAllCatalogProduct
 
 		if ($freezeCoupons)
 			Sale\DiscountCouponsManager::unFreezeCouponStorage();
+		$discount->setExecuteModuleFilter(array('all', 'sale', 'catalog'));
 
 		if ($isCompatibilityUsed === true)
 		{

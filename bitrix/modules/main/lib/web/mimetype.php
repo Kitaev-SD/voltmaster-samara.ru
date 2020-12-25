@@ -168,6 +168,7 @@ final class MimeType
 		'epub' => 'application/epub+zip',
 		'msg' => 'message/rfc822',
 		'odt' => 'application/vnd.oasis.opendocument.text',
+		'xodt' => 'application/vnd.collabio.xodocuments.document',
 		'7z' => 'application/x-7z-compressed',
 		'bz2' => 'application/x-bzip2',
 		'mp4v' => 'video/mp4',
@@ -194,7 +195,7 @@ final class MimeType
 	
 	public static function getByFileExtension($extension)
 	{
-		$extension = strtolower($extension);
+		$extension = mb_strtolower($extension);
 		if (isset(self::$mimes[$extension]))
 		{
 			return self::$mimes[$extension];

@@ -1,17 +1,19 @@
 <?
 
-use Bitrix\Main\Localization\Loc;
-use Bitrix\Main\ErrorCollection;
-use Bitrix\Main\Loader;
 use Bitrix\Main\Error;
-
-use Bitrix\Sender\Security;
+use Bitrix\Main\ErrorCollection;
+use Bitrix\Main\Localization\Loc;
 
 if (!defined("B_PROLOG_INCLUDED") || B_PROLOG_INCLUDED !== true)
 {
 	die();
 }
 
+if (!Bitrix\Main\Loader::includeModule('sender'))
+{
+	ShowError('Module `sender` not installed');
+	die();
+}
 Loc::loadMessages(__FILE__);
 
 class SenderContactComponent extends CBitrixComponent
@@ -21,11 +23,12 @@ class SenderContactComponent extends CBitrixComponent
 
 	protected function checkRequiredParams()
 	{
-		if (!Loader::includeModule('sender'))
+		if (!Bitrix\Main\Loader::includeModule('sender'))
 		{
 			$this->errors->setError(new Error('Module `sender` is not installed.'));
 			return false;
 		}
+
 		return true;
 	}
 
@@ -77,7 +80,7 @@ class SenderContactComponent extends CBitrixComponent
 			CComponentEngine::initComponentVariables($componentPage, $arComponentVariables, $arVariableAliases, $arVariables);
 			foreach ($arUrlTemplates as $url => $value)
 			{
-				$key = 'PATH_TO_'.strtoupper($url);
+				$key = 'PATH_TO_'.mb_strtoupper($url);
 				$this->arResult[$key] = isset($this->arParams[$key][0]) ? $this->arParams[$key] : $this->arParams['SEF_FOLDER'] . $value;
 			}
 
@@ -116,15 +119,15 @@ class SenderContactComponent extends CBitrixComponent
 			global $APPLICATION;
 			foreach ($arDefaultUrlTemplates404 as $url => $value)
 			{
-				$key = 'PATH_TO_'.strtoupper($url);
-				$value = substr($value, 0, -1);
+				$key = 'PATH_TO_'.mb_strtoupper($url);
+				$value = mb_substr($value, 0, -1);
 				$value = str_replace('/', '&ID=', $value);
 				$lang = isset($_REQUEST['lang']) ? $_REQUEST['lang'] : null;
 				$this->arResult[$key] = $APPLICATION->GetCurPage() . "?$value" . ($lang ? "&lang=$lang" : '');
 			}
 		}
 
-		$this->arResult['PATH_TO_RECIPIENT'] .= (strpos($this->arResult['PATH_TO_RECIPIENT'], '?') ? '&' : '?') . 'clear_filter=Y&apply_filter=Y';
+		$this->arResult['PATH_TO_RECIPIENT'] .= (mb_strpos($this->arResult['PATH_TO_RECIPIENT'], '?')? '&' : '?') . 'clear_filter=Y&apply_filter=Y';
 		$componentPage = $componentPage == 'list' ? 'list' : $componentPage;
 
 		if (!is_array($this->arResult))
@@ -146,8 +149,6 @@ class SenderContactComponent extends CBitrixComponent
 
 	protected function prepareResult()
 	{
-		Security\Agreement::requestFromCurrentUser();
-
 		return true;
 	}
 

@@ -32,8 +32,20 @@ $arComponentParameters = Array(
 			'NAME' => getMessage('LANDING_CMP_PAR_CODE'),
 			'TYPE' => 'STRING'
 		),
-		'PAGE_URL_BACK' => array(
-			'NAME' => getMessage('LANDING_CMP_PAR_PAGE_URL_BACK'),
+		'DONT_LEAVE_FRAME' => array(
+			'NAME' => getMessage('LANDING_CMP_PAR_DONT_LEAVE_FRAME'),
+			'TYPE' => 'CHECKBOX'
+		),
+		'BINDING_TYPE' => array(
+			'NAME' => getMessage('LANDING_CMP_PAR_BINDING_TYPE'),
+			'TYPE' => 'LIST',
+			'VALUES' => [
+				'GROUP' => getMessage('LANDING_CMP_PAR_BINDING_TYPE_GROUP'),
+				'MENU' => getMessage('LANDING_CMP_PAR_BINDING_TYPE_MENU')
+			]
+		),
+		'BINDING_ID' => array(
+			'NAME' => getMessage('LANDING_CMP_PAR_BINDING_ID'),
 			'TYPE' => 'STRING'
 		)
 	)

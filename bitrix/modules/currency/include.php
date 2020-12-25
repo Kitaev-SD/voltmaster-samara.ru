@@ -2,7 +2,7 @@
 use Bitrix\Main\Loader;
 
 global $DB;
-$strDBType = strtolower($DB->type);
+$strDBType = mb_strtolower($DB->type);
 
 Loader::registerAutoLoadClasses(
 	'currency',
@@ -23,11 +23,13 @@ Loader::registerAutoLoadClasses(
 );
 unset($strDBType);
 
+//class_alias('Bitrix\Currency\UserField\Types\Money', 'Bitrix\Currency\UserField\Money');
+
 \CJSCore::RegisterExt(
 	'currency',
 	array(
 		'js' => '/bitrix/js/currency/core_currency.js',
-		'rel' => array('core')
+		'rel' => array('core', 'main.polyfill.promise')
 	)
 );
 

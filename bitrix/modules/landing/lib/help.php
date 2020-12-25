@@ -10,19 +10,25 @@ class Help
 	 */
 	protected static $domains = array(
 		'ru' => 'bitrix24.ru',
-		'ua' => 'bitrix24.ua',
 		'by' => 'bitrix24.by',
 		'kz' => 'bitrix24.kz',
-		'pl' => 'bitrix24.pl',
+
+		'ua' => 'bitrix24.ua',
+
 		'en' => 'bitrix24.com',
 		'de' => 'bitrix24.de',
 		'es' => 'bitrix24.es',
 		'br' => 'bitrix24.com.br',
+		'pl' => 'bitrix24.pl',
 		'fr' => 'bitrix24.fr',
 		'cn' => 'bitrix24.cn',
 		'in' => 'bitrix24.in',
 		'eu' => 'bitrix24.eu',
-		'tr' => 'bitrix24.com.tr'
+		'tr' => 'bitrix24.com.tr',
+		'it' => 'bitrix24.it',
+		'id' => 'bitrix24.id',
+		'vn' => 'bitrix24.vn',
+		'jp' => 'bitrix24.jp'
 	);
 
 	/**
@@ -31,22 +37,116 @@ class Help
 	protected static $helpUrl = array(
 		'SITE_LIMIT_REACHED' => array(
 			'ru' => '6519197',
+			'ua' => '6524403',
 			'en' => '6588287',
-			'es' => '6529315',
 			'de' => '6630821',
+			'es' => '6529315',
 			'br' => '7014601',
-			'ua' => '6524403'
+			'fr' => '8460105',
+			'pl' => '10187232'
 		),
 		'LANDING_EDIT' => array(
-			'ru' => 's93291'
+			'ru' => 's105667',
+			'ua' => 's105681',
+			'en' => 's95157',
+			'de' => 's95161',
+			'es' => 's95265',
+			'br' => 's119713',
+			'fr' => 's110613',
+			'pl' => 's127232'
 		),
 		'DOMAIN_EDIT' => array(
-			'ru' => '6624333'
+			'ru' => '6624333',
+			'ua' => '6626953',
+			'en' => '7389089',
+			'de' => '6637101',
+			'es' => '8479199',
+			'br' => '8513557',
+			'fr' => '8460145',
+			'pl' => '10187266'
+		),
+		'DOMAIN_BITRIX24' => array(
+			'ru' => '11341354'
+		),
+		'COOKIES_EDIT' => array(
+		),
+		'DOMAIN_FREE' => array(
+			'ru' => '11341378'
 		),
 		'GMAP_EDIT' => array(
-			'ru' => '8203739'
+			'ru' => '8203739',
+			'ua' => '8223491',
+			'en' => '8218073',
+			'de' => '8208835',
+			'es' => '8210537',
+			'br' => '8234081',
+			'fr' => '9221199'
+		),
+		'PIXEL' => array(
+			'ru' => '9022893',
+			'ua' => '9028735',
+			'en' => '9025097',
+			'de' => '9024719',
+			'es' => '9023659',
+			'br' => '9029347',
+			'fr' => '9392177'
+		),
+		'GTM' => array(
+			'ru' => '9488927',
+			'ua' => '9490499',
+			'en' => '9510537',
+			'de' => '9492673',
+			'es' => '9496717',
+			'br' => '9497065',
+			'fr' => '9493337'
+		),
+		'GACOUNTER' => array(
+			'ru' => '9485227',
+			'ua' => '9490499',
+			'en' => '9510537',
+			'de' => '9492673',
+			'es' => '9496717',
+			'br' => '9497065',
+			'fr' => '9493337'
+		),
+		'META_GOOGLE_VERIFICATION' => array(
+			'ru' => '7908779',
+			'ua' => '7917063',
+			'en' => '7949461',
+			'de' => '7920223',
+			'es' => '7993185',
+			'br' => '8828551',
+			'fr' => '9203285',
+			'pl' => '10187376'
+		),
+		'DYNAMIC_BLOCKS' => array(
+			'ru' => '10104989',
+			'ua' => '10119783',
+			'en' => '10134346',
+			'de' => '10119494',
+			'es' => '10133942',
+			'fr' => '10133930'
+		),
+		'YACOUNTER' => array(
+			'ru' => '9494147'
+		),
+		'META_YANDEX_VERIFICATION' => array(
+			'ru' => '7919271'
+		),
+		'SPEED' => array(
+			'ru' => '11565144',
+			'ua' => '11567047'
 		)
 	);
+
+	/**
+	 * Gets domain's array.
+	 * @return array
+	 */
+	public static function getDomains()
+	{
+		return self::$domains;
+	}
 
 	/**
 	 * Gets url to help article by code.
@@ -61,6 +161,11 @@ class Help
 		if ($myZone === null)
 		{
 			$myZone = Manager::getZone();
+		}
+
+		if ($myZone == 'by' || $myZone == 'kz')
+		{
+			$myZone = 'ru';
 		}
 
 		$helpId = 0;
@@ -84,8 +189,8 @@ class Help
 		{
 			return 'https://helpdesk.' . self::$domains[$helpZone] .
 					(
-						(substr($helpId, 0, 1) == 's')
-						? ('/#section' . substr($helpId, 1))
+						(mb_substr($helpId, 0, 1) == 's')
+						? ('/section/'.mb_substr($helpId, 1) . '/')
 						: ('/open/' . $helpId . '/')
 					);
 		}
@@ -94,7 +199,7 @@ class Help
 	}
 
 	/**
-	 * Relace in content all help links by format #HELP_LINK_*CODE*#.
+	 * Replaces in content all help links by format #HELP_LINK_*CODE*#.
 	 * @param string $content Some content.
 	 * @return string
 	 */

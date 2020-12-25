@@ -3,6 +3,7 @@
 namespace Bitrix\Forum\Comments;
 
 use Bitrix\Forum\Internals\Error\ErrorCollection;
+use Bitrix\Forum\MessageTable;
 use Bitrix\Main\Config\Option;
 use Bitrix\Main\Loader;
 use \Bitrix\Main\Localization\Loc;
@@ -10,6 +11,7 @@ use \Bitrix\Forum\Internals\Error\Error;
 use \Bitrix\Main\Event;
 use \Bitrix\Main\EventResult;
 use \Bitrix\Main\ArgumentException;
+use Bitrix\Main\Type\DateTime;
 
 Loc::loadMessages(__FILE__);
 
@@ -37,16 +39,24 @@ class Comment extends BaseObject
 			"USE_SMILES" => ($params["USE_SMILES"] == "Y" ? "Y" : "N"),
 			"APPROVED" => $this->topic["APPROVED"],
 			"XML_ID" => $this->getEntity()->getXmlId(),
-			"USER_ID" => $this->getUser()->getId(),
-			"AUX" => isset($params["AUX"]) ? $params["AUX"] : 'N',
+			"AUX" => ($params["AUX"] ?? 'N'),
+			"AUX_DATA" => ($params["AUX_DATA"] ?? ''),
 		);
+		if (array_key_exists("POST_DATE", $params))
+		{
+			$result["POST_DATE"] = $params["POST_DATE"];
+		}
+		if (array_key_exists("SOURCE_ID", $params))
+		{
+			$result["SOURCE_ID"] = $params["SOURCE_ID"];
+		}
 		$errorCollection = new ErrorCollection();
-		if (strlen($result["POST_MESSAGE"]) <= 0)
+		if ($result["POST_MESSAGE"] == '')
 			$errorCollection->addOne(new Error(Loc::getMessage("FORUM_CM_ERR_EMPTY_TEXT"), self::ERROR_PARAMS_MESSAGE));
 
-		if (strlen($result["AUTHOR_NAME"]) <= 0 && $result["AUTHOR_ID"] > 0)
+		if ($result["AUTHOR_NAME"] == '' && $result["AUTHOR_ID"] > 0)
 			$result["AUTHOR_NAME"] = self::getUserName($result["AUTHOR_ID"]);
-		if (strlen($result["AUTHOR_NAME"]) <= 0)
+		if ($result["AUTHOR_NAME"] == '')
 			$errorCollection->addOne(new Error(Loc::getMessage("FORUM_CM_ERR_EMPTY_AUTHORS_NAME"), self::ERROR_PARAMS_MESSAGE));
 
 		if (is_array($params["FILES"]) && in_array($this->forum["ALLOW_UPLOAD"], array("Y", "F", "A")))
@@ -123,40 +133,68 @@ class Comment extends BaseObject
 	 */
 	public function add(array $params)
 	{
-		$aux = (isset($params['AUX']) && $params['AUX'] == "Y");
+		$aux = (isset($params['AUX']) && $params['AUX'] === "Y");
+		$auxData = ($params['AUX_DATA'] ?? '');
 
 		$params = array(
+			"SOURCE_ID" => $params["SOURCE_ID"],
+
+			"POST_DATE" => array_key_exists("POST_DATE", $params) ? $params["POST_DATE"] : new \Bitrix\Main\Type\DateTime(),
 			"POST_MESSAGE" => trim($params["POST_MESSAGE"]),
+			"FILES" => $params["FILES"],
+
+			"USE_SMILES" => $params["USE_SMILES"],
+
 			"AUTHOR_ID" => $this->getUser()->getId(),
 			"AUTHOR_NAME" => trim($params["AUTHOR_NAME"]),
 			"AUTHOR_EMAIL" => trim($params["AUTHOR_EMAIL"]),
-			"USE_SMILES" => $params["USE_SMILES"],
-			"FILES" => $params["FILES"],
-			"AUX" => $params["AUX"]
+			"AUTHOR_IP" => "<no address>",
+			"AUTHOR_REAL_IP" => "<no address>",
+			"GUEST_ID" => $_SESSION["SESS_GUEST_ID"],
+
+			"AUX" => $params["AUX"],
+			"AUX_DATA" => $auxData,
 		);
 
 		if ($this->prepareFields($params, $this->errorCollection))
 		{
-			$authorIP = $authorIPTmp = \ForumGetRealIP();
-			$authorRealIP = $_SERVER['REMOTE_ADDR'];
-			if (Option::get("forum", "FORUM_GETHOSTBYADDR", "N") == "Y")
+			if ($realIp = \Bitrix\Main\Service\GeoIp\Manager::getRealIp())
 			{
-				$authorIP = @gethostbyaddr($authorIP);
-				$authorRealIP = ($authorIPTmp == $authorRealIP ? $authorIP : @gethostbyaddr($authorRealIP));
+				$params["AUTHOR_IP"] = $realIp;
+				$params["AUTHOR_REAL_IP"] = $realIp;
+				if (\Bitrix\Main\Config\Option::get("forum", "FORUM_GETHOSTBYADDR", "N") == "Y")
+				{
+					$params["AUTHOR_REAL_IP"] = @gethostbyaddr($realIp);
+				}
 			}
-			$params["AUTHOR_IP"] = ($authorIP!==False) ? $authorIP : "<no address>";
-			$params["AUTHOR_REAL_IP"] = ($authorRealIP!==False) ? $authorRealIP : "<no address>";
-			$params["GUEST_ID"] = $_SESSION["SESS_GUEST_ID"];
 
-			if (!(($mid = \CForumMessage::add($params, false)) > 0))
+			/***************** Events OnBeforeCommentAdd ******************/
+			$event = new Event("forum", "OnBeforeCommentAdd", [
+				$this->getEntity()->getType(),
+				$this->getEntity()->getId(),
+				$params
+			]);
+			$event->send($this);
+			if($event->getResults())
 			{
-				$text = Loc::getMessage("ADDMESS_ERROR_ADD_MESSAGE");
-				if (($str = $this->getApplication()->getException()) && $str)
-					$text = $str->getString();
-				$this->errorCollection->addOne(new Error($text, self::ERROR_PARAMS_MESSAGE));
+				foreach($event->getResults() as $eventResult)
+				{
+					if($eventResult->getType() != EventResult::SUCCESS)
+					{
+						$run = false;
+						break;
+					}
+				}
 			}
-			else
+			/***************** /Events *****************************************/
+
+			$topic = \Bitrix\Forum\Topic::getById($params["TOPIC_ID"]);
+			$result = \Bitrix\Forum\Message::create($topic, $params);
+
+			if ($result->isSuccess())
 			{
+				$mid = $result->getId();
+
 				if (!$aux)
 				{
 					$this->updateStatisticModule($mid);
@@ -165,7 +203,10 @@ class Comment extends BaseObject
 
 				$this->setComment($mid);
 
-				if (!$aux)
+				if (
+					!$aux // create task from livefeed
+					|| $auxData <> '' // tasks commentposter, add to livefeed
+				)
 				{
 					$event = new Event("forum", "OnAfterCommentAdd", array(
 							$this->getEntity()->getType(),
@@ -174,7 +215,8 @@ class Comment extends BaseObject
 								"TOPIC_ID" => $this->topic["ID"],
 								"MESSAGE_ID" => $mid,
 								"PARAMS" => $params,
-								"MESSAGE" => $this->getComment()
+								"MESSAGE" => $this->getComment(),
+								"AUX_DATA" => $auxData
 							))
 					);
 					$event->send();
@@ -182,6 +224,7 @@ class Comment extends BaseObject
 
 				return $this->getComment();
 			}
+			$this->errorCollection->addFromResult($result);
 		}
 		return false;
 	}
@@ -242,6 +285,10 @@ class Comment extends BaseObject
 				"FILES" => $params["FILES"]
 			)) && $this->prepareFields($params, $this->errorCollection))
 			{
+				if (array_key_exists("POST_DATE", $paramsRaw))
+				{
+					$params["POST_DATE"] = $paramsRaw["POST_DATE"];
+				}
 				if (array_key_exists("EDIT_REASON", $paramsRaw))
 				{
 					$params += array(
@@ -251,18 +298,16 @@ class Comment extends BaseObject
 						"EDIT_REASON" => trim($paramsRaw["EDIT_REASON"]),
 						"EDIT_DATE" => ""
 					);
-					if (strlen($params["EDITOR_NAME"]) <= 0)
+					if ($params["EDITOR_NAME"] == '')
 						$params["EDITOR_NAME"] = ($params["EDITOR_ID"] > 0 ? self::getUserName($params["EDITOR_ID"]) : Loc::getMessage("GUEST"));
 				}
-				if (!(($mid = \CForumMessage::update($this->message["ID"], $params)) > 0))
+				$result = \Bitrix\Forum\Message::getById($this->message["ID"])->edit($params);
+				if ($result->isSuccess())
 				{
-					$text = Loc::getMessage("ADDMESS_ERROR_EDIT_MESSAGE");
-					if (($str = $this->getApplication()->getException()) && $str)
-						$text = $str->getString();
-					$this->errorCollection->addOne(new Error($text, self::ERROR_PARAMS_MESSAGE));
-				}
-				else
-				{
+					$mid = $this->message["ID"];
+					unset($GLOBALS["FORUM_CACHE"]["MESSAGE"][$mid]);
+					unset($GLOBALS["FORUM_CACHE"]["MESSAGE_FILTER"][$mid]);
+
 					if ($params["AUTHOR_ID"] != $this->getUser()->getId() || Option::get("forum", "LOGS", "Q") < "U")
 					{
 						$resLog = array();
@@ -300,6 +345,7 @@ class Comment extends BaseObject
 					/***************** /Events *****************************************/
 					return $this->getComment();
 				}
+				$this->errorCollection->addFromResult($result);
 			}
 		}
 		return false;

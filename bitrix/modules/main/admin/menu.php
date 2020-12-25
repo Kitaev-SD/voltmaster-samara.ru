@@ -167,8 +167,8 @@ if($USER->CanDoOperation('view_other_settings') || $USER->CanDoOperation('manage
 			),
 		);
 		$settingsItems[] = array(
-			"text" => GetMessage("MAIN_MENU_EVENT"),
-			"title" => GetMessage("MAIN_MENU_EVENT_TITLE"),
+			"text" => GetMessage("MAIN_MENU_EVENT1"),
+			"title" => GetMessage("MAIN_MENU_EVENT_TITLE1"),
 			"items_id" => "menu_templates",
 			"items" => array(
 				array(
@@ -178,8 +178,14 @@ if($USER->CanDoOperation('view_other_settings') || $USER->CanDoOperation('manage
 					"title" => GetMessage("MAIN_MENU_TEMPLATES_ALT"),
 				),
 				array(
-					"text" => GetMessage("MAIN_MENU_EVENT_TYPES"),
-					"title" => GetMessage("MAIN_MENU_EVENT_TYPES_TITLE"),
+					"text" => GetMessage("main_menu_sms_templates"),
+					"url" => "sms_template_admin.php?lang=".LANGUAGE_ID,
+					"more_url" => array("sms_template_edit.php"),
+					"title" => GetMessage("main_menu_sms_templates_title"),
+				),
+				array(
+					"text" => GetMessage("MAIN_MENU_EVENT_TYPES1"),
+					"title" => GetMessage("MAIN_MENU_EVENT_TYPES_TITLE1"),
 					"url" => "type_admin.php?lang=".LANGUAGE_ID,
 					"more_url" => array(
 						"type_edit.php"
@@ -493,7 +499,7 @@ if($USER->CanDoOperation('view_other_settings') || $USER->CanDoOperation('view_e
 					"more_url" => array("phpinfo.php"),
 					"title" => GetMessage("MAIN_MENU_PHPINFO_ALT"),
 				),
-				(strtoupper($DBType) == "MYSQL"?
+				(mb_strtoupper($DBType) == "MYSQL"?
 					Array(
 						"text" => GetMessage("MAIN_MENU_OPTIMIZE_DB"),
 						"url" => "repair_db.php?optimize_tables=Y&lang=".LANGUAGE_ID,
@@ -502,7 +508,7 @@ if($USER->CanDoOperation('view_other_settings') || $USER->CanDoOperation('view_e
 					)
 					:null
 				),
-				(strtoupper($DBType) == "MYSQL"?
+				(mb_strtoupper($DBType) == "MYSQL"?
 					Array(
 						"text" => GetMessage("MAIN_MENU_REPAIR_DB"),
 						"url" => "repair_db.php?lang=".LANGUAGE_ID,
@@ -518,7 +524,10 @@ if($USER->CanDoOperation('view_other_settings') || $USER->CanDoOperation('view_e
 	$toolsItems[] = array(
 		"text" => GetMessage("MAIN_MENU_EVENT_LOG"),
 		"url" => "event_log.php?lang=".LANGUAGE_ID,
-		"more_url" => array(),
+		"more_url" => array(
+			"log_notifications.php",
+			"log_notification_edit.php",
+		),
 		"title" => GetMessage("MAIN_MENU_EVENT_LOG_ALT"),
 	);
 
@@ -623,7 +632,7 @@ if($USER->CanDoOperation('install_updates') || (in_array(LANGUAGE_ID, array("ru"
 									}
 
 									$arMarket[] = array(
-										"text" => $category["#"]["name"][0]["#"].(IntVal($category["#"]["count"][0]["#"]) > 0 ? " (".$category["#"]["count"][0]["#"].")" : ""),
+										"text" => $category["#"]["name"][0]["#"].(intval($category["#"]["count"][0]["#"]) > 0 ? " (".$category["#"]["count"][0]["#"].")" : ""),
 										"url" => $url."&lang=".LANGUAGE_ID,
 										"more_url" => $arUrls,
 										"title" => GetMessage("MAIN_MENU_MP_CATEGORY")." ".$category["#"]["name"][0]["#"],

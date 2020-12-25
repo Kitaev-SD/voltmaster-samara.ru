@@ -5,6 +5,7 @@ use Bitrix\Main\Config\Option;
 
 use Bitrix\Main\Error;
 use Bitrix\Main\Event;
+use Bitrix\Main\ORM\Data\AddResult;
 use Bitrix\Sale\Internals\Pool;
 use Bitrix\Sale\Result;
 use Bitrix\Main\IO\File;
@@ -33,6 +34,7 @@ class Manager
 	const SKIP_CHILDREN_PARENT_CHECK = 1;
 
 	protected static $handlers = null;
+	protected static $restHandlers = [];
 	protected static $cachedFields = array();
 
 	/* Directories where we can found handlers */
@@ -45,7 +47,6 @@ class Manager
 	 * @param int $deliveryId
 	 * @return array Service fields
 	 * @throws SystemException
-	 * @throws \Bitrix\Main\ArgumentException
 	 */
 	public static function getById($deliveryId)
 	{
@@ -67,6 +68,18 @@ class Manager
 		}
 
 		return self::$cachedFields[$deliveryId];
+	}
+
+	/**
+	 * @param array $params
+	 * @return \Bitrix\Main\ORM\Query\Result
+	 * @throws SystemException
+	 * @throws \Bitrix\Main\ArgumentException
+	 * @throws \Bitrix\Main\ObjectPropertyException
+	 */
+	public static function getList(array $params = array()): \Bitrix\Main\ORM\Query\Result
+	{
+		return Table::getList($params);
 	}
 
 	/**
@@ -377,7 +390,7 @@ class Manager
 			$errorMsg = "Can't create delivery object. Class \"".$srvParams['CLASS_NAME']."\" does not exist.";
 		}
 
-		if(strlen($errorMsg) > 0)
+		if($errorMsg <> '')
 		{
 			$eventLog = new \CEventLog;
 			$eventLog->Add(array(
@@ -430,7 +443,7 @@ class Manager
 	 */
 	public static function getObjectByCode($serviceCode)
 	{
-		if(strlen($serviceCode) <= 0 )
+		if($serviceCode == '' )
 			throw new ArgumentNullException("serviceCode");
 
 		$srvParams = array();
@@ -481,7 +494,8 @@ class Manager
 			'\Bitrix\Sale\Delivery\Services\Automatic' => 'lib/delivery/services/automatic.php',
 			'\Bitrix\Sale\Delivery\Services\Configurable' => 'lib/delivery/services/configurable.php',
 			'\Bitrix\Sale\Delivery\Services\AutomaticProfile' => 'lib/delivery/services/automatic_profile.php',
-			'\Bitrix\Sale\Delivery\Services\EmptyDeliveryService' => 'lib/delivery/services/emptydeliveryservice.php'
+			'\Bitrix\Sale\Delivery\Services\EmptyDeliveryService' => 'lib/delivery/services/emptydeliveryservice.php',
+			'\Sale\Handlers\Delivery\Taxi\Yandex\YandexTaxi' => 'handlers/delivery/taxi/yandex/yandextaxi.php',
 		);
 
 		\Bitrix\Main\Loader::registerAutoLoadClasses('sale', $result);
@@ -615,6 +629,30 @@ class Manager
 	}
 
 	/**
+	 * @return array|null
+	 * @throws SystemException
+	 * @throws \Bitrix\Main\ArgumentException
+	 * @throws \Bitrix\Main\ObjectPropertyException
+	 */
+	public static function getRestHandlerList(): ?array
+	{
+		static $init = false;
+		if (!$init)
+		{
+			$init = true;
+			$restHandlerList = \Bitrix\Sale\Delivery\Rest\Internals\DeliveryRestHandlerTable::getList([
+				'select' => ['*']
+			])->fetchAll();
+			foreach ($restHandlerList as $restHandler)
+			{
+				self::$restHandlers[$restHandler['CODE']] = $restHandler;
+			}
+		}
+
+		return self::$restHandlers;
+	}
+
+	/**
 	 * Calculates the price of the shipment
 	 * @param Shipment $shipment
 	 * @param int $deliveryId optional
@@ -648,7 +686,6 @@ class Manager
 	 * @param string $name Group name
 	 * @return int Group id
 	 * @throws SystemException
-	 * @throws \Bitrix\Main\ArgumentException
 	 * @throws \Exception
 	 */
 	public static function getGroupId($name)
@@ -715,13 +752,24 @@ class Manager
 	/**
 	 * Adds delivery service
 	 * @param array $fields
-	 * @return \Bitrix\Main\Entity\AddResult
+	 * @return AddResult
 	 * @throws SystemException
 	 * @throws \Exception
 	 */
 	public static function add(array $fields)
 	{
 		self::initHandlers();
+
+		if(!empty($fields["CLASS_NAME"]))
+		{
+			/** @var \Bitrix\Main\Result $onBeforeAddResult */
+			$onBeforeAddResult = $fields["CLASS_NAME"]::onBeforeAdd($fields);
+			if (!$onBeforeAddResult->isSuccess())
+			{
+				return (new AddResult())->addErrors($onBeforeAddResult->getErrors());
+			}
+		}
+
 		$res = \Bitrix\Sale\Delivery\Services\Table::add($fields);
 
 		if($res->isSuccess())
@@ -734,6 +782,14 @@ class Manager
 		}
 
 		return $res;
+	}
+
+	/**
+	 * @return string
+	 */
+	public static function generateXmlId()
+	{
+		return uniqid('bx_');
 	}
 
 	/**
@@ -910,7 +966,6 @@ class Manager
 	/**
 	 * @param string $code
 	 * @return int Service id
-	 * @throws \Bitrix\Main\ArgumentException
 	 */
 	public static function getIdByCode($code)
 	{
@@ -1007,7 +1062,7 @@ class Manager
 		$code = self::getIdCodeCached($id, "id");
 		$cacheManager->clean("SALE_DELIVERY_ID_CODE_MAP_I_".$id);
 
-		if(strlen($code) > 0)
+		if($code <> '')
 			$cacheManager->clean("SALE_DELIVERY_ID_CODE_MAP_C_".$code);
 	}
 
@@ -1015,7 +1070,6 @@ class Manager
 	 * Returns is delivery service is already used in shipments
 	 * @param $deliveryId
 	 * @return bool
-	 * @throws \Bitrix\Main\ArgumentException
 	 */
 	protected static function isDeliveryInShipments($deliveryId)
 	{
@@ -1170,7 +1224,7 @@ class Manager
 	 */
 	public static function isDeliveryServiceClassValid($class)
 	{
-		if(strlen($class) <= 0)
+		if($class == '')
 			return false;
 
 		self::initHandlers();
@@ -1212,8 +1266,8 @@ class Manager
 
 		$restriction = new $className;
 
-		if(!($restriction instanceof Restrictions\Base))
-			throw new SystemException('Object must be the instance of Bitrix\Sale\Delivery\Restrictions\Base');
+		if(!is_subclass_of($className, 'Bitrix\Sale\Services\Base\Restriction'))
+			throw new SystemException('Object must be the instance of Bitrix\Sale\Services\Base\Restriction');
 
 		$cache[$className] = $restriction;
 		return  $restriction;

@@ -1077,7 +1077,13 @@ BX["UI"].FileInput.prototype = {
 		if (item.description == undefined)
 			item.description = (BX(id + 'Description') && BX(id + 'Description').value ? BX(id + 'Description').value : '');
 		if (item.description)
-			hint +=  '<span class="adm-fileinput-drag-area-popup-param">' + BX.message('JS_CORE_FILE_DESCRIPTION') + ':&nbsp;<span>' + item.description + '</span></span>';
+		{
+			hint +=  '<span class="adm-fileinput-drag-area-popup-param">' +
+				BX.message('JS_CORE_FILE_DESCRIPTION') +
+				':&nbsp;<span>' +
+					BX.util.htmlspecialchars(String(item.description).replace(/\&quot\;/gi, "\"")) +
+				'</span></span>';
+		}
 		var path = item["file"] ? (item["file"]["real_url"] || item["file"]["tmp_url"]) : '';
 		if (path)
 		{
@@ -1796,7 +1802,7 @@ FrameMaster.prototype = {
 		}
 
 		this.activeItem = item;
-		this.description.value = item.props.description;
+		this.description.value = String(item.props.description).replace(/\&quot\;/gi, "\"");
 		var file = (item.file || item.item.file);
 		this.canvas.set(item.canvas, { props : { width : file.width, height : file.height } });
 		if (item.canvas.width != file.width || item.canvas.height != file.height)

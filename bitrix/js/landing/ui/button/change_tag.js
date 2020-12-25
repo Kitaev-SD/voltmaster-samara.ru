@@ -39,7 +39,7 @@
 			if (!this.menu)
 			{
 				this.menu = new Menu({
-					id: "change-tag-name-menu",
+					id: "change-tag-name-menu-" + BX.Text.getRandom(),
 					bindElement: this.layout,
 					zIndex: -678,
 					items: [
@@ -66,6 +66,11 @@
 						new BX.PopupMenuItem({
 							id: "H5",
 							text: "H5",
+							onclick: this.onChange
+						}),
+						new BX.PopupMenuItem({
+							id: "H6",
+							text: "H6",
 							onclick: this.onChange
 						})
 					]
@@ -111,7 +116,7 @@
 				if (newActive)
 				{
 					newActive.layout.text.innerHTML = "<strong>"+newActive.layout.text.innerText+"</strong>";
-					this.layout.innerText = newActive.id;
+					this.layout.innerHTML = "<span class=\"landing-ui-icon-editor-"+newActive.id.toLowerCase()+"\"></span>";
 				}
 			}
 		},

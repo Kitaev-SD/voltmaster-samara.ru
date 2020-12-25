@@ -2,6 +2,7 @@
 
 namespace Bitrix\Sale;
 
+use Bitrix\Location\Entity\Address;
 use Bitrix\Sale\Internals\Input;
 use Bitrix\Main;
 use Bitrix\Main\Localization\Loc;
@@ -147,13 +148,49 @@ abstract class PropertyBase
 
 	/**
 	 * @param $value
-	 * @return array
+	 * @return array|mixed|string|null
+	 * @throws Main\ArgumentException
+	 * @throws Main\LoaderException
+	 * @throws Main\ObjectPropertyException
+	 * @throws Main\SystemException
 	 */
 	public function normalizeValue($value)
 	{
 		if ($this->fields['TYPE'] === 'FILE')
 		{
 			return Input\File::loadInfo($value);
+		}
+		elseif ($this->fields['TYPE'] === 'ADDRESS' && Main\Loader::includeModule('location'))
+		{
+			if (is_array($value))
+			{
+				/**
+				 * Already normalized
+				 */
+				return $value;
+			}
+			elseif (is_numeric($value))
+			{
+				/**
+				 * DB value
+				 */
+				$address = Address::load((int)$value);
+
+				$value = ($address instanceof Address) ? $address->toArray() : null;
+			}
+			elseif (is_string($value) && !empty($value))
+			{
+				/**
+				 * JSON most likely
+				 */
+				return Main\Web\Json::decode(
+					Main\Text\Encoding::convertEncoding(
+						$value,
+						SITE_CHARSET,
+						'UTF-8'
+					)
+				);
+			}
 		}
 		elseif ($this->fields['TYPE'] === "STRING")
 		{
@@ -236,18 +273,13 @@ abstract class PropertyBase
 	 */
 	public static function getMeaningfulValues($personTypeId, $request)
 	{
-		$personTypeId = intval($personTypeId);
-		if ($personTypeId <= 0)
-		{
-			throw new Main\ArgumentNullException("personTypeId");
-		}
-
-		if (!is_array($request))
-		{
-			throw new Main\ArgumentNullException("request");
-		}
-
 		$result = [];
+
+		$personTypeId = intval($personTypeId);
+		if ($personTypeId <= 0 || !is_array($request))
+		{
+			return [];
+		}
 
 		$dbRes = static::getList([
 			'select' => [
@@ -268,9 +300,9 @@ abstract class PropertyBase
 			{
 				foreach ($row as $key => $value)
 				{
-					if (($value === "Y") && (substr($key, 0, 3) === "IS_"))
+					if (($value === "Y") && (mb_substr($key, 0, 3) === "IS_"))
 					{
-						$result[substr($key, 3)] = $request[$row["ID"]];
+						$result[mb_substr($key, 3)] = $request[$row["ID"]];
 					}
 				}
 			}
@@ -385,12 +417,15 @@ abstract class PropertyBase
 	}
 
 	/**
-	 * @param $value
-	 * @param null $oldValue
-	 * @return array|mixed|null
+	 * @param PropertyValueBase $propertyValue
+	 * @return array|mixed|string|null
+	 * @throws Main\ArgumentOutOfRangeException
+	 * @throws Main\NotImplementedException
 	 */
-	public function prepareValueBeforeSave($value, $oldValue = null)
+	public function getPreparedValueForSave(PropertyValueBase $propertyValue)
 	{
+		$value = $propertyValue->getField('VALUE');
+
 		if ($this->getType() == 'FILE')
 		{
 			$value = Input\File::asMultiple($value);
@@ -417,11 +452,13 @@ abstract class PropertyBase
 			}
 
 			$property = $this->getFields();
+			$propertyValue->setField('VALUE', $value);
 			$value = Input\File::getValue($property, $value);
 
+			$originalFields = $propertyValue->getFields()->getOriginalValues();
 			foreach (
 				array_diff(
-					Input\File::asMultiple(Input\File::getValue($property, $oldValue)),
+					Input\File::asMultiple(Input\File::getValue($property, $originalFields['VALUE'])),
 					Input\File::asMultiple($value),
 					Input\File::asMultiple(Input\File::getValue($property, $property['DEFAULT_VALUE']))
 				)
@@ -429,6 +466,21 @@ abstract class PropertyBase
 			)
 			{
 				\CFile::Delete($fileId);
+			}
+		}
+		elseif ($this->getType() == 'ADDRESS'  && Main\Loader::includeModule('location'))
+		{
+			if (is_array($value))
+			{
+				$address = Address::fromArray($value);
+
+				$result = $address->save();
+				if (!$result->isSuccess())
+				{
+					return null;
+				}
+
+				return (int)$result->getId();
 			}
 		}
 
@@ -452,7 +504,7 @@ abstract class PropertyBase
 	 */
 	public function getEditHtml(array $values)
 	{
-		$key = isset($this->property["ID"]) ? $this->getId() : "n".$values['ID'];
+		$key = isset($this->property["ID"]) ? $this->getId() : "n".$values['ORDER_PROPS_ID'];
 		return Input\Manager::getEditHtml("PROPERTIES[".$key."]", $this->fields, $values['VALUE']);
 	}
 
