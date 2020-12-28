@@ -1,8 +1,10 @@
 <?
+use Bitrix\Main\Loader;
+
 if(!defined("B_PROLOG_INCLUDED") || B_PROLOG_INCLUDED!==true)
 	die();
 
-if(!CModule::IncludeModule('sale'))
+if(!Loader::includeModule('sale'))
 	return;
 
 use	Bitrix\Sale\BusinessValue,
@@ -33,7 +35,7 @@ $arGeneralInfo = Array();
 $dbSite = CSite::GetByID(WIZARD_SITE_ID);
 if($arSite = $dbSite -> Fetch())
 	$lang = $arSite["LANGUAGE_ID"];
-if(strlen($lang) <= 0)
+if($lang == '')
 	$lang = "ru";
 $bRus = false;
 if($lang == "ru")
@@ -150,9 +152,9 @@ if($bRus || COption::GetOptionString("eshop", "wizard_installed", "N", WIZARD_SI
 			"SERVER_NAME" => $_SERVER["SERVER_NAME"],
 		));
 
-	if(strlen($siteStamp)>0)
+	if($siteStamp <> '')
 	{
-		if(IntVal($siteStamp) > 0)
+		if(intval($siteStamp) > 0)
 		{
 			$ff = CFile::GetByID($siteStamp);
 			if($zr = $ff->Fetch())
@@ -194,7 +196,7 @@ if($bRus || COption::GetOptionString("eshop", "wizard_installed", "N", WIZARD_SI
 	$personTypeUr = (isset($personType["ur"]) && $personType["ur"] == "Y" ? "Y" : "N");
 	COption::SetOptionString("eshop", "personTypeUr", $personTypeUr, false, WIZARD_SITE_ID);
 
-	if (in_array(GetMessage("SALE_WIZARD_PERSON_1"), $arPersonTypeNames))
+	if (!defined("ADDITIONAL_INSTALL") && in_array(GetMessage("SALE_WIZARD_PERSON_1"), $arPersonTypeNames))
 	{
 		$arGeneralInfo["personType"]["fiz"] = array_search(GetMessage("SALE_WIZARD_PERSON_1"), $arPersonTypeNames);
 		CSalePersonType::Update(array_search(GetMessage("SALE_WIZARD_PERSON_1"), $arPersonTypeNames), Array(
@@ -212,7 +214,7 @@ if($bRus || COption::GetOptionString("eshop", "wizard_installed", "N", WIZARD_SI
 				);
 	}
 
-	if (in_array(GetMessage("SALE_WIZARD_PERSON_2"), $arPersonTypeNames))
+	if (!defined("ADDITIONAL_INSTALL") && in_array(GetMessage("SALE_WIZARD_PERSON_2"), $arPersonTypeNames))
 	{
 		$arGeneralInfo["personType"]["ur"] = array_search(GetMessage("SALE_WIZARD_PERSON_2"), $arPersonTypeNames);
 		CSalePersonType::Update(array_search(GetMessage("SALE_WIZARD_PERSON_2"), $arPersonTypeNames), Array(
@@ -235,7 +237,7 @@ if($bRus || COption::GetOptionString("eshop", "wizard_installed", "N", WIZARD_SI
 		$personTypeFizUa = (isset($personType["fiz_ua"]) && $personType["fiz_ua"] == "Y" ? "Y" : "N");
 		COption::SetOptionString("eshop", "personTypeFizUa", $personTypeFizUa, false, WIZARD_SITE_ID);
 
-		if (in_array(GetMessage("SALE_WIZARD_PERSON_3"), $arPersonTypeNames))
+		if (!defined("ADDITIONAL_INSTALL") && in_array(GetMessage("SALE_WIZARD_PERSON_3"), $arPersonTypeNames))
 		{
 			$arGeneralInfo["personType"]["fiz_ua"] = array_search(GetMessage("SALE_WIZARD_PERSON_3"), $arPersonTypeNames);
 			CSalePersonType::Update(array_search(GetMessage("SALE_WIZARD_PERSON_3"), $arPersonTypeNames), Array(
@@ -278,6 +280,8 @@ if($bRus || COption::GetOptionString("eshop", "wizard_installed", "N", WIZARD_SI
 			));
 		}
 
+		if (!defined("ADDITIONAL_INSTALL"))
+		{
 			//Set options
 			COption::SetOptionString('sale','default_currency',$defCurrency);
 			COption::SetOptionString('sale','delete_after','30');
@@ -317,6 +321,7 @@ if($bRus || COption::GetOptionString("eshop", "wizard_installed", "N", WIZARD_SI
 			COption::SetOptionString('sale','recalc_product_list_period','4');
 			COption::SetOptionString('sale', 'order_email', $shopEmail);
 			COption::SetOptionString('sale', 'encode_fuser_id', 'Y');
+		}
 
 			if(!$bRus)
 				$shopLocation = GetMessage("WIZ_CITY");
@@ -325,7 +330,7 @@ if($bRus || COption::GetOptionString("eshop", "wizard_installed", "N", WIZARD_SI
 			{
 				$location = '';
 
-				if(strlen($shopLocation))
+				if($shopLocation <> '')
 				{
 					// get city with name equal to $shopLocation
 					$item = \Bitrix\Sale\Location\LocationTable::getList(array(
@@ -340,7 +345,9 @@ if($bRus || COption::GetOptionString("eshop", "wizard_installed", "N", WIZARD_SI
 					))->fetch();
 
 					if($item)
-						$location = $item['CODE']; // city found, simply take it`s code an proceed with it
+					{
+						$location = $item['CODE'];
+					} // city found, simply take it`s code an proceed with it
 					else
 					{
 						// city were not found, create it
@@ -354,7 +361,7 @@ if($bRus || COption::GetOptionString("eshop", "wizard_installed", "N", WIZARD_SI
 						$countryCode = $LOCALIZATION_COUNTRY_CODE_MAP[$shopCountry];
 						$countryId = false;
 
-						if(strlen($countryCode))
+						if($countryCode <> '')
 						{
 							// get country which matches the current localization
 							$countryId = 0;
@@ -370,14 +377,18 @@ if($bRus || COption::GetOptionString("eshop", "wizard_installed", "N", WIZARD_SI
 
 							// country found
 							if($item)
+							{
 								$countryId = $item['ID'];
+							}
 						}
 
 						// at this point types must exist
 						$types = array();
 						$res = \Bitrix\Sale\Location\TypeTable::getList();
 						while($item = $res->fetch())
+						{
 							$types[$item['CODE']] = $item['ID'];
+						}
 
 						if(isset($types['COUNTRY']) && isset($types['CITY']))
 						{
@@ -399,7 +410,9 @@ if($bRus || COption::GetOptionString("eshop", "wizard_installed", "N", WIZARD_SI
 
 								$res = \Bitrix\Sale\Location\LocationTable::add($data);
 								if($res->isSuccess())
+								{
 									$countryId = $res->getId();
+								}
 							}
 
 							if($countryId)
@@ -421,7 +434,9 @@ if($bRus || COption::GetOptionString("eshop", "wizard_installed", "N", WIZARD_SI
 
 								$res = \Bitrix\Sale\Location\LocationTable::add($data);
 								if($res->isSuccess())
+								{
 									$location = 'demo_city_'.WIZARD_SITE_ID;
+								}
 							}
 
 						}
@@ -436,7 +451,7 @@ if($bRus || COption::GetOptionString("eshop", "wizard_installed", "N", WIZARD_SI
 				{
 					$location = $arLocation["ID"];
 				}
-				if(IntVal($location) <= 0)
+				if(intval($location) <= 0)
 				{
 					$CurCountryID = 0;
 					$db_contList = CSaleLocation::GetList(
@@ -448,11 +463,11 @@ if($bRus || COption::GetOptionString("eshop", "wizard_installed", "N", WIZARD_SI
 					);
 					if ($arContList = $db_contList->Fetch())
 					{
-						$LLL = IntVal($arContList["ID"]);
-						$CurCountryID = IntVal($arContList["COUNTRY_ID"]);
+						$LLL = intval($arContList["ID"]);
+						$CurCountryID = intval($arContList["COUNTRY_ID"]);
 					}
 
-					if(IntVal($CurCountryID) <= 0)
+					if(intval($CurCountryID) <= 0)
 					{
 						$arArrayTmp = Array();
 						$arArrayTmp["NAME"] = GetMessage("WIZ_COUNTRY_".ToUpper($shopLocalization));
@@ -1527,7 +1542,7 @@ if($bRus || COption::GetOptionString("eshop", "wizard_installed", "N", WIZARD_SI
 		{
 			$propCityId = $id;
 		}
-		if(strlen($prop["CODE"]) > 0)
+		if($prop["CODE"] <> '')
 		{
 			//$arGeneralInfo["propCode"][$prop["CODE"]] = $prop["CODE"];
 			$arGeneralInfo["propCodeID"][$prop["CODE"]] = $id;
@@ -1547,6 +1562,11 @@ if($bRus || COption::GetOptionString("eshop", "wizard_installed", "N", WIZARD_SI
 		// add business value mapping to property
 		$businessValueCodes[key($businessValueCodes)]['MAP'] = array($prop['PERSON_TYPE_ID'] => array('PROPERTY', $id));
 		next($businessValueCodes);
+	}
+
+	if (defined("ADDITIONAL_INSTALL"))
+	{
+		return;
 	}
 
 /*
@@ -1572,6 +1592,7 @@ if($bRus || COption::GetOptionString("eshop", "wizard_installed", "N", WIZARD_SI
 				"CITY" => Array("TYPE" => "PROPERTY", "VALUE" => $arGeneralInfo["properies"][$arGeneralInfo["personType"]["fiz"]]["LOCATION"]["ID"]."_CITY"),
 				"STREET" => Array("TYPE" => "PROPERTY", "VALUE" => $arGeneralInfo["properies"][$arGeneralInfo["personType"]["fiz"]]["ADDRESS"]["ID"]),
 				"EMAIL" => Array("TYPE" => "PROPERTY", "VALUE" => $arGeneralInfo["properies"][$arGeneralInfo["personType"]["fiz"]]["EMAIL"]["ID"]),
+				"PHONE" => Array("TYPE" => "PROPERTY", "VALUE" => $arGeneralInfo["properies"][$arGeneralInfo["personType"]["fiz"]]["PHONE"]["ID"]),
 				"CONTACT_PERSON" => Array("TYPE" => "PROPERTY", "VALUE" => $arGeneralInfo["properies"][$arGeneralInfo["personType"]["fiz"]]["CONTACT_PERSON"]["ID"]),
 				"IS_FIZ" => "Y",
 			));
@@ -1649,6 +1670,7 @@ if($bRus || COption::GetOptionString("eshop", "wizard_installed", "N", WIZARD_SI
 			"CITY" => Array("TYPE" => "PROPERTY", "VALUE" => $arGeneralInfo["properies"][$arGeneralInfo["personType"]["fiz_ua"]]["LOCATION"]["ID"]."_CITY"),
 			"STREET" => Array("TYPE" => "PROPERTY", "VALUE" => $arGeneralInfo["properies"][$arGeneralInfo["personType"]["fiz_ua"]]["ADDRESS"]["ID"]),
 			"EMAIL" => Array("TYPE" => "PROPERTY", "VALUE" => $arGeneralInfo["properies"][$arGeneralInfo["personType"]["fiz_ua"]]["EMAIL"]["ID"]),
+			"PHONE" => Array("TYPE" => "PROPERTY", "VALUE" => $arGeneralInfo["properies"][$arGeneralInfo["personType"]["fiz_ua"]]["PHONE"]["ID"]),
 			"CONTACT_PERSON" => Array("TYPE" => "PROPERTY", "VALUE" => $arGeneralInfo["properies"][$arGeneralInfo["personType"]["fiz_ua"]]["CONTACT_PERSON"]["ID"]),
 			"IS_FIZ" => "Y",
 		));
@@ -2186,8 +2208,8 @@ if($bRus || COption::GetOptionString("eshop", "wizard_installed", "N", WIZARD_SI
 					$params = array(
 						'filter' => array(
 							"SERVICE_ID" => $id,
-							"SERVICE_TYPE" => \Bitrix\Sale\Services\PaySystem\Restrictions\Manager::SERVICE_TYPE_PAYMENT,
-							"=CLASS_NAME" => '\Bitrix\Sale\Services\PaySystem\Restrictions\PersonType'
+							"SERVICE_TYPE" => Sale\Services\PaySystem\Restrictions\Manager::SERVICE_TYPE_PAYMENT,
+							"=CLASS_NAME" => '\\'.Sale\Services\PaySystem\Restrictions\PersonType::class
 						)
 					);
 
@@ -2229,8 +2251,8 @@ if($bRus || COption::GetOptionString("eshop", "wizard_installed", "N", WIZARD_SI
 			$params = array(
 				'filter' => array(
 					"SERVICE_ID" => $tmpPaySystem['ID'],
-					"SERVICE_TYPE" => \Bitrix\Sale\Services\PaySystem\Restrictions\Manager::SERVICE_TYPE_PAYMENT,
-					"=CLASS_NAME" => '\Bitrix\Sale\Services\PaySystem\Restrictions\PersonType'
+					"SERVICE_TYPE" => Sale\Services\PaySystem\Restrictions\Manager::SERVICE_TYPE_PAYMENT,
+					"=CLASS_NAME" => '\\'.Sale\Services\PaySystem\Restrictions\PersonType::class
 				)
 			);
 
@@ -2269,6 +2291,8 @@ if($bRus || COption::GetOptionString("eshop", "wizard_installed", "N", WIZARD_SI
 
 	if (COption::GetOptionString("eshop", "wizard_installed", "N", WIZARD_SITE_ID) != "Y" || WIZARD_INSTALL_DEMO_DATA)
 	{
+		Sale\Notify::setNotifyDisable(true);
+
 		if ($saleConverted15)
 		{
 			$orderPaidStatus    = 'P';
@@ -2370,20 +2394,9 @@ if($bRus || COption::GetOptionString("eshop", "wizard_installed", "N", WIZARD_SI
 			}
 		}
 
-		if(CModule::IncludeModule("currency"))
-		{
-			$dbCur = CCurrency::GetList($by="currency", $o = "asc");
-			while($arCur = $dbCur->Fetch())
-			{
-				if($lang == "ru")
-					CCurrencyLang::Update($arCur["CURRENCY"], $lang, array("DECIMALS" => 2, "HIDE_ZERO" => "Y"));
-				elseif($arCur["CURRENCY"] == "EUR")
-					CCurrencyLang::Update($arCur["CURRENCY"], $lang, array("DECIMALS" => 2, "FORMAT_STRING" => "&euro;#"));
-			}
-		}
 		WizardServices::IncludeServiceLang("step1.php", $lang);
 
-		if (CModule::IncludeModule("catalog"))
+		if (Loader::includeModule("catalog"))
 		{
 			$dbVat = CCatalogVat::GetListEx(
 				array(),
@@ -2471,7 +2484,11 @@ if($bRus || COption::GetOptionString("eshop", "wizard_installed", "N", WIZARD_SI
 			if (empty($arPrd))
 				return false;
 
-			$order = Sale\Order::create($arData['SITE_ID'], $arData['USER_ID'], $arData['CURRENCY']);
+			$registry = Sale\Registry::getInstance(Sale\Registry::REGISTRY_TYPE_ORDER);
+			/** @var Sale\Order $orderClass */
+			$orderClass = $registry->getOrderClassName();
+
+			$order = $orderClass::create($arData['SITE_ID'], $arData['USER_ID'], $arData['CURRENCY']);
 			$order->setPersonTypeId($arData['PERSON_TYPE_ID']);
 			if (!empty($arData['PROPS']))
 			{
@@ -2504,7 +2521,10 @@ if($bRus || COption::GetOptionString("eshop", "wizard_installed", "N", WIZARD_SI
 				unset($propertyValues);
 			}
 
-			$basket = Sale\Basket::create($arData['SITE_ID']);
+			/** @var Sale\Basket $basketClass */
+			$basketClass = $registry->getBasketClassName();
+
+			$basket = $basketClass::create($arData['SITE_ID']);
 			$basket->setFUserId($arData['FUSER_ID']);
 
 			while ($prdCnt > 0)
@@ -2582,9 +2602,9 @@ if($bRus || COption::GetOptionString("eshop", "wizard_installed", "N", WIZARD_SI
 		}
 
 		$personType = $arGeneralInfo["personType"]["ur"];
-		if(IntVal($arGeneralInfo["personType"]["fiz"]) > 0)
+		if(intval($arGeneralInfo["personType"]["fiz"]) > 0)
 			$personType = $arGeneralInfo["personType"]["fiz"];
-		if(IntVal($personType) <= 0)
+		if(intval($personType) <= 0)
 		{
 			$dbPerson = CSalePersonType::GetList(array(), Array("LID" => WIZARD_SITE_ID));
 			if($arPerson = $dbPerson->Fetch())
@@ -2593,13 +2613,13 @@ if($bRus || COption::GetOptionString("eshop", "wizard_installed", "N", WIZARD_SI
 			}
 		}
 		$paySystem = 0;
-		if(IntVal($arGeneralInfo["paySystem"]["cash"]) > 0 )
+		if(intval($arGeneralInfo["paySystem"]["cash"]) > 0 )
 			$paySystem = $arGeneralInfo["paySystem"]["cash"];
-		elseif(IntVal($arGeneralInfo["paySystem"]["bill"]) > 0 )
+		elseif(intval($arGeneralInfo["paySystem"]["bill"]) > 0 )
 			$paySystem = $arGeneralInfo["paySystem"]["bill"];
-		elseif(IntVal($arGeneralInfo["paySystem"]["sberbank"]) > 0 )
+		elseif(intval($arGeneralInfo["paySystem"]["sberbank"]) > 0 )
 			$paySystem = $arGeneralInfo["paySystem"]["sberbank"];
-		elseif(IntVal($arGeneralInfo["paySystem"]["paypal"]) > 0 )
+		elseif(intval($arGeneralInfo["paySystem"]["paypal"]) > 0 )
 			$paySystem = $arGeneralInfo["paySystem"]["paypal"];
 		else
 		{
@@ -2610,7 +2630,7 @@ if($bRus || COption::GetOptionString("eshop", "wizard_installed", "N", WIZARD_SI
 
 		if(\Bitrix\Main\Config\Option::get('sale', 'sale_locationpro_migrated', '') == 'Y')
 		{
-			if(!strlen($location))
+			if($location == '')
 			{
 				// get first found
 				$item = \Bitrix\Sale\Location\LocationTable::getList(array('limit' => 1, 'select' => array('CODE')))->fetch();
@@ -2620,7 +2640,7 @@ if($bRus || COption::GetOptionString("eshop", "wizard_installed", "N", WIZARD_SI
 		}
 		else
 		{
-			if(IntVal($location) <= 0)
+			if(intval($location) <= 0)
 			{
 				$dbLocation = CSaleLocation::GetList(Array("ID" => "ASC"), Array("LID" => $lang));
 				if($arLocation = $dbLocation->Fetch())
@@ -2713,6 +2733,8 @@ if($bRus || COption::GetOptionString("eshop", "wizard_installed", "N", WIZARD_SI
 		}
 		CAgent::RemoveAgent("CSaleProduct::RefreshProductList();", "sale");
 		CAgent::AddAgent("CSaleProduct::RefreshProductList();", "sale", "N", 60*60*24*4, "", "Y");
+
+		Sale\Notify::setNotifyDisable(false);
 	}
 
 }
