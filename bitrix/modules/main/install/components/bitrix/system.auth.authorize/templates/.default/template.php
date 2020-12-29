@@ -54,7 +54,7 @@ document.getElementById('bx_auth_secure').style.display = 'inline-block';
 				</tr>
 				<tr>
 					<td class="bx-auth-label"><?echo GetMessage("AUTH_CAPTCHA_PROMT")?>:</td>
-					<td><input class="bx-auth-input form-control" type="text" name="captcha_word" maxlength="50" value="" size="15" /></td>
+					<td><input class="bx-auth-input form-control" type="text" name="captcha_word" maxlength="50" value="" size="15" autocomplete="off" /></td>
 				</tr>
 			<?endif;?>
 <?if ($arResult["STORE_PASSWORD"] == "Y"):?>

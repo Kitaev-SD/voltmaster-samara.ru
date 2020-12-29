@@ -234,6 +234,12 @@ abstract class CAllMain
 		//page title
 		$APPLICATION->SetTitle(GetMessage("AUTH_TITLE"));
 
+		if(is_array($arAuthResult) && $arAuthResult["TYPE"] == "ERROR" && $arAuthResult["ERROR_TYPE"] == "CHANGE_PASSWORD")
+		{
+			//require to change the password after N days
+			$change_password = "yes";
+		}
+
 		$inc_file = "";
 		if($forgot_password=="yes")
 		{
@@ -320,28 +326,47 @@ abstract class CAllMain
 		$this->AuthForm($message, false, false, "N", false);
 	}
 
+	/**
+	 * @param bool $mode
+	 */
+	public function SetNeedCAPTHA($mode)
+	{
+		$kernelSession = Main\Application::getInstance()->getKernelSession();
+		$kernelSession["BX_LOGIN_NEED_CAPTCHA"] = (bool)$mode;
+	}
+
+	/**
+	 * @return bool
+	 */
+	public function NeedCAPTHA()
+	{
+		$kernelSession = Main\Application::getInstance()->getKernelSession();
+		return (isset($kernelSession["BX_LOGIN_NEED_CAPTCHA"]) && $kernelSession["BX_LOGIN_NEED_CAPTCHA"]);
+	}
+
 	public function NeedCAPTHAForLogin($login)
 	{
 		//When last login was failed then ask for CAPTCHA
-		if(isset($_SESSION["BX_LOGIN_NEED_CAPTCHA"]) && $_SESSION["BX_LOGIN_NEED_CAPTCHA"])
+		if($this->NeedCAPTHA())
 		{
 			return true;
 		}
 
+		$o = 'LOGIN';
+		$b = 'DESC';
+
 		//This is local cache. May save one query.
 		$USER_ATTEMPTS = false;
 
+		$session = Main\Application::getInstance()->getSession();
+
 		//Check if SESSION cache for POLICY_ATTEMPTS is actual for given login
-		if(
-			!array_key_exists("BX_LOGIN_NEED_CAPTCHA_LOGIN", $_SESSION)
-			|| $_SESSION["BX_LOGIN_NEED_CAPTCHA_LOGIN"]["LOGIN"] !== $login
-		)
+		if(!$session->has("BX_LOGIN_NEED_CAPTCHA_LOGIN") || $session["BX_LOGIN_NEED_CAPTCHA_LOGIN"]["LOGIN"] !== $login)
 		{
 			$POLICY_ATTEMPTS = 0;
 			if($login <> '')
 			{
-				$rsUser = CUser::GetList(($o='LOGIN'), ($b='DESC'),
-					array(
+				$rsUser = CUser::GetList($o, $b, array(
 						"LOGIN_EQUAL_EXACT" => $login,
 						"EXTERNAL_AUTH_ID" => "",
 					),
@@ -355,24 +380,20 @@ abstract class CAllMain
 					$USER_ATTEMPTS = intval($arUser["LOGIN_ATTEMPTS"]);
 				}
 			}
-			$_SESSION["BX_LOGIN_NEED_CAPTCHA_LOGIN"] = array(
+			$session["BX_LOGIN_NEED_CAPTCHA_LOGIN"] = [
 				"LOGIN" => $login,
 				"POLICY_ATTEMPTS" => $POLICY_ATTEMPTS,
-			);
+			];
 		}
 
-		//For users who had sucsessful login and if policy is set
+		//For users who had successful login and if policy is set
 		//check for CAPTCHA display
-		if(
-			$login <> ''
-			&& $_SESSION["BX_LOGIN_NEED_CAPTCHA_LOGIN"]["POLICY_ATTEMPTS"] > 0
-		)
+		if($login <> '' && $session["BX_LOGIN_NEED_CAPTCHA_LOGIN"]["POLICY_ATTEMPTS"] > 0)
 		{
 			//We need to know how many attempts user made
 			if($USER_ATTEMPTS === false)
 			{
-				$rsUser = CUser::GetList(($o='LOGIN'), ($b='DESC'),
-					array(
+				$rsUser = CUser::GetList($o, $b, array(
 						"LOGIN_EQUAL_EXACT" => $login,
 						"EXTERNAL_AUTH_ID" => "",
 					),
@@ -385,7 +406,7 @@ abstract class CAllMain
 					$USER_ATTEMPTS = 0;
 			}
 			//When user login attempts exceeding the policy we'll show the CAPTCHA
-			if($USER_ATTEMPTS >= $_SESSION["BX_LOGIN_NEED_CAPTCHA_LOGIN"]["POLICY_ATTEMPTS"])
+			if($USER_ATTEMPTS >= $session["BX_LOGIN_NEED_CAPTCHA_LOGIN"]["POLICY_ATTEMPTS"])
 				return true;
 		}
 
@@ -883,7 +904,7 @@ abstract class CAllMain
 
 	public function SetShowIncludeAreas($bShow=true)
 	{
-		$_SESSION["SESS_INCLUDE_AREAS"] = $bShow;
+		\Bitrix\Main\Application::getInstance()->getKernelSession()["SESS_INCLUDE_AREAS"] = $bShow;
 	}
 
 	public function GetShowIncludeAreas()
@@ -892,7 +913,8 @@ abstract class CAllMain
 
 		if(!is_object($USER) || !$USER->IsAuthorized() || defined('ADMIN_SECTION') && ADMIN_SECTION == true)
 			return false;
-		if(isset($_SESSION["SESS_INCLUDE_AREAS"]) && $_SESSION["SESS_INCLUDE_AREAS"])
+		$kernelSession = \Bitrix\Main\Application::getInstance()->getKernelSession();
+		if(isset($kernelSession["SESS_INCLUDE_AREAS"]) && $kernelSession["SESS_INCLUDE_AREAS"])
 			return true;
 		static $panel_dynamic_mode = null;
 		if (!isset($panel_dynamic_mode))
@@ -1001,10 +1023,10 @@ abstract class CAllMain
 			return False;
 
 		$debug = null;
-		$bShowDebug = $_SESSION["SESS_SHOW_INCLUDE_TIME_EXEC"]=="Y"
+		$bShowDebug = \Bitrix\Main\Application::getInstance()->getKernelSession()["SESS_SHOW_INCLUDE_TIME_EXEC"]=="Y"
 			&& (
 				$USER->CanDoOperation('edit_php')
-				|| $_SESSION["SHOW_SQL_STAT"]=="Y"
+				|| \Bitrix\Main\Application::getInstance()->getKernelSession()["SHOW_SQL_STAT"]=="Y"
 			)
 			&& !defined("PUBLIC_AJAX_MODE")
 		;
@@ -1139,7 +1161,7 @@ abstract class CAllMain
 		/** @noinspection PhpUnusedLocalVariableInspection */
 		global $APPLICATION, $USER, $DB, $MESS, $DOCUMENT_ROOT;
 
-		if($_SESSION["SESS_SHOW_INCLUDE_TIME_EXEC"]=="Y" && ($USER->CanDoOperation('edit_php') || $_SESSION["SHOW_SQL_STAT"]=="Y"))
+		if(\Bitrix\Main\Application::getInstance()->getKernelSession()["SESS_SHOW_INCLUDE_TIME_EXEC"]=="Y" && ($USER->CanDoOperation('edit_php') || \Bitrix\Main\Application::getInstance()->getKernelSession()["SHOW_SQL_STAT"]=="Y"))
 		{
 			$debug = new CDebugInfo();
 			$debug->Start();
@@ -1363,7 +1385,7 @@ abstract class CAllMain
 			$res = include($_SERVER["DOCUMENT_ROOT"].$path);
 		}
 
-		if($_SESSION["SESS_SHOW_INCLUDE_TIME_EXEC"]=="Y" && ($USER->CanDoOperation('edit_php') || $_SESSION["SHOW_SQL_STAT"]=="Y"))
+		if(\Bitrix\Main\Application::getInstance()->getKernelSession()["SESS_SHOW_INCLUDE_TIME_EXEC"]=="Y" && ($USER->CanDoOperation('edit_php') || \Bitrix\Main\Application::getInstance()->getSession()["SHOW_SQL_STAT"]=="Y"))
 			echo $debug->Output($rel_path, $path);
 		elseif(is_object($debug))
 			$debug->Stop($rel_path, $path);
@@ -2407,9 +2429,9 @@ abstract class CAllMain
 		{
 			$right = $MODULE_PERMISSIONS[$module_id][$cache_site_key][$key];
 		}
-		elseif (isset($_SESSION["MODULE_PERMISSIONS"][$module_id][$cache_site_key][$key]))
+		elseif (isset(\Bitrix\Main\Application::getInstance()->getKernelSession()["MODULE_PERMISSIONS"][$module_id][$cache_site_key][$key]))
 		{
-			$right = $_SESSION["MODULE_PERMISSIONS"][$module_id][$cache_site_key][$key];
+			$right = \Bitrix\Main\Application::getInstance()->getKernelSession()["MODULE_PERMISSIONS"][$module_id][$cache_site_key][$key];
 		}
 		else
 		{
@@ -2478,7 +2500,7 @@ abstract class CAllMain
 			$MODULE_PERMISSIONS[$module_id][$cache_site_key][$key] = $right;
 			if (defined("CACHE_MODULE_PERMISSIONS") && constant("CACHE_MODULE_PERMISSIONS") == "SESSION")
 			{
-				$_SESSION["MODULE_PERMISSIONS"][$module_id][$cache_site_key][$key] = $right;
+				\Bitrix\Main\Application::getInstance()->getKernelSession()["MODULE_PERMISSIONS"][$module_id][$cache_site_key][$key] = $right;
 			}
 		}
 
@@ -2771,9 +2793,9 @@ abstract class CAllMain
 	{
 		$response = Main\Context::getCurrent()->getResponse();
 
-		if(is_array($_SESSION['SPREAD_COOKIE']))
+		if(is_array(\Bitrix\Main\Application::getInstance()->getSession()['SPREAD_COOKIE']))
 		{
-			foreach($_SESSION['SPREAD_COOKIE'] as $cookie)
+			foreach(\Bitrix\Main\Application::getInstance()->getSession()['SPREAD_COOKIE'] as $cookie)
 			{
 				if($cookie instanceof Main\Web\Cookie)
 				{
@@ -2781,7 +2803,7 @@ abstract class CAllMain
 				}
 			}
 		}
-		$_SESSION['SPREAD_COOKIE'] = $response->getCookies();
+		\Bitrix\Main\Application::getInstance()->getSession()['SPREAD_COOKIE'] = $response->getCookies();
 
 		$this->HoldSpreadCookieHTML(true);
 	}
@@ -2832,16 +2854,16 @@ abstract class CAllMain
 			$response = Main\Context::getCurrent()->getResponse();
 			$request = Main\Context::getCurrent()->getRequest();
 
-			if(isset($_SESSION['SPREAD_COOKIE']) && is_array($_SESSION['SPREAD_COOKIE']))
+			if(isset(\Bitrix\Main\Application::getInstance()->getSession()['SPREAD_COOKIE']) && is_array(\Bitrix\Main\Application::getInstance()->getSession()['SPREAD_COOKIE']))
 			{
-				foreach($_SESSION['SPREAD_COOKIE'] as $cookie)
+				foreach(\Bitrix\Main\Application::getInstance()->getSession()['SPREAD_COOKIE'] as $cookie)
 				{
 					if($cookie instanceof Main\Web\Cookie)
 					{
 						$response->addCookie($cookie, false);
 					}
 				}
-				unset($_SESSION['SPREAD_COOKIE']);
+				unset(\Bitrix\Main\Application::getInstance()->getSession()['SPREAD_COOKIE']);
 			}
 
 			$cookies = $response->getCookies();
@@ -3228,34 +3250,28 @@ abstract class CAllMain
 		return $this->LAST_ERROR;
 	}
 
+	/**
+	 * @deprecated Use Main\Text\Encoding::convertEncoding()
+	 * @param $string
+	 * @param $charset_in
+	 * @param $charset_out
+	 * @return mixed
+	 */
 	public function ConvertCharset($string, $charset_in, $charset_out)
 	{
-		$this->ResetException();
-
-		$error = "";
-		$result = \Bitrix\Main\Text\Encoding::convertEncoding($string, $charset_in, $charset_out, $error);
-		if (!$result && !empty($error))
-			$this->ThrowException($error, "ERR_CHAR_BX_CONVERT");
-
-		return $result;
+		return Main\Text\Encoding::convertEncoding($string, $charset_in, $charset_out);
 	}
 
+	/**
+	 * @deprecated Use Main\Text\Encoding::convertEncoding()
+	 * @param $arData
+	 * @param $charset_from
+	 * @param $charset_to
+	 * @return mixed
+	 */
 	public function ConvertCharsetArray($arData, $charset_from, $charset_to)
 	{
-		if (!is_array($arData))
-		{
-			if (is_string($arData))
-				$arData = $this->ConvertCharset($arData, $charset_from, $charset_to);
-
-			return ($arData);
-		}
-
-		foreach ($arData as $key => $value)
-		{
-			$arData[$key] = $this->ConvertCharsetArray($value, $charset_from, $charset_to);
-		}
-
-		return $arData;
+		return Main\Text\Encoding::convertEncoding($arData, $charset_from, $charset_to);
 	}
 
 	public function CaptchaGetCode()
@@ -4142,7 +4158,10 @@ class CAllSite
 		{
 			foreach($arFilter as $key=>$val)
 			{
-				if($val == '') continue;
+				if((string)$val == '')
+				{
+					continue;
+				}
 				$val = $DB->ForSql($val);
 				switch(mb_strtoupper($key))
 				{
@@ -4633,7 +4652,7 @@ class CAllLanguage
 		{
 			foreach ($arFilter as $key => $val)
 			{
-				if ($val <> '')
+				if ((string)$val <> '')
 				{
 					switch(mb_strtoupper($key))
 					{

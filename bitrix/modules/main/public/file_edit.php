@@ -136,8 +136,8 @@ elseif($strWarning == '')
 	if ($limit_php_access)
 	{
 		//OFP - 'original full path' used for restorin' php code fragments in limit_php_access mode
-		if (!isset($_SESSION['arOFP']))
-			$_SESSION['arOFP'] = Array();
+		if (!isset(\Bitrix\Main\Application::getInstance()->getSession()['arOFP']))
+			\Bitrix\Main\Application::getInstance()->getSession()['arOFP'] = Array();
 
 		if(isset($_POST['ofp_id']))
 		{
@@ -146,8 +146,8 @@ elseif($strWarning == '')
 		else
 		{
 			$ofp_id = mb_substr(md5($site.'|'.$path), 0, 8);
-			if(!isset($_SESSION['arOFP'][$ofp_id]))
-				$_SESSION['arOFP'][$ofp_id] = $path;
+			if(!isset(\Bitrix\Main\Application::getInstance()->getSession()['arOFP'][$ofp_id]))
+				\Bitrix\Main\Application::getInstance()->getSession()['arOFP'][$ofp_id] = $path;
 		}
 	}
 }
@@ -198,7 +198,7 @@ if($strWarning == '')
 			if($limit_php_access)
 			{
 				// ofp - original full path :)
-				$ofp = $_SESSION['arOFP'][$ofp_id];
+				$ofp = \Bitrix\Main\Application::getInstance()->getSession()['arOFP'][$ofp_id];
 				$ofp = $io->CombinePath("/", $ofp);
 				$abs_ofp = $DOC_ROOT.$ofp;
 

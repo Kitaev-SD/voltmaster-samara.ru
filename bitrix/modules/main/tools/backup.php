@@ -4,6 +4,7 @@ if (ini_get('short_open_tag') == 0 && mb_strtoupper(ini_get('short_open_tag')) !
 ?><?
 error_reporting(E_ALL & ~E_NOTICE & ~E_STRICT & ~E_DEPRECATED);
 define('START_TIME', microtime(1));
+define('BX_FORCE_DISABLE_SEPARATED_SESSION_MODE', true);
 define('CLI', defined('BX_CRONTAB') && BX_CRONTAB === true || !$_SERVER['DOCUMENT_ROOT']);
 @define('LANGUAGE_ID', 'en');
 @define('NOT_CHECK_PERMISSIONS', true);
@@ -97,6 +98,7 @@ elseif (!CLI) // hit from bitrixcloud service
 		RaiseErrorAndDie('Backup is disabled', 4);
 
 	session_write_close();
+	ini_set("session.use_strict_mode", "0");
 	session_id(md5($backup_secret_key));
 	session_start();
 	$NS =& $_SESSION['BX_DUMP_STATE'];

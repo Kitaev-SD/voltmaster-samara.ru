@@ -935,7 +935,7 @@ BX.SidePanel.Slider.prototype =
 				className: "side-panel side-panel-overlay"
 			},
 			events: {
-				click: this.handleOverlayClick.bind(this)
+				mousedown: this.handleOverlayClick.bind(this)
 			},
 			style: {
 				zIndex: this.getZindex()
@@ -1558,7 +1558,7 @@ BX.SidePanel.Slider.prototype =
 		}
 
 		var frameWindow = this.getFrameWindow();
-		if (frameWindow && frameWindow.BX)
+		if (frameWindow && frameWindow.BX && frameWindow.BX.onCustomEvent)
 		{
 			frameWindow.BX.onCustomEvent(this, event.getFullName(), [event]);
 
@@ -2141,7 +2141,7 @@ BX.SidePanel.Label = function(slider)
 };
 
 BX.SidePanel.Label.MIN_LEFT_OFFSET = 25;
-BX.SidePanel.Label.MIN_TOP_OFFSET = 21;
+BX.SidePanel.Label.MIN_TOP_OFFSET = 17;
 BX.SidePanel.Label.INTERVAL_TOP_OFFSET = 50;
 
 BX.SidePanel.Label.prototype =

@@ -240,6 +240,15 @@ class CCheckList
 			if ($f = @fopen($file, "r"))
 				$arHowTo = fread($f, filesize($file));
 		}
+
+		$convertEncoding = \Bitrix\Main\Localization\Translation::needConvertEncoding(LANG);
+		if ($convertEncoding)
+		{
+			$targetEncoding = \Bitrix\Main\Localization\Translation::getCurrentEncoding();
+			$sourceEncoding = \Bitrix\Main\Localization\Translation::getSourceEncoding(LANG);
+			$arHowTo = \Bitrix\Main\Text\Encoding::convertEncoding($arHowTo, $sourceEncoding, $targetEncoding);
+		}
+
 		$arDesc = array(
 			"NAME" => GetMessage("CL_".$ID),
 			"DESC" => GetMessage("CL_".$ID."_DESC", array('#LANG#' => LANG)),
@@ -715,7 +724,7 @@ class CAutoCheck
 							}
 							if (!in_array($dir, array('empty')) && count($arShowTitle) == 0)
 								$arMessage .= GetMessage("NO_SHOWTITLE", array("#template#" => $dir))."\n";
-							if (!in_array($dir, array('mobile_app', 'desktop_app', 'empty', 'learning_10_0_0')) && count($arShowPanel) == 0)
+							if (!in_array($dir, array('mobile_app', 'desktop_app', 'empty', 'learning_10_0_0', 'call_app')) && count($arShowPanel) == 0)
 								$arMessage .= GetMessage("NO_SHOWPANEL", array("#template#" => $dir))."\n";
 						}
 					}
@@ -771,9 +780,9 @@ class CAutoCheck
 			}
 		}
 
-		if(!$_SESSION["BX_CHECKLIST"][$arParams["TEST_ID"]])
-			$_SESSION["BX_CHECKLIST"][$arParams["TEST_ID"]] = array();
-		$NS = &$_SESSION["BX_CHECKLIST"][$arParams["TEST_ID"]];
+		if(!\Bitrix\Main\Application::getInstance()->getSession()["BX_CHECKLIST"][$arParams["TEST_ID"]])
+			\Bitrix\Main\Application::getInstance()->getSession()["BX_CHECKLIST"][$arParams["TEST_ID"]] = array();
+		$NS = &\Bitrix\Main\Application::getInstance()->getSession()["BX_CHECKLIST"][$arParams["TEST_ID"]];
 		if ($arParams["STEP"] == false)
 		{
 			$NS = array();
@@ -1173,9 +1182,9 @@ class CAutoCheck
 		);
 
 		$arParams["STEP"] = (intval($arParams["STEP"])>=0)?intval($arParams["STEP"]):0;
-		if (!$_SESSION["BX_CHECKLIST"] || $arParams["STEP"] == 0)
+		if (!\Bitrix\Main\Application::getInstance()->getSession()["BX_CHECKLIST"] || $arParams["STEP"] == 0)
 		{
-			$_SESSION["BX_CHECKLIST"] = array(
+			\Bitrix\Main\Application::getInstance()->getSession()["BX_CHECKLIST"] = array(
 				"LAST_FILE" => "",
 				"FOUND" => "",
 				"PERCENT" => 0,
@@ -1186,7 +1195,7 @@ class CAutoCheck
 			{
 				CCheckListTools::__scandir($path, $files, $arExept);
 			}
-			$_SESSION["BX_CHECKLIST"]["COUNT"] = count($files);
+			\Bitrix\Main\Application::getInstance()->getSession()["BX_CHECKLIST"]["COUNT"] = count($files);
 		}
 
 		$arFileNum = 0;
@@ -1198,10 +1207,10 @@ class CAutoCheck
 			{
 				$arFileNum++;
 				//this is not first step?
-				if ($_SESSION["BX_CHECKLIST"]["LAST_FILE"] <> '')
+				if (\Bitrix\Main\Application::getInstance()->getSession()["BX_CHECKLIST"]["LAST_FILE"] <> '')
 				{
-					if ($_SESSION["BX_CHECKLIST"]["LAST_FILE"] == $file)
-						$_SESSION["BX_CHECKLIST"]["LAST_FILE"] = "";
+					if (\Bitrix\Main\Application::getInstance()->getSession()["BX_CHECKLIST"]["LAST_FILE"] == $file)
+						\Bitrix\Main\Application::getInstance()->getSession()["BX_CHECKLIST"]["LAST_FILE"] = "";
 					continue;
 				}
 				$queries = array();
@@ -1212,25 +1221,25 @@ class CAutoCheck
 						preg_match('/((?:mysql_query|odbc_exec|oci_execute|odbc_execute)\(.*\))/ism', $content, $queries);
 				}
 				if ($queries && count($queries[0])>0)
-					$_SESSION["BX_CHECKLIST"]["FOUND"].=str_replace(array("//", "\\\\"), array("/", "\\"), $file)."\n";
+					\Bitrix\Main\Application::getInstance()->getSession()["BX_CHECKLIST"]["FOUND"].=str_replace(array("//", "\\\\"), array("/", "\\"), $file)."\n";
 
 				if (time()-$time>=20)
 				{
-					$_SESSION["BX_CHECKLIST"]["LAST_FILE"] = $file;
+					\Bitrix\Main\Application::getInstance()->getSession()["BX_CHECKLIST"]["LAST_FILE"] = $file;
 					return array(
 						"IN_PROGRESS" => "Y",
-						"PERCENT" => round($arFileNum/($_SESSION["BX_CHECKLIST"]["COUNT"]*0.01), 2)
+						"PERCENT" => round($arFileNum/(\Bitrix\Main\Application::getInstance()->getSession()["BX_CHECKLIST"]["COUNT"]*0.01), 2)
 					);
 				}
 			}
 		}
 		$arResult = array("STATUS" => true);
-		if ($_SESSION["BX_CHECKLIST"]["FOUND"] <> '')
+		if (\Bitrix\Main\Application::getInstance()->getSession()["BX_CHECKLIST"]["FOUND"] <> '')
 		{
 			$arResult["STATUS"] = false;
 			$arResult["MESSAGE"]=array(
 				"PREVIEW" => GetMessage("CL_KERNEL_CHECK_FILES").$arFileNum.".\n".GetMessage("CL_ERROR_FOUND_SHORT")."\n",
-				"DETAIL" => GetMessage("CL_DIRECT_QUERY_TO_DB")."\n".$_SESSION["BX_CHECKLIST"]["FOUND"],
+				"DETAIL" => GetMessage("CL_DIRECT_QUERY_TO_DB")."\n".\Bitrix\Main\Application::getInstance()->getSession()["BX_CHECKLIST"]["FOUND"],
 			);
 		}
 		else
@@ -1239,7 +1248,7 @@ class CAutoCheck
 				"PREVIEW" => GetMessage("CL_KERNEL_CHECK_FILES").$arFileNum."\n"
 			);
 		}
-		unset($_SESSION["BX_CHECKLIST"]);
+		unset(\Bitrix\Main\Application::getInstance()->getSession()["BX_CHECKLIST"]);
 		return $arResult;
 	}
 

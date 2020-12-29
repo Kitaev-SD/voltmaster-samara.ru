@@ -1,4 +1,4 @@
-<?
+<?php
 $MESS["LANDING_FIELD_TITLE_METAOG_NAME"] = "Вигляд сторінки в соцмережах";
 $MESS["LANDING_FIELD_TITLE_METAOG_NAME_GROUP"] = "Вигляд багатого посилання";
 $MESS["LANDING_FIELD_TITLE_METAOG_NAME_KNOWLEDGE"] = "Вигляд багатого посилання";
@@ -27,6 +27,7 @@ $MESS["LANDING_TPL_HTML_DISABLED_TITLE"] = "Обмеження тарифу";
 $MESS["LANDING_TPL_LAYOUT"] = "Шаблон сторінки";
 $MESS["LANDING_TPL_LAYOUT_AREA"] = "Область";
 $MESS["LANDING_TPL_LAYOUT_USE"] = "Змінити для цієї сторінки";
+$MESS["LANDING_TPL_MY_COLOR"] = "Свій колір";
+$MESS["LANDING_TPL_OTHER_COLORS"] = "Ще кольори";
 $MESS["LANDING_TPL_TITLE_ADD"] = "Нова сторінка";
 $MESS["LANDING_TPL_TITLE_EDIT"] = "Налаштування сторінки";
-?>

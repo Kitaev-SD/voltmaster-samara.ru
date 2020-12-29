@@ -31,8 +31,10 @@ class CDatabase extends CDatabaseMysql
 		if(!$this->db_Conn)
 		{
 			$error = "[".mysqli_connect_errno()."] ".mysqli_connect_error();
-			if($this->debug || (isset($_SESSION["SESS_AUTH"]["ADMIN"]) && $_SESSION["SESS_AUTH"]["ADMIN"]))
+			if($this->debug)
+			{
 				echo "<br><font color=#ff0000>Error! mysqli_connect()</font><br>".$error."<br>";
+			}
 
 			SendError("Error! mysqli_connect()\n".$error."\n");
 
@@ -239,7 +241,8 @@ class CDBResult extends CDBResultMysql
 			$this->NavPageCount++;
 
 		//page number to display. start with 1
-		$this->NavPageNomer = ($this->PAGEN < 1 || $this->PAGEN > $this->NavPageCount? ($_SESSION[$this->SESS_PAGEN] < 1 || $_SESSION[$this->SESS_PAGEN] > $this->NavPageCount? 1:$_SESSION[$this->SESS_PAGEN]):$this->PAGEN);
+		$session = \Bitrix\Main\Application::getInstance()->getSession();
+		$this->NavPageNomer = ($this->PAGEN < 1 || $this->PAGEN > $this->NavPageCount? ($session[$this->SESS_PAGEN] < 1 || $session[$this->SESS_PAGEN] > $this->NavPageCount? 1: $session[$this->SESS_PAGEN]):$this->PAGEN);
 
 		//rows to skip
 		$NavFirstRecordShow = $this->NavPageSize * ($this->NavPageNomer-1);

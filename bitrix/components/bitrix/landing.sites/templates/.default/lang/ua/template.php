@@ -1,4 +1,4 @@
-<?
+<?php
 $MESS["LANDING_TPL_ACTIONS"] = "Дії";
 $MESS["LANDING_TPL_ACTION_ADD"] = "Новий сайт";
 $MESS["LANDING_TPL_ACTION_ADDPAGE"] = "Створити сторінку";
@@ -29,6 +29,9 @@ $MESS["LANDING_TPL_COL_CREATED"] = "Створено";
 $MESS["LANDING_TPL_COL_MODIFIED"] = "Змінено";
 $MESS["LANDING_TPL_COL_TITLE"] = "Назва";
 $MESS["LANDING_TPL_DELETED"] = "Видалений";
+$MESS["LANDING_TPL_DEV_BTN"] = "Замовити";
+$MESS["LANDING_TPL_DEV_HELP"] = "Потрібна допомога в розробці сайту?";
+$MESS["LANDING_TPL_DEV_ORDER"] = "Замовте впровадження в наших партнерів";
 $MESS["LANDING_TPL_PUBLIC_URL"] = "Опублікований в домені #LINK#";
 $MESS["LANDING_TPL_TITLE"] = "Сайти";
 $MESS["LANDING_TPL_TITLE_KNOWLEDGE"] = "База знань";
@@ -37,4 +40,3 @@ $MESS["LANDING_TPL_TITLE_STORE"] = "Магазини";
 $MESS["LANDING_TPL_TTL_DELETE"] = "До остаточного видалення";
 $MESS["LANDING_TPL_TTL_DELETE_D"] = "д.";
 $MESS["LANDING_TPL_UNPUBLIC"] = "Не опублікований";
-?>

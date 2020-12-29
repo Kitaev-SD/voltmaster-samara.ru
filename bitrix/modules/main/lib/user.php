@@ -54,6 +54,10 @@ class UserTable extends Entity\DataManager
 				'data_type' => 'boolean',
 				'values' => array('N','Y')
 			),
+			'BLOCKED' => array(
+				'data_type' => 'boolean',
+				'values' => array('N','Y')
+			),
 			'DATE_REGISTER' => array(
 				'data_type' => 'datetime'
 			),

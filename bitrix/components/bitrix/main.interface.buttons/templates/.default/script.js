@@ -104,6 +104,7 @@ if (typeof(BX.Main.interfaceButtons) === 'undefined')
 			getDisabledItems: BX.delegate(this.getDisabledItems, this),
 			getMoreButton: BX.delegate(this.getMoreButton, this),
 			adjustMoreButtonPosition: BX.delegate(this.adjustMoreButtonPosition, this),
+			getSubmenu: BX.delegate(this.getSubmenu, this),
 			showSubmenu: BX.delegate(this.showSubmenu, this),
 			closeSubmenu: BX.delegate(this.closeSubmenu, this),
 			refreshSubmenu: BX.delegate(this.refreshSubmenu, this),
@@ -1529,7 +1530,7 @@ if (typeof(BX.Main.interfaceButtons) === 'undefined')
 						disabledItems.indexOf(current) === -1)
 					{
 						result.push({
-							text: this.getSubmenuItemText(current),
+							html: this.getSubmenuItemText(current),
 							href: this.dataValue(current, 'url'),
 							onclick: this.dataValue(current, 'onclick'),
 							title: current.getAttribute('title'),
@@ -1568,7 +1569,7 @@ if (typeof(BX.Main.interfaceButtons) === 'undefined')
 					}
 
 					result.push({
-						text: this.getSubmenuItemText(current),
+						html: this.getSubmenuItemText(current),
 						href: this.dataValue(current, 'url'),
 						onclick: this.dataValue(current, 'onclick'),
 						title: current.getAttribute('title'),
@@ -1581,7 +1582,7 @@ if (typeof(BX.Main.interfaceButtons) === 'undefined')
 			if (this.isSettingsEnabled)
 			{
 				result.push({
-					text: '<span>'+this.message('MIB_HIDDEN')+'</span>',
+					html: '<span>'+this.message('MIB_HIDDEN')+'</span>',
 					className: [
 						this.classSeporator,
 						this.classSubmenuItem,
@@ -1592,7 +1593,7 @@ if (typeof(BX.Main.interfaceButtons) === 'undefined')
 				if (!disabledItems.length)
 				{
 					result.push({
-						text: '<span>'+this.message('MIB_NO_HIDDEN')+'</span>',
+						html: '<span>'+this.message('MIB_NO_HIDDEN')+'</span>',
 						className: [
 							this.classSubmenuItem,
 							this.classSubmenuNoHiddenItem
@@ -1624,7 +1625,7 @@ if (typeof(BX.Main.interfaceButtons) === 'undefined')
 						}
 
 						result.push({
-							text: this.getSubmenuItemText(current),
+							html: this.getSubmenuItemText(current),
 							href: this.dataValue(current, 'url'),
 							onclick: this.dataValue(current, 'onclick'),
 							title: current.getAttribute('title'),
@@ -1636,7 +1637,7 @@ if (typeof(BX.Main.interfaceButtons) === 'undefined')
 				}
 
 				result.push({
-					text: '<span>'+this.message('MIB_MANAGE')+'</span>',
+					html: '<span>'+this.message('MIB_MANAGE')+'</span>',
 					className: [
 						this.classSeporator,
 						this.classSubmenuItem,
@@ -1646,7 +1647,7 @@ if (typeof(BX.Main.interfaceButtons) === 'undefined')
 				});
 
 				result.push({
-					text: this.message('MIB_SETTING_MENU_ITEM'),
+					html: this.message('MIB_SETTING_MENU_ITEM'),
 					className: [
 						this.classSettingMenuItem,
 						this.classSubmenuItem
@@ -1654,7 +1655,7 @@ if (typeof(BX.Main.interfaceButtons) === 'undefined')
 				});
 
 				result.push({
-					text: this.message('MIB_APPLY_SETTING_MENU_ITEM'),
+					html: this.message('MIB_APPLY_SETTING_MENU_ITEM'),
 					className: [
 						this.classSettingsApplyButton,
 						this.classSubmenuItem
@@ -1662,7 +1663,7 @@ if (typeof(BX.Main.interfaceButtons) === 'undefined')
 				});
 
 				result.push({
-					text: this.message('MIB_RESET_SETTINGS'),
+					html: this.message('MIB_RESET_SETTINGS'),
 					className: [this.classSettingsResetButton, this.classSubmenuItem].join(' ')
 				});
 			}

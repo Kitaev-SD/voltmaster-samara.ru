@@ -42,7 +42,7 @@ class CRatingRule
 			for ($i=0; $i<count($filter_keys); $i++)
 			{
 				$val = $arFilter[$filter_keys[$i]];
-				if ($val == '' || $val=="NOT_REF") continue;
+				if ((string)$val == '' || $val=="NOT_REF") continue;
 				switch(mb_strtoupper($filter_keys[$i]))
 				{
 					case "ID":

@@ -83,7 +83,7 @@ elseif($_REQUEST['process'] == "Y")
 		RaiseErrorAndDie(GetMessage("DUMP_MAIN_SESISON_ERROR"));
 
 	require_once($_SERVER["DOCUMENT_ROOT"]."/bitrix/modules/main/include/prolog_admin_js.php");
-	$NS =& $_SESSION['BX_DUMP_STATE'];
+	$NS =& \Bitrix\Main\Application::getInstance()->getSession()['BX_DUMP_STATE'];
 	if($_REQUEST['action'] == 'start')
 	{
 		define('NO_TIME', true);

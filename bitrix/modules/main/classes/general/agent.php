@@ -198,7 +198,7 @@ class CAllAgent
 		{
 			$val = $arFilter[$filter_keys[$i]];
 			$key = mb_strtoupper($filter_keys[$i]);
-			if($val == '' || ($key=="USER_ID" && $val!==false && $val!==null))
+			if((string)$val == '' || ($key=="USER_ID" && $val!==false && $val!==null))
 				continue;
 
 			switch($key)
@@ -254,9 +254,9 @@ class CAllAgent
 			if (isset($arOFields[$by]))
 			{
 				if ($order != "ASC")
-					$order = "DESC".($DB->type=="ORACLE" ? " NULLS LAST" : "");
+					$order = "DESC";
 				else
-					$order = "ASC".($DB->type=="ORACLE" ? " NULLS FIRST" : "");
+					$order = "ASC";
 				$arSqlOrder[] = $arOFields[$by]." ".$order;
 			}
 		}

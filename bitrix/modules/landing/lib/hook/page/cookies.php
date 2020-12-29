@@ -1,12 +1,21 @@
 <?php
 namespace Bitrix\Landing\Hook\Page;
 
+use \Bitrix\Landing\Help;
+use \Bitrix\Landing\Rights;
+use \Bitrix\Landing\Site;
 use \Bitrix\Landing\Field;
 use \Bitrix\Landing\Manager;
 use \Bitrix\Main\Localization\Loc;
 
 class Cookies extends \Bitrix\Landing\Hook\Page
 {
+	/**
+	 * Work modes.
+	 */
+	const MODE_A = 'A';
+	const MODE_I = 'I';
+
 	/**
 	 * Cookies server is enabled.
 	 * @var bool
@@ -19,6 +28,8 @@ class Cookies extends \Bitrix\Landing\Hook\Page
 	 */
 	protected function getMap(): array
 	{
+		$helpUrl = Help::getHelpUrl('COOKIES_EDIT');
+
 		return [
 			'USE' => new Field\Checkbox('USE', [
 				'title' => Loc::getMessage('LANDING_HOOK_COOKIES_USE')
@@ -42,6 +53,19 @@ class Cookies extends \Bitrix\Landing\Hook\Page
 					'bottom_right' => Loc::getMessage('LANDING_HOOK_COOKIES_POSITION_BR'),
 				]
 			]),
+			'MODE' => new Field\Select('MODE', [
+				'title' => Loc::getMessage('LANDING_HOOK_COOKIES_MODE'),
+				'default' => 'A',
+				'options' => [
+					self::MODE_A => Loc::getMessage('LANDING_HOOK_COOKIES_MODE_A'),
+					self::MODE_I => Loc::getMessage('LANDING_HOOK_COOKIES_MODE_I'),
+				],
+				'help' => $helpUrl
+					?   '<a href="' . $helpUrl . '" target="_blank">' .
+							Loc::getMessage('LANDING_HOOK_COOKIES_MODE_HELP') .
+						'</a>'
+					: ''
+			])
 		];
 	}
 
@@ -83,6 +107,16 @@ class Cookies extends \Bitrix\Landing\Hook\Page
 	}
 
 	/**
+	 * Returns true if current mode is information only.
+	 * @return bool
+	 */
+	public function isInformationMode(): bool
+	{
+		$mode = $this->fields['MODE']->getValue();
+		return $mode == self::MODE_I || (!$mode && Manager::availableOnlyForZone('ru'));
+	}
+
+	/**
 	 * Exec hook.
 	 * @return void
 	 */
@@ -95,8 +129,13 @@ class Cookies extends \Bitrix\Landing\Hook\Page
 
 		if ($this->fields['USE']->getValue() == 'Y')
 		{
-			self::$enabled = true;
-			Manager::clearPageView('Noscript');
+			$infoMode = $this->isInformationMode();
+
+			if (!$infoMode)
+			{
+				self::$enabled = true;
+				Manager::clearPageView('Noscript');
+			}
 
 			ob_start();
 			Manager::getApplication()->includeComponent(
@@ -106,7 +145,9 @@ class Cookies extends \Bitrix\Landing\Hook\Page
 					'USE' => $this->fields['USE']->getValue(),
 					'POSITION' => $this->fields['POSITION']->getValue(),
 					'COLOR_BG' => $this->fields['COLOR_BG']->getValue(),
-					'COLOR_TEXT' => $this->fields['COLOR_TEXT']->getValue()
+					'COLOR_TEXT' => $this->fields['COLOR_TEXT']->getValue(),
+					'AGREEMENT_ID' => $this->fields['AGREEMENT_ID']->getValue(),
+					'INFORMATION' =>  $infoMode ? 'Y' : 'N'
 				],
 				false
 			);
@@ -158,5 +199,29 @@ class Cookies extends \Bitrix\Landing\Hook\Page
 				</script>'
 			);
 		}
+	}
+
+	/**
+	 * Returns agreement id by site id.
+	 * @param int $siteId Site id.
+	 * @return int|null
+	 */
+	public static function getAgreementIdBySiteId(int $siteId): ?int
+	{
+		Rights::setOff();
+		$fields = Site::getAdditionalFields($siteId);
+		Rights::setOn();
+
+		$mode = $fields['COOKIES_MODE']->getValue();
+		$informationMode = $mode == self::MODE_I || (!$mode && Manager::availableOnlyForZone('ru'));
+
+		if ($informationMode)
+		{
+			return null;
+		}
+
+		return isset($fields['COOKIES_AGREEMENT_ID'])
+			? $fields['COOKIES_AGREEMENT_ID']->getValue()
+			: null;
 	}
 }

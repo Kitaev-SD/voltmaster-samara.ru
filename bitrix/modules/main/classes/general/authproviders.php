@@ -45,7 +45,7 @@ class CGroupAuthProvider extends CAuthProvider implements IProviderInterface
 		
 		$DB->Query("
 			INSERT INTO b_user_access (USER_ID, PROVIDER_ID, ACCESS_CODE)
-			SELECT UG.USER_ID, '".$DB->ForSQL($this->id)."', ".$DB->Concat("'G'", ($DB->type == "MSSQL" ? "CAST(UG.GROUP_ID as varchar(17))": "UG.GROUP_ID"))."
+			SELECT UG.USER_ID, '".$DB->ForSQL($this->id)."', ".$DB->Concat("'G'", "UG.GROUP_ID")."
 			FROM b_user_group UG, b_group G 
 			WHERE UG.USER_ID=".$USER_ID."
 				AND G.ID=UG.GROUP_ID
@@ -391,6 +391,17 @@ class CUserAuthProvider extends CAuthProvider implements IProviderInterface
 			return $arResult;
 		}
 		return false;
+	}
+
+	public static function OnUserLogin($USER_ID)
+	{
+		$res = CAccess::GetUserCodes($USER_ID, array("PROVIDER_ID" => self::ID));
+		$arCode = $res->Fetch();
+
+		if(!$arCode)
+		{
+			CAccess::RecalculateForUser($USER_ID, self::ID);
+		}
 	}
 }
 

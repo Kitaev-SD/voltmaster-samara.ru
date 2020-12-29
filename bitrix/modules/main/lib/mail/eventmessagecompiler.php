@@ -213,12 +213,18 @@ class EventMessageCompiler
 	 */
 	protected function setMailAttachment()
 	{
-		$eventMessageAttachment = array();
+		$eventMessageAttachment = [];
+		$eventFilesContent = [];
 
 		// Attach files from message template
 		if(array_key_exists('FILE', $this->eventMessageFields))
 		{
 			$eventMessageAttachment = $this->eventMessageFields["FILE"];
+		}
+
+		if(array_key_exists('FILES_CONTENT', $this->event))
+		{
+			$eventFilesContent = $this->event["FILES_CONTENT"];
 		}
 
 		// Attach files from event
@@ -258,6 +264,21 @@ class EventMessageCompiler
 			}
 
 			$this->mailAttachment = $attachFileList;
+		}
+
+		if (count($eventFilesContent) > 0)
+		{
+			foreach ($eventFilesContent as $item)
+			{
+				$this->mailAttachment[] = [
+					'CONTENT_TYPE' => $item['CONTENT_TYPE'],
+					'NAME' => $item['NAME'],
+					'CONTENT' => $item['CONTENT'],
+					'ID' => $item['ID'],
+					'CHARSET' => $item['CHARSET'],
+					'METHOD' => $item['METHOD'],
+				];
+			}
 		}
 	}
 

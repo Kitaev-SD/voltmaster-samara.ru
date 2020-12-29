@@ -12,7 +12,7 @@ use Bitrix\Intranet\Integration\Templates\Bitrix24\ThemePicker;
 CJSCore::Init();
 $this->addExternalCss($this->GetFolder() . '/template.css');
 $this->addExternalJs($this->GetFolder() . '/template.js');
-\Bitrix\Main\UI\Extension::load(['sidepanel', 'ui.common', 'sidepanel']);
+\Bitrix\Main\UI\Extension::load(['sidepanel', 'ui.common', 'ui.fonts.opensans']);
 
 ?><!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?=LANGUAGE_ID ?>" lang="<?=LANGUAGE_ID ?>">
@@ -68,8 +68,19 @@ if ($arResult["SHOW_BITRIX24_THEME"] == "Y")
 	$themePicker->showBodyAssets();
 }
 ?>
-<div class="ui-slider-page">
-	<div id="left-panel" class="ui-page-slider-left-panel"><? $APPLICATION->ShowViewContent("left-panel"); ?></div>
+<div class="ui-slider-page"><?
+		$APPLICATION->AddBufferContent(function() {
+			$content = trim($GLOBALS['APPLICATION']->getViewContent('left-panel-before'));
+			$content .= trim($GLOBALS['APPLICATION']->getViewContent('left-panel'));
+			$content .= trim($GLOBALS['APPLICATION']->getViewContent('left-panel-after'));
+			if (!empty($content))
+			{
+				return '<div id="left-panel" class="ui-page-slider-left-panel">'.$content.'</div>';
+			}
+
+			return '';
+		})
+	?>
 	<div id="ui-page-slider-content">
 		<div class="pagetitle-above"><?$APPLICATION->ShowViewContent("above_pagetitle")?></div>
 		<? if(!isset($arParams['USE_UI_TOOLBAR']) || $arParams['USE_UI_TOOLBAR'] !== 'Y')
@@ -81,9 +92,17 @@ if ($arResult["SHOW_BITRIX24_THEME"] == "Y")
 						<? $APPLICATION->ShowViewContent("pagetitle"); ?>
 					</div>
 					<div class="ui-side-panel-wrap-title">
-						<span id="pagetitle" class="ui-side-panel-wrap-title-item ui-side-panel-wrap-title-name"><? $APPLICATION->ShowTitle(); ?></span>
-						<span class="ui-side-panel-wrap-title-edit-button" style="display: none;"></span>
-						<input type="text" class="ui-side-panel-wrap-title-item ui-side-panel-wrap-title-input" style="display: none;">
+						<div class="ui-side-panel-wrap-title-box">
+							<span id="pagetitle" class="ui-side-panel-wrap-title-item">
+								<span class="ui-side-panel-wrap-title-name-item ui-side-panel-wrap-title-name"><? $APPLICATION->ShowTitle(); ?></span>
+								<span class="ui-side-panel-wrap-title-edit-button" style="display: none;"></span>
+								<input type="text" class="ui-side-panel-wrap-title-item ui-side-panel-wrap-title-input" style="display: none;">
+							</span>
+							<span class="ui-side-panel-wrap-subtitle-box">
+								<span class="ui-side-panel-wrap-subtitle-item"></span>
+								<span class="ui-side-panel-wrap-subtitle-control"></span>
+							</span>
+						</div>
 						<? $APPLICATION->ShowViewContent("inside_pagetitle_below"); ?>
 					</div>
 					<? $APPLICATION->ShowViewContent("inside_pagetitle"); ?>
@@ -117,6 +136,7 @@ if ($arResult["SHOW_BITRIX24_THEME"] == "Y")
 		</div>
 	</div>
 	</div>
+	<div><?$APPLICATION->ShowViewContent("below_page")?></div>
 	<script type="text/javascript">
 		BX.ready(function () {
 			BX.UI.SidePanel.Wrapper.init(<?=Json::encode([

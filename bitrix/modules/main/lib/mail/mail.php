@@ -12,7 +12,6 @@ use Bitrix\Main\Config as Config;
 use Bitrix\Main\IO\File;
 use Bitrix\Main\Application;
 use Bitrix\Main\Web\Uri;
-use Bitrix\Main\Text\BinaryString;
 
 class Mail
 {
@@ -444,7 +443,7 @@ class Mail
 			foreach($files as $attachment)
 			{
 				$isLimitExceeded = $this->isFileLimitExceeded(
-					!empty($attachment["SIZE"]) ? $attachment["SIZE"] : 0,
+					!empty($attachment["SIZE"]) ? $attachment["SIZE"] : strlen($attachment["CONTENT"] ?? ''),
 					$summarySize
 				);
 
@@ -452,7 +451,9 @@ class Mail
 				{
 					try
 					{
-						$fileContent = File::getFileContents($attachment["PATH"]);
+						$fileContent = isset($attachment["CONTENT"])
+							? $attachment["CONTENT"]
+							: File::getFileContents($attachment["PATH"]);
 					}
 					catch (\Exception $exception)
 					{
@@ -465,7 +466,7 @@ class Mail
 				}
 
 				$isLimitExceeded = $this->isFileLimitExceeded(
-					BinaryString::getLength($fileContent),
+					strlen($fileContent),
 					$summarySize
 				);
 				if ($isLimitExceeded)
@@ -482,13 +483,29 @@ class Mail
 					);
 				}
 
-				$name = $this->encodeSubject($attachment["NAME"], $this->charset);
-				$part = (new Part())
-					->addHeader('Content-Type', $attachment['CONTENT_TYPE'] . "; name=\"$name\"")
-					->addHeader('Content-Disposition', "attachment; filename=\"$name\"")
-					->addHeader('Content-Transfer-Encoding', 'base64')
-					->addHeader('Content-ID', "<{$attachment['ID']}>")
-					->setBody($fileContent);
+
+
+				if(isset($attachment['METHOD']))
+				{
+					$name = $this->encodeSubject($attachment["NAME"], $attachment['CHARSET']);
+					$part = (new Part())
+						->addHeader('Content-Type', $attachment['CONTENT_TYPE'] .
+								"; name=\"$name\"; method=".$attachment['METHOD']."; charset=".$attachment['CHARSET'])
+						->addHeader('Content-Disposition', "attachment; filename=\"$name\"")
+						->addHeader('Content-Transfer-Encoding', 'base64')
+						->addHeader('Content-ID', "<{$attachment['ID']}>")
+						->setBody($fileContent);
+				}
+				else
+				{
+					$name = $this->encodeSubject($attachment["NAME"], $this->charset);
+					$part = (new Part())
+						->addHeader('Content-Type', $attachment['CONTENT_TYPE'] . "; name=\"$name\"")
+						->addHeader('Content-Disposition', "attachment; filename=\"$name\"")
+						->addHeader('Content-Transfer-Encoding', 'base64')
+						->addHeader('Content-ID', "<{$attachment['ID']}>")
+						->setBody($fileContent);
+				}
 
 				if ($this->multipartRelated && $this->isAttachmentImage($attachment, true))
 				{

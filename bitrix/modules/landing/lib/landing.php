@@ -1350,19 +1350,21 @@ class Landing extends \Bitrix\Landing\Internals\BaseTable
 					false,
 					$landingFull
 				);
-				if ($isIframe)
+				foreach ($urls['LANDING'] as &$url)
 				{
-					foreach ($urls['LANDING'] as &$url)
+					$url = \htmlspecialcharsbx($url);
+					if ($isIframe)
 					{
 						$url .= '?IFRAME=Y';
 					}
-					unset($url);
 				}
+				unset($url);
 			}
 			if (!empty($urls['BLOCK']))
 			{
 				foreach ($urls['BLOCK'] as $bid => $lid)
 				{
+					$urls['LANDING'][$lid] = \htmlspecialcharsbx($urls['LANDING'][$lid]);
 					$urls['LANDING'][$lid] .= ($isIframe ? '?IFRAME=Y' : '');
 					if (isset($urls['LANDING'][$lid]))
 					{
@@ -1681,7 +1683,10 @@ class Landing extends \Bitrix\Landing\Internals\BaseTable
 	 */
 	public function touch()
 	{
-		self::update($this->id);
+		if (self::update($this->id)->isSuccess())
+		{
+			Site::touch($this->siteId);
+		}
 	}
 
 	/**
@@ -1749,6 +1754,13 @@ class Landing extends \Bitrix\Landing\Internals\BaseTable
 			Assets\PreProcessing\Icon::processingLanding($this->id);
 			Assets\Manager::rebuildWebpackForLanding($this->id);
 			$this->version = 8;
+		}
+		if ($this->version <= 8)
+		{
+			$needUpdate = true;
+			Subtype\Form::updateLandingToEmbedForms($this->id);
+			Assets\Manager::rebuildWebpackForLanding($this->id);
+			$this->version = 9;
 		}
 		if ($needUpdate)
 		{
@@ -2490,7 +2502,7 @@ class Landing extends \Bitrix\Landing\Internals\BaseTable
 		$demoCmp = new $className;
 		$demoCmp->initComponent($componentName);
 		$demoCmp->arParams = [
-			'TYPE' => ($site['TYPE'] == 'STORE') ? 'PAGE' : $site['TYPE'],
+			'TYPE' => ($site['TYPE'] == 'STORE' || $site['TYPE'] == 'SMN') ? 'PAGE' : $site['TYPE'],
 			'SITE_ID' => $siteId,
 			'SITE_WORK_MODE' => 'N',
 			'DISABLE_REDIRECT' => 'Y',

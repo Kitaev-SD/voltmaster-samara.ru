@@ -10,6 +10,7 @@ this.BX.Landing = this.BX.Landing || {};
 	    if (main_core.Type.isDomNode(link)) {
 	      if (main_core.Type.isStringFilled(link.href) && link.target !== '_blank') {
 	        event.preventDefault();
+	        BX.Landing.Pub.TopPanel.pushHistory(link.href);
 	        void landing_sliderhacks.SliderHacks.reloadSlider(link.href);
 	      }
 	    }
@@ -27,6 +28,7 @@ this.BX.Landing = this.BX.Landing || {};
 
 	        if (urlParams.target === '_self') {
 	          event.stopImmediatePropagation();
+	          BX.Landing.Pub.TopPanel.pushHistory(urlParams.href);
 	          void landing_sliderhacks.SliderHacks.reloadSlider(urlParams.href);
 	        } else {
 	          top.open(urlParams.href, urlParams.target);

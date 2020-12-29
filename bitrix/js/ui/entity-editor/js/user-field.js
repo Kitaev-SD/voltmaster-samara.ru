@@ -33,6 +33,7 @@ if(typeof BX.UI.EntityUserFieldManager === "undefined")
 		this._creationSignature = "";
 		this._creationUrl = "";
 		this._activeFields = {};
+		this._validationEnabled = true;
 		this._validationResult = null;
 		this._validationPromise = null;
 
@@ -154,6 +155,17 @@ if(typeof BX.UI.EntityUserFieldManager === "undefined")
 			if(this._creationPageUrl)
 			{
 				items.push({ name: "custom", title: BX.message("UI_ENTITY_EDITOR_UF_CUSTOM_TITLE"), legend: BX.message("UI_ENTITY_EDITOR_UF_CUSTOM_LEGEND") });
+			}
+
+			var event = new BX.Event.BaseEvent({
+				data: {
+					types: items
+				}
+			});
+			BX.Event.EventEmitter.emit('BX.UI.EntityUserFieldManager:getTypes', event);
+			if(BX.Type.isArray(event.getData().types))
+			{
+				items = event.getData().types;
 			}
 
 			return items;
@@ -418,6 +430,10 @@ if(typeof BX.UI.EntityUserFieldManager === "undefined")
 			}
 			BX.Main.UF.EditManager.unRegisterField(name);
 		},
+		setValidationEnabled: function(isEnabled)
+		{
+			this._validationEnabled = !!isEnabled;
+		},
 		validate: function(result)
 		{
 			var names = [];
@@ -429,7 +445,7 @@ if(typeof BX.UI.EntityUserFieldManager === "undefined")
 				}
 			}
 
-			if(names.length > 0)
+			if(this._validationEnabled && names.length > 0)
 			{
 				this._validationResult = result;
 				BX.Main.UF.EditManager.validate(
@@ -503,6 +519,10 @@ if(typeof BX.UI.EntityUserFieldManager === "undefined")
 		this.items[id] = self;
 		return self;
 	};
+	BX.UI.EntityUserFieldManager.getById = function(id)
+	{
+		return this.items.hasOwnProperty(id) ? this.items[id] : null;
+	}
 }
 
 if(typeof BX.UI.EntityUserFieldLayoutLoader === "undefined")
@@ -608,6 +628,10 @@ if(typeof BX.UI.EntityUserFieldLayoutLoader === "undefined")
 
 if(typeof BX.UI.EntityEditorUserField === "undefined")
 {
+	/**
+	 * @extends BX.UI.EntityEditorField
+	 * @constructor
+	 */
 	BX.UI.EntityEditorUserField = function()
 	{
 		BX.UI.EntityEditorUserField.superclass.constructor.apply(this);
@@ -725,6 +749,12 @@ if(typeof BX.UI.EntityEditorUserField === "undefined")
 	BX.UI.EntityEditorUserField.prototype.hasContentToDisplay = function()
 	{
 		if(this._mode === BX.UI.EntityEditorMode.edit)
+		{
+			return true;
+		}
+		// if rest field marked as "show always", it always has value and should be shown:
+		if (this.checkOptionFlag(BX.UI.EntityEditorControlOptions.showAlways)
+			&& this.getFieldType().indexOf('rest_') === 0)
 		{
 			return true;
 		}
@@ -856,6 +886,7 @@ if(typeof BX.UI.EntityEditorUserField === "undefined")
 			if(html !== "")
 			{
 				this.setupContentHtml(html);
+				this._hasLayout = true;
 			}
 			else
 			{
@@ -878,7 +909,18 @@ if(typeof BX.UI.EntityEditorUserField === "undefined")
 
 				var fieldParams = BX.clone(fieldInfo);
 				fieldParams["SIGNATURE"] = signature;
-
+				if(fieldType === BX.UI.EntityUserFieldType.file && BX.type.isObject(fieldParams["ADDITIONAL"]))
+				{
+					var ownerToken = BX.prop.getString(
+						BX.prop.getObject(fieldData, "EXTRAS", {}),
+						"OWNER_TOKEN",
+						""
+					);
+					if(ownerToken !== "")
+					{
+						fieldParams["ADDITIONAL"]["URL_TEMPLATE"] += "&owner_token=" + encodeURIComponent(ownerToken);
+					}
+				}
 				if(this.checkIfNotEmpty(fieldData))
 				{
 					var value = BX.prop.getArray(fieldData, "VALUE", null);
@@ -903,9 +945,8 @@ if(typeof BX.UI.EntityEditorUserField === "undefined")
 		else
 		{
 			this._innerWrapper.appendChild(document.createTextNode(BX.message("UI_ENTITY_EDITOR_FIELD_EMPTY")));
+			this._hasLayout = true;
 		}
-
-		this._hasLayout = true;
 	};
 	BX.UI.EntityEditorUserField.prototype.doRegisterLayout = function()
 	{
@@ -933,10 +974,6 @@ if(typeof BX.UI.EntityEditorUserField === "undefined")
 			fieldParams["ENTITY_VALUE_ID"] = 1;
 		}
 
-	};
-	BX.UI.EntityEditorUserField.prototype.doClearLayout = function(options)
-	{
-		this._innerWrapper = null;
 	};
 	BX.UI.EntityEditorUserField.prototype.validate = function()
 	{
@@ -1005,11 +1042,17 @@ if(typeof BX.UI.EntityEditorUserField === "undefined")
 			this._manager.registerActiveField(this);
 		}
 
-		BX.bindDelegate(
-			this._innerWrapper,
-			"bxchange",
-			{ tag: [ "input", "select", "textarea" ] },
-			this._changeHandler
+		//Add Change Listener after timeout for prevent markAsChanged call in process of field initialization.
+		window.setTimeout(
+			function(){
+				BX.bindDelegate(
+					this._innerWrapper,
+					"bxchange",
+					{ tag: [ "input", "select", "textarea" ] },
+					this._changeHandler
+				);
+			}.bind(this),
+			200
 		);
 
 		//HACK: Try to resolve employee change button
@@ -1038,20 +1081,30 @@ if(typeof BX.UI.EntityEditorUserField === "undefined")
 			this._hasLayout = true;
 		}
 
+		this.addExternalEventsHandlers();
+	};
+	BX.UI.EntityEditorUserField.prototype.addExternalEventsHandlers = function()
+	{
 		// Handler could be called by UF to trigger _changeHandler in complicated cases
-		BX.addCustomEvent(window, "onUIEntityEditorUserFieldExternalChanged", BX.proxy(function(fieldId){
-			if (fieldId == this._id && BX.type.isFunction(this._changeHandler))
-			{
-				this._changeHandler();
-			}
-		}, this));
+		BX.removeCustomEvent(window, "onUIEntityEditorUserFieldExternalChanged", BX.proxy(this.userFieldExternalChangedHandler, this));
+		BX.addCustomEvent(window, "onUIEntityEditorUserFieldExternalChanged", BX.proxy(this.userFieldExternalChangedHandler, this));
 
-		BX.addCustomEvent(window, "onUIEntityEditorUserFieldSetValidator", BX.proxy(function(fieldId, callback){
-			if (fieldId == this._id && BX.type.isFunction(callback))
-			{
-				this.validate = callback;
-			}
-		}, this));
+		BX.removeCustomEvent(window, "onUIEntityEditorUserFieldSetValidator", BX.proxy(this.userFieldSetValidatorHandler, this));
+		BX.addCustomEvent(window, "onUIEntityEditorUserFieldSetValidator", BX.proxy(this.userFieldSetValidatorHandler, this));
+	};
+	BX.UI.EntityEditorUserField.prototype.userFieldExternalChangedHandler = function(fieldId)
+	{
+		if (fieldId == this._id && BX.type.isFunction(this._changeHandler))
+		{
+			this._changeHandler();
+		}
+	};
+	BX.UI.EntityEditorUserField.prototype.userFieldSetValidatorHandler = function(fieldId, callback)
+	{
+		if (fieldId == this._id && BX.type.isFunction(callback))
+		{
+			this.validate = callback;
+		}
 	};
 	BX.UI.EntityEditorUserField.prototype.onLayoutLoaded = function(result)
 	{
@@ -1059,6 +1112,8 @@ if(typeof BX.UI.EntityEditorUserField === "undefined")
 		if(html !== "")
 		{
 			this.setupContentHtml(html);
+			this._hasLayout = true;
+			this.raiseLayoutEvent();
 		}
 	};
 	BX.UI.EntityEditorUserField.prototype.onEmployeeSelectorOpen = function(e)
@@ -1375,8 +1430,13 @@ if(typeof(BX.UI.UserFieldTypeMenu) === "undefined")
 		},
 		onItemSelect: function(item)
 		{
-			var callback = BX.prop.getFunction(this._settings, "callback", null);
-			if(callback)
+			var callback = item.getCallback();
+			if (!BX.type.isFunction(callback))
+			{
+				callback = BX.prop.getFunction(this._settings, "callback", null);
+			}
+
+			if (callback)
 			{
 				callback(this, item);
 			}
@@ -1520,6 +1580,7 @@ if(typeof(BX.UI.UserFieldTypeMenuItem) === "undefined")
 		this._value = "";
 		this._text = "";
 		this._legend = "";
+		this._callback = null;
 	};
 	BX.UI.UserFieldTypeMenuItem.prototype =
 	{
@@ -1531,6 +1592,7 @@ if(typeof(BX.UI.UserFieldTypeMenuItem) === "undefined")
 			this._value = BX.prop.getString(settings, "value");
 			this._text = BX.prop.getString(settings, "text");
 			this._legend = BX.prop.getString(settings, "legend");
+			this._callback = BX.prop.getFunction(settings, "callback", null);
 		},
 		getId: function()
 		{
@@ -1547,6 +1609,10 @@ if(typeof(BX.UI.UserFieldTypeMenuItem) === "undefined")
 		getLegend: function()
 		{
 			return this._legend;
+		},
+		getCallback: function()
+		{
+			return this._callback;
 		},
 		prepareContent: function()
 		{
@@ -1619,7 +1685,7 @@ if(typeof BX.UI.EntityEditorUserFieldConfigurator === "undefined")
 		this._enableMandatoryControl = true;
 		this._mandatoryConfigurator = null;
 	};
-	
+
 	BX.extend(BX.UI.EntityEditorUserFieldConfigurator, BX.UI.EntityEditorFieldConfigurator);
 
 	BX.UI.EntityEditorUserFieldConfigurator.prototype.checkField = function()
@@ -1807,8 +1873,8 @@ if(typeof BX.UI.EntityEditorUserFieldConfigurator === "undefined")
 					this._isRequiredCheckBox = this.createOption(
 						{
 							caption: this._mandatoryConfigurator.getTitle() + ":",
-							labelSettings: { props: { className: "ui-entity-new-field-addiction-label" } },
-							containerSettings: { style: { alignItems: "center" } },
+							//labelSettings: { props: { className: "ui-entity-new-field-addiction-label" } },
+							containerSettings: { props: { className: "ui-entity-new-field-addiction-flex-row" } },
 							elements: this._mandatoryConfigurator.getButton().prepareLayout()
 						}
 					);
@@ -1945,7 +2011,7 @@ if(typeof BX.UI.EntityEditorUserFieldConfigurator === "undefined")
 					checkBox = this.createOption(
 						{
 							caption: this._mandatoryConfigurator.getTitle() + ":",
-							labelSettings: { props: { className: "ui-entity-new-field-addiction-label" } },
+							//labelSettings: { props: { className: "ui-entity-new-field-addiction-label" } },
 							containerSettings: { style: { alignItems: "center" } },
 							elements: this._mandatoryConfigurator.getButton().prepareLayout()
 						}

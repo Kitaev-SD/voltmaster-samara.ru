@@ -59,6 +59,8 @@ $arBXGroupPolicy = array(
 		"PASSWORD_LOWERCASE" => "N",
 		"PASSWORD_DIGITS" => "N",
 		"PASSWORD_PUNCTUATION" => "N",
+		"PASSWORD_CHANGE_DAYS" => "",
+		"PASSWORD_UNIQUE_COUNT" => "",
 		"LOGIN_ATTEMPTS" => "",
 		"BLOCK_LOGIN_ATTEMPTS" => "",
 		"BLOCK_TIME" => "",
@@ -75,6 +77,8 @@ $arBXGroupPolicy = array(
 		"PASSWORD_LOWERCASE" => "N",
 		"PASSWORD_DIGITS" => "N",
 		"PASSWORD_PUNCTUATION" => "N",
+		"PASSWORD_CHANGE_DAYS" => "0",
+		"PASSWORD_UNIQUE_COUNT" => "0",
 		"LOGIN_ATTEMPTS" => 0,
 		"BLOCK_LOGIN_ATTEMPTS" => 0,
 		"BLOCK_TIME" => "",
@@ -91,6 +95,8 @@ $arBXGroupPolicy = array(
 		"PASSWORD_LOWERCASE" => "Y",
 		"PASSWORD_DIGITS" => "Y",
 		"PASSWORD_PUNCTUATION" => "N",
+		"PASSWORD_CHANGE_DAYS" => "90",
+		"PASSWORD_UNIQUE_COUNT" => "1",
 		"LOGIN_ATTEMPTS" => 0,
 		"BLOCK_LOGIN_ATTEMPTS" => 0,
 		"BLOCK_TIME" => "",
@@ -107,6 +113,8 @@ $arBXGroupPolicy = array(
 		"PASSWORD_LOWERCASE" => "Y",
 		"PASSWORD_DIGITS" => "Y",
 		"PASSWORD_PUNCTUATION" => "Y",
+		"PASSWORD_CHANGE_DAYS" => "30",
+		"PASSWORD_UNIQUE_COUNT" => "3",
 		"LOGIN_ATTEMPTS" => 3,
 		"BLOCK_LOGIN_ATTEMPTS" => 0,
 		"BLOCK_TIME" => "",
@@ -125,6 +133,8 @@ $BX_GROUP_POLICY_CONTROLS = array(
 	"PASSWORD_LOWERCASE"	=>	array("checkbox", "Y"),
 	"PASSWORD_DIGITS"	=>	array("checkbox", "Y"),
 	"PASSWORD_PUNCTUATION"	=>	array("checkbox", "Y"),
+	"PASSWORD_CHANGE_DAYS"	=>	array("text", 5),
+	"PASSWORD_UNIQUE_COUNT"	=>	array("text", 5),
 	"LOGIN_ATTEMPTS"	=>	array("text", 5),
 	"BLOCK_LOGIN_ATTEMPTS"	=>	array("text", 5),
 	"BLOCK_TIME"	=>	array("text", 5),
@@ -583,6 +593,8 @@ $tabControl->BeginNextTab();
 						level.low++;
 					break;
 				case "PASSWORD_LENGTH":
+				case "BLOCK_TIME":
+				case "PASSWORD_UNIQUE_COUNT":
 					level.total++;
 					if(parseInt(el2.value) >= parseInt(arGroupPolicy['high'][key]))
 						level.high++;
@@ -592,6 +604,8 @@ $tabControl->BeginNextTab();
 						level.low++;
 					break;
 				case "LOGIN_ATTEMPTS":
+				case "BLOCK_LOGIN_ATTEMPTS":
+				case "PASSWORD_CHANGE_DAYS":
 					level.total++;
 					if(parseInt(el2.value) > 0)
 					{

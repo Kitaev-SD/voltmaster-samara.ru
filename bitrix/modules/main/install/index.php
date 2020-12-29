@@ -133,6 +133,7 @@ class main extends CModule
 		RegisterModuleDependences('main', 'OnBeforeGroupDelete', 'main', 'CGroupAuthProvider', 'OnBeforeGroupDelete');
 		RegisterModuleDependences('main', 'OnAfterSetUserGroup', 'main', 'CGroupAuthProvider', 'OnAfterSetUserGroup');
 		RegisterModuleDependences('main', 'OnUserLogin', 'main', 'CGroupAuthProvider', 'OnUserLogin');
+		RegisterModuleDependences('main', 'OnUserLogin', 'main', 'CUserAuthProvider', 'OnUserLogin');
 		RegisterModuleDependences("main", "OnEventLogGetAuditTypes", "main", "CEventMain", "GetAuditTypes");
 		RegisterModuleDependences("main", "OnEventLogGetAuditHandlers", "main", "CEventMain", "MakeMainObject");
 		RegisterModuleDependences("perfmon", "OnGetTableSchema", "main", "CTableSchema", "OnGetTableSchema");
@@ -180,6 +181,7 @@ class main extends CModule
 		COption::SetOptionString("main", "optimize_css_files", "Y");
 		COption::SetOptionString("main", "optimize_js_files", "Y");
 		COption::SetOptionString("main", "control_file_duplicates", "Y");
+		COption::SetOptionString("main", "secure_logout", "Y");
 
 		$nextDay = time() + 86400;
 		CAgent::AddAgent('\\Bitrix\\Main\\Analytics\\CounterDataTable::submitData();', "main", "N", 60);
@@ -1763,7 +1765,7 @@ class main extends CModule
 		}
 
 		$DB->Query("UPDATE b_user SET EXTERNAL_AUTH_ID = NULL WHERE EXTERNAL_AUTH_ID = 'socservices'");
-		$DB->Query("UPDATE b_file SET HANDLER_ID=NULL WHERE HANDLER_ID = 1");
+		$DB->Query("UPDATE b_file SET HANDLER_ID=NULL WHERE HANDLER_ID is not null");
 		$DB->Query("UPDATE b_event_message SET EMAIL_FROM='#DEFAULT_EMAIL_FROM#' WHERE EMAIL_FROM LIKE '%no-reply@bitrix24%'");
 	}
 }

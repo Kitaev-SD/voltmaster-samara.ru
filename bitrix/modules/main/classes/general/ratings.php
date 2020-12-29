@@ -99,7 +99,7 @@ class CAllRatings
 		{
 			foreach ($arFilter as $key => $val)
 			{
-				if ($val == '' || $val=="NOT_REF")
+				if ((string)$val == '' || $val=="NOT_REF")
 					continue;
 				switch(mb_strtoupper($key))
 				{
@@ -761,12 +761,16 @@ class CAllRatings
 	{
 		global $DB, $CACHE_MANAGER;
 
-		if (isset($_SESSION['RATING_VOTE_COUNT']) && $arParam['ENTITY_TYPE_ID'] == 'USER')
+		if ($arParam['ENTITY_TYPE_ID'] == 'USER' && isset(\Bitrix\Main\Application::getInstance()->getSession()['RATING_VOTE_COUNT']))
 		{
-			if ($_SESSION['RATING_VOTE_COUNT'] >= $_SESSION['RATING_USER_VOTE_COUNT'])
+			if (\Bitrix\Main\Application::getInstance()->getSession()['RATING_VOTE_COUNT'] >= \Bitrix\Main\Application::getInstance()->getSession()['RATING_USER_VOTE_COUNT'])
+			{
 				return false;
+			}
 			else
-				$_SESSION['RATING_VOTE_COUNT']++;
+			{
+				\Bitrix\Main\Application::getInstance()->getSession()['RATING_VOTE_COUNT']++;
+			}
 		}
 
 		$arParam['ENTITY_TYPE_ID'] = mb_substr($arParam['ENTITY_TYPE_ID'], 0, 50);
@@ -1579,6 +1583,11 @@ class CAllRatings
 	{
 		global $DB;
 		$err_mess = (CRatings::err_mess())."<br>Function: OnAfterUserRegister<br>Line: ";
+
+		if (in_array($arFields['EXTERNAL_AUTH_ID'], \Bitrix\Main\UserTable::getExternalUserTypes(), true))
+		{
+			return false;
+		}
 
 		$userId = isset($arFields["USER_ID"]) ? intval($arFields["USER_ID"]): (isset($arFields["ID"]) ? intval($arFields["ID"]): 0);
 		if($userId>0)

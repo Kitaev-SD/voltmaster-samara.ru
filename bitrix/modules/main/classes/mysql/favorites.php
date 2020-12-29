@@ -13,7 +13,7 @@ class CFavorites extends CAllFavorites
 		{
 			foreach ($arFilter as $key => $val)
 			{
-				if ($val == '' || $val=="NOT_REF") continue;
+				if ((string)$val == '' || $val=="NOT_REF") continue;
 				switch(mb_strtoupper($key))
 				{
 					case "ID":

@@ -76,7 +76,7 @@ if (Loader::includeModule('bitrix24'))
 		return;
 	}
 }
-if (!Rights::hasAdditionalRight(Rights::ADDITIONAL_RIGHTS['menu24']))
+if (!Rights::hasAdditionalRight(Rights::ADDITIONAL_RIGHTS['menu24'], null, true))
 {
 	Manager::getApplication()->showAuthForm(
 		Loc::getMessage('LANDING_CMP_ACCESS_DENIED2')
@@ -384,16 +384,19 @@ $agreementCode = 'landing_agreement';
 $agreementsId = array();
 $agreements = array(
 	'ru' => array(),
-	'es' => array(),
 	'en' => array(),
 	$currentLang => array()
 );
 $virtualLangs = array(
 	'ua' => 'ru',
 	'by' => 'ru',
-	'kz' => 'ru',
-	'la' => 'es'
+	'kz' => 'ru'
 );
+
+if (isset($agreements['es']))
+{
+	$virtualLangs['la'] = 'es';
+}
 
 // lang zone is in CIS
 $cis = $currentZone == 'by' || $currentZone == 'kz';
@@ -410,10 +413,7 @@ foreach ($agreements as $lng => $item)
 	}
 	else
 	{
-		$mess = Loc::loadLanguageFile(
-			__FILE__,
-			LANGUAGE_ID
-		);
+		$mess = Loc::loadLanguageFile(__FILE__, $lng);
 	}
 	if ($mess)
 	{

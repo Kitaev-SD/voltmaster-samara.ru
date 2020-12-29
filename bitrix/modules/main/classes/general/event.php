@@ -31,7 +31,7 @@ class CAllEvent
 		return Mail\EventManager::cleanUpAgent();
 	}
 
-	public static function SendImmediate($event, $lid, $arFields, $Duplicate = "Y", $message_id="", $files=array(), $languageId = '')
+	public static function SendImmediate($event, $lid, $arFields, $Duplicate = "Y", $message_id = "", $files = array(), $languageId = '', array $filesContent = [])
 	{
 		foreach(GetModuleEvents("main", "OnBeforeEventAdd", true) as $arEvent)
 			if(ExecuteModuleEventEx($arEvent, array(&$event, &$lid, &$arFields, &$message_id, &$files, &$languageId)) === false)
@@ -52,6 +52,7 @@ class CAllEvent
 			"FILE" => $files,
 			"LANGUAGE_ID" => ($languageId == ''? LANGUAGE_ID : $languageId),
 			"ID" => "0",
+			"FILES_CONTENT" => $filesContent,
 		);
 
 		return Mail\Event::sendImmediate($arLocalFields);
@@ -609,7 +610,7 @@ class CAllEventMessage
 				}
 				else
 				{
-					if( ($val == '') || ($val === "NOT_REF") )
+					if((string)$val == '' || $val === "NOT_REF")
 						continue;
 				}
 				$match_value_set = array_key_exists($key."_EXACT_MATCH", $arFilter);
@@ -1031,7 +1032,7 @@ class CEventType
 		$arSqlOrder = array();
 		foreach($arFilter as $key => $val)
 		{
-			if($val == '')
+			if((string)$val == '')
 				continue;
 			$val = $DB->ForSql($val);
 			$key_res = CEventType::GetFilterOperation($key);

@@ -123,7 +123,7 @@ class BitrixVue
 	}
 
 	/**
-	 *	Defer the callback to be executed after the next DOM update cycle. Use it immediately after you’ve changed some data to wait for the DOM update.
+	 *	Defer the callback to be executed after the next DOM update cycle. Use it immediately after you have changed some data to wait for the DOM update.
 	 *
 	 * @param {Function} callback
 	 * @param {Object} context
@@ -685,9 +685,18 @@ class BitrixVue
 	}
 }
 
-let Vue = new BitrixVue;
+let Vue;
+let VueVendor;
 
-export {
-	Vue,
-	VueVendorV2 as VueVendor
-};
+if (typeof exports !== 'undefined' && ('Vue' in exports))
+{
+	Vue = exports.Vue;
+	VueVendor = exports.VueVendor;
+}
+else
+{
+	Vue = new BitrixVue;
+	VueVendor = VueVendorV2;
+}
+
+export {Vue, VueVendor};

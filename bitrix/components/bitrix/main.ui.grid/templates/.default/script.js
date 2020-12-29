@@ -1415,7 +1415,7 @@
 	            })]
 	          });
 	          return {
-	            text: subItem.innerHTML,
+	            html: subItem.innerHTML,
 	            className: currentValue === item.VALUE ? self.selectedClass : self.notSelectedClass,
 	            delimiter: item.DELIMITER,
 	            items: 'ITEMS' in item ? prepareItems(item.ITEMS) : null
@@ -6164,7 +6164,7 @@
 	      if (gridsCount === 1) {
 	        var tmpDiv = BX.create('div');
 	        var pageTitleNode = BX('pagetitle');
-	        var pageTitle = !!pageTitleNode ? '&laquo;' + pageTitleNode.innerText + '&raquo;' : '';
+	        var pageTitle = !!pageTitleNode ? '&laquo;' + pageTitleNode.innerHTML + '&raquo;' : '';
 	        tmpDiv.innerHTML = '<span>' + this.parent.getParam('SETTINGS_TITLE') + ' ' + pageTitle + '</span>';
 	        return tmpDiv.firstChild.innerText;
 	      }

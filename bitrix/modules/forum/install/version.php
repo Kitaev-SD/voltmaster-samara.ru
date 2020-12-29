@@ -1,6 +1,5 @@
-<?
-$arModuleVersion = array(
-	"VERSION" => "20.0.600",
-	"VERSION_DATE" => "2020-08-05 09:36:00"
-);
-?>
+<?php
+$arModuleVersion = [
+	'VERSION' => '20.275.0',
+	'VERSION_DATE' => '2020-12-18 17:51:40'
+];

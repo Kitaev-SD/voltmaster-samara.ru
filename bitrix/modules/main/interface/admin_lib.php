@@ -238,13 +238,9 @@ var phpVars = {
 };
 </script>
 ";
-
-		CJSCore::Init(array('admin_sidepanel'));
-
 		$APPLICATION->AddHeadScript('/bitrix/js/main/admin_tools.js');
 		$APPLICATION->AddHeadScript('/bitrix/js/main/popup_menu.js');
 		$APPLICATION->AddHeadScript('/bitrix/js/main/admin_search.js');
-		$APPLICATION->AddHeadScript('/bitrix/js/main/admin_sidepanel.js');
 
 		return $s;
 	}
@@ -445,9 +441,6 @@ class CAdminAjaxHelper
 
 	/**
      * Sends JSON response with status "success".
-	 * @throws \Bitrix\Main\ArgumentException
-	 * @throws \Bitrix\Main\ArgumentNullException
-	 * @throws \Bitrix\Main\ArgumentOutOfRangeException
 	 */
 	public function sendJsonSuccessResponse()
 	{
@@ -457,9 +450,6 @@ class CAdminAjaxHelper
 	/**
      * Sends JSON response with status "error" and with errors.
 	 * @param string $message Error message.
-	 * @throws \Bitrix\Main\ArgumentException
-	 * @throws \Bitrix\Main\ArgumentNullException
-	 * @throws \Bitrix\Main\ArgumentOutOfRangeException
 	 */
 	public function sendJsonErrorResponse($message)
 	{
@@ -469,17 +459,14 @@ class CAdminAjaxHelper
 	/**
 	 * Sends JSON response.
 	 * @param array $params Data structure.
-	 * @throws \Bitrix\Main\ArgumentException
-	 * @throws \Bitrix\Main\ArgumentNullException
-	 * @throws \Bitrix\Main\ArgumentOutOfRangeException
 	 */
 	public function sendJsonResponse($params = array())
 	{
 		if ($this->isAjaxRequest() && !$this->skipResponse)
 		{
-			$this->httpResponse->addHeader("Content-Type", "application/json");
-			$this->httpResponse->flush(Json::encode($params));
-			$this->end();
+			$response = new Bitrix\Main\Engine\Response\Json($params);
+			$response = Bitrix\Main\Context::getCurrent()->getResponse()->copyHeadersTo($response);
+			Bitrix\Main\Application::getInstance()->end(0, $response);
 		}
 	}
 
@@ -982,19 +969,20 @@ class CAdminMenu
 				"items_id"=>$aMenu["items_id"],
 				"page_icon"=>isset($aMenu["page_icon"])? $aMenu["page_icon"]: null,
 				"text"=>$aMenu["text"],
-				"url"=>$aMenu["url"],
+				"url"=>isset($aMenu["url"]) ? $aMenu["url"] : null,
 				"skip_chain"=>isset($aMenu["skip_chain"])? $aMenu["skip_chain"]: null,
 				"help_section"=>isset($aMenu["help_section"])? $aMenu["help_section"]: null,
 			);
 
 		$bSelected = false;
-		$bMoreUrl = (isset($aMenu["more_url"]) && is_array($aMenu["more_url"]) && !empty($aMenu["more_url"]));
-		if($aMenu["url"] <> "" || $bMoreUrl)
+		$mainUrl = (isset($aMenu["url"]) && $aMenu["url"] <> "");
+		$bMoreUrl = (!empty($aMenu["more_url"]) && is_array($aMenu["more_url"]));
+		if($mainUrl || $bMoreUrl)
 		{
 			$cur_page = $APPLICATION->GetCurPage();
 
 			$all_links = array();
-			if($aMenu["url"] <> "")
+			if($mainUrl)
 				$all_links[] = $aMenu["url"];
 			if($bMoreUrl)
 				$all_links = array_merge($all_links, $aMenu["more_url"]);
@@ -1080,11 +1068,11 @@ class CAdminMenu
 			{
 				$aSections["_active"] = array(
 					"menu_id"=>$aMenu["menu_id"],
-					"page_icon"=>$aMenu["page_icon"],
+					"page_icon"=>isset($aMenu["page_icon"])? $aMenu["page_icon"]: null,
 					"text"=>$aMenu["text"],
 					"url"=>$aMenu["url"],
-					"skip_chain"=>$aMenu["skip_chain"],
-					"help_section"=>$aMenu["help_section"],
+					"skip_chain"=>isset($aMenu["skip_chain"])? $aMenu["skip_chain"]: null,
+					"help_section"=>isset($aMenu["help_section"]) ? $aMenu["help_section"]: null,
 				);
 			}
 			$aMenu["_active"] = true;
@@ -1909,11 +1897,11 @@ class CAdminSorting
 		$needUserOrder = false;
 		if(isset($GLOBALS[$this->by_name]))
 		{
-			$_SESSION["SESS_SORT_BY"][$this->table_id] = $GLOBALS[$this->by_name];
+			\Bitrix\Main\Application::getInstance()->getSession()["SESS_SORT_BY"][$this->table_id] = $GLOBALS[$this->by_name];
 		}
-		elseif(isset($_SESSION["SESS_SORT_BY"][$this->table_id]))
+		elseif(isset(\Bitrix\Main\Application::getInstance()->getSession()["SESS_SORT_BY"][$this->table_id]))
 		{
-			$GLOBALS[$this->by_name] = $_SESSION["SESS_SORT_BY"][$this->table_id];
+			$GLOBALS[$this->by_name] = \Bitrix\Main\Application::getInstance()->getSession()["SESS_SORT_BY"][$this->table_id];
 		}
 		else
 		{
@@ -1922,11 +1910,11 @@ class CAdminSorting
 
 		if(isset($GLOBALS[$this->ord_name]))
 		{
-			$_SESSION["SESS_SORT_ORDER"][$this->table_id] = $GLOBALS[$this->ord_name];
+			\Bitrix\Main\Application::getInstance()->getSession()["SESS_SORT_ORDER"][$this->table_id] = $GLOBALS[$this->ord_name];
 		}
-		elseif(isset($_SESSION["SESS_SORT_ORDER"][$this->table_id]))
+		elseif(isset(\Bitrix\Main\Application::getInstance()->getSession()["SESS_SORT_ORDER"][$this->table_id]))
 		{
-			$GLOBALS[$this->ord_name] = $_SESSION["SESS_SORT_ORDER"][$this->table_id];
+			$GLOBALS[$this->ord_name] = \Bitrix\Main\Application::getInstance()->getSession()["SESS_SORT_ORDER"][$this->table_id];
 		}
 		else
 		{
@@ -2112,11 +2100,11 @@ class CAdminResult extends CDBResult
 		{
 			$nSize = (int)$_REQUEST["SIZEN_".($NavNum+1)];
 			if($bSess)
-				$_SESSION["NAV_PAGE_SIZE"][$unique] = $nSize;
+				\Bitrix\Main\Application::getInstance()->getSession()["NAV_PAGE_SIZE"][$unique] = $nSize;
 		}
-		elseif($bSess && isset($_SESSION["NAV_PAGE_SIZE"][$unique]))
+		elseif($bSess && isset(\Bitrix\Main\Application::getInstance()->getSession()["NAV_PAGE_SIZE"][$unique]))
 		{
-			$nSize = $_SESSION["NAV_PAGE_SIZE"][$unique];
+			$nSize = \Bitrix\Main\Application::getInstance()->getSession()["NAV_PAGE_SIZE"][$unique];
 		}
 		else
 		{

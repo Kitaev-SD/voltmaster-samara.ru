@@ -85,7 +85,8 @@ class AuthCode extends Main\Engine\Controller
 
 		if($result->isSuccess())
 		{
-			if(!$USER->IsAuthorized() && $shortCode->getUser()->getActive())
+			$codeUser = $shortCode->getUser();
+			if(!$USER->IsAuthorized() && $codeUser->getActive() && !$codeUser->getBlocked())
 			{
 				if(Main\Loader::includeModule("security"))
 				{

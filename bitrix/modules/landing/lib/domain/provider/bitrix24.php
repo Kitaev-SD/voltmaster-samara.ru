@@ -2,6 +2,7 @@
 namespace Bitrix\Landing\Domain\Provider;
 
 use Bitrix\Landing\Manager;
+use Bitrix\Landing\Domain;
 use Bitrix\Landing\Domain\Provider;
 use \Bitrix\Main\ModuleManager;
 use \Bitrix\Main\Loader;
@@ -16,7 +17,7 @@ class Bitrix24 extends Provider
 	{
 		return 'bitrix24';
 	}
-	
+
 	/**
 	 * Returns true, if provider is available.
 	 * @return bool
@@ -42,6 +43,23 @@ class Bitrix24 extends Provider
 				return ['com.ua'];
 			default:
 				return [];
+		}
+	}
+
+	/**
+	 * Get agreement's URL.
+	 * @return string|null
+	 */
+	public function getAgreementURL(): ?string
+	{
+		switch (Manager::getZone())
+		{
+			case 'ru':
+				return 'https://www.bitrix24.ru/about/domainfree.php';
+			case 'ua':
+				return 'https://www.bitrix24.ua/about/domainfree.php';
+			default:
+				return null;
 		}
 	}
 
@@ -124,13 +142,7 @@ class Bitrix24 extends Provider
 	{
 		$dns = \Bitrix\Landing\Domain\Register::getDNSRecords();
 		$domainName = mb_strtolower(trim($domainName));
-		$domainNameParts = explode('.', $domainName);
-		$domainNameTld = $domainNameParts[count($domainNameParts) - 1];
-
-		if ($domainNameParts[count($domainNameParts) - 2] == 'com')
-		{
-			$domainNameTld = 'com.' . $domainNameTld;
-		}
+		$domainNameTld = Domain::getTLD($domainName);
 
 		// check tld
 		$tldValid = false;

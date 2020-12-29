@@ -77,4 +77,14 @@ $MESS["UI_ENTITY_EDITOR_UF_STRING_TITLE"] = "Рядок";
 $MESS["UI_ENTITY_EDITOR_UF_URL_LEGEND"] = "Для зберігання посилань на веб-сторінки.";
 $MESS["UI_ENTITY_EDITOR_UF_URL_TITLE"] = "Посилання";
 $MESS["UI_ENTITY_EDITOR_YES"] = "Так";
+$MESS["UI_ENTITY_EDITOR_CHECK_SCOPE"] = "Обрати \"#SCOPE_NAME#\"";
+$MESS["UI_ENTITY_EDITOR_CREATE_SCOPE"] = "Створити нове подання";
+$MESS["UI_ENTITY_EDITOR_UPDATE_SCOPE"] = "Змінити/видалити подання...";
+$MESS["UI_ENTITY_EDITOR_CONFIG_SCOPE_CANCEL"] = "Скасувати";
+$MESS["UI_ENTITY_EDITOR_CONFIG_SCOPE_MEMBERS"] = "Обрати тих, хто відноситься до подання:";
+$MESS["UI_ENTITY_EDITOR_CONFIG_SCOPE_NAME"] = "Назва подання:";
+$MESS["UI_ENTITY_EDITOR_CONFIG_SCOPE_NAME_PLACEHOLDER"] = "Введіть назву";
+$MESS["UI_ENTITY_EDITOR_CONFIG_SCOPE_SAVE"] = "Зберегти";
+$MESS["UI_ENTITY_EDITOR_CONFIG_SCOPE_SAVED"] = "Подання збережено";
+$MESS["UI_ENTITY_EDITOR_SECTION_OPEN_DETAILS"] = "відкрити";
 ?>

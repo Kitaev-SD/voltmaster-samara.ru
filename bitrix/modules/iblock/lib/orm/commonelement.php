@@ -28,6 +28,7 @@ abstract class CommonElement extends EO_CommonElement
 	 *
 	 * @param $iblockSectionId
 	 *
+	 * @return CommonElement
 	 * @throws \Bitrix\Main\ArgumentException
 	 * @throws \Bitrix\Main\SystemException
 	 */
@@ -61,6 +62,8 @@ abstract class CommonElement extends EO_CommonElement
 			// rewrite value
 			parent::sysSetValue('IBLOCK_SECTION_ID', $newIblockSectionId);
 		}
+
+		return $this;
 	}
 
 	/**

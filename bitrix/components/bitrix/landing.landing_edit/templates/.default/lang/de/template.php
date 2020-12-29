@@ -1,4 +1,4 @@
-<?
+<?php
 $MESS["LANDING_FIELD_TITLE_METAOG_NAME"] = "Rich Text Format für soziale Medien";
 $MESS["LANDING_FIELD_TITLE_METAOG_NAME_GROUP"] = "Rich Text Format";
 $MESS["LANDING_FIELD_TITLE_METAOG_NAME_KNOWLEDGE"] = "Rich Text Format";
@@ -27,6 +27,7 @@ $MESS["LANDING_TPL_HTML_DISABLED_TITLE"] = "Tarifeinschränkungen";
 $MESS["LANDING_TPL_LAYOUT"] = "Seitenvorlage";
 $MESS["LANDING_TPL_LAYOUT_AREA"] = "Bereich";
 $MESS["LANDING_TPL_LAYOUT_USE"] = "Für diese Seite anwenden";
+$MESS["LANDING_TPL_MY_COLOR"] = "Benutzerdefinierte Farbe";
+$MESS["LANDING_TPL_OTHER_COLORS"] = "Weitere Farben";
 $MESS["LANDING_TPL_TITLE_ADD"] = "Neue Seite";
 $MESS["LANDING_TPL_TITLE_EDIT"] = "Seiteneinstellungen";
-?>

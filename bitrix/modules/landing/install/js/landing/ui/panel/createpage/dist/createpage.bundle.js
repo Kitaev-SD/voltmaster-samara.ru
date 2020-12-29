@@ -1,7 +1,7 @@
 this.BX = this.BX || {};
 this.BX.Landing = this.BX.Landing || {};
 this.BX.Landing.UI = this.BX.Landing.UI || {};
-(function (exports, main_core, main_loader, landing_ui_panel_content, landing_loc, landing_backend, landing_env, landing_sliderhacks) {
+(function (exports,main_core,main_loader,landing_ui_panel_content,landing_loc,landing_backend,landing_env,landing_sliderhacks,landing_ui_field_textfield) {
 	'use strict';
 
 	function _templateObject2() {
@@ -27,9 +27,7 @@ this.BX.Landing.UI = this.BX.Landing.UI || {};
 	 * @memberOf BX.Landing.UI.Panel
 	 */
 
-	var CreatePage =
-	/*#__PURE__*/
-	function (_Content) {
+	var CreatePage = /*#__PURE__*/function (_Content) {
 	  babelHelpers.inherits(CreatePage, _Content);
 	  babelHelpers.createClass(CreatePage, null, [{
 	    key: "getInstance",
@@ -74,7 +72,7 @@ this.BX.Landing.UI = this.BX.Landing.UI || {};
 	    key: "getTitleField",
 	    value: function getTitleField() {
 	      return this.cache.remember('titleField', function () {
-	        return new BX.Landing.UI.Field.Text({
+	        return new landing_ui_field_textfield.TextField({
 	          title: landing_loc.Loc.getMessage('LANDING_CREATE_PAGE_PANEL_FIELD_PAGE_TITLE'),
 	          textOnly: true
 	        });
@@ -84,7 +82,7 @@ this.BX.Landing.UI = this.BX.Landing.UI || {};
 	    key: "getCodeField",
 	    value: function getCodeField() {
 	      return this.cache.remember('codeField', function () {
-	        return new BX.Landing.UI.Field.Text({
+	        return new landing_ui_field_textfield.TextField({
 	          title: landing_loc.Loc.getMessage('LANDING_CREATE_PAGE_PANEL_FIELD_PAGE_CODE'),
 	          textOnly: true
 	        });
@@ -116,7 +114,7 @@ this.BX.Landing.UI = this.BX.Landing.UI || {};
 	          return BX.Landing.Block.Node.Text.currentNode;
 	        }
 
-	        return BX.Landing.UI.Field.Text.currentField;
+	        return landing_ui_field_textfield.TextField.currentField;
 	      }();
 
 	      var capitalizedTitle = title.replace(/^\w/, function (c) {
@@ -234,5 +232,5 @@ this.BX.Landing.UI = this.BX.Landing.UI || {};
 
 	exports.CreatePage = CreatePage;
 
-}(this.BX.Landing.UI.Panel = this.BX.Landing.UI.Panel || {}, BX, BX, BX.Landing.UI.Panel, BX.Landing, BX.Landing, BX.Landing, BX.Landing));
+}((this.BX.Landing.UI.Panel = this.BX.Landing.UI.Panel || {}),BX,BX,BX.Landing.UI.Panel,BX.Landing,BX.Landing,BX.Landing,BX.Landing,BX.Landing.UI.Field));
 //# sourceMappingURL=createpage.bundle.js.map

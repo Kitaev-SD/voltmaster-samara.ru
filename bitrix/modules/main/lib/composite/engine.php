@@ -1,6 +1,7 @@
 <?php
 namespace Bitrix\Main\Composite;
 
+use Bitrix\Main\Application;
 use Bitrix\Main\Composite\Debug;
 use Bitrix\Main\Composite\Debug\Logger;
 use Bitrix\Main\Composite\Internals\Model\PageTable;
@@ -10,6 +11,7 @@ use Bitrix\Main\Config\Configuration;
 use Bitrix\Main\Config\Option;
 use Bitrix\Main\Context;
 use Bitrix\Main\EventManager;
+use Bitrix\Main\Engine\Response;
 use Bitrix\Main\IO\File;
 use Bitrix\Main\Loader;
 use Bitrix\Main\Localization\Loc;
@@ -333,7 +335,7 @@ final class Engine
 			return null;
 		}
 
-		if (defined("BX_BUFFER_SHUTDOWN"))
+		if (defined("BX_BUFFER_SHUTDOWN") || !defined("B_EPILOG_INCLUDED"))
 		{
 			Logger::log(
 				array(
@@ -367,7 +369,7 @@ final class Engine
 				if (self::$isCompositeInjected !== true && $method[1] === "GetHeadStrings")
 				{
 					self::$isCompositeInjected =
-						\CUtil::BinStrpos($newBuffer[$i * 2 + 1], "w.frameRequestStart") !== false;
+						strpos($newBuffer[$i * 2 + 1], "w.frameRequestStart") !== false;
 				}
 			}
 		}
@@ -397,7 +399,7 @@ final class Engine
 	 */
 	public static function endBuffering(&$originalContent, $compositeContent)
 	{
-		if (!self::isEnabled() || $compositeContent === null || defined("BX_BUFFER_SHUTDOWN"))
+		if (!self::isEnabled() || $compositeContent === null || defined("BX_BUFFER_SHUTDOWN") || !defined("B_EPILOG_INCLUDED"))
 		{
 			//this happens when die() invokes in self::onBeforeLocalRedirect
 			if (self::isAjaxRequest() && self::$isRedirect === false)
@@ -481,7 +483,7 @@ final class Engine
 
 						if ($page->getStorage() instanceof Data\FileStorage)
 						{
-							$freeSpace = BinaryString::getLength($dividedData["static"]) + mb_strlen($dividedData["md5"]);
+							$freeSpace = strlen($dividedData["static"]) + strlen($dividedData["md5"]);
 							self::ensureFileQuota($freeSpace);
 						}
 
@@ -601,8 +603,8 @@ final class Engine
 
 				$realId = $dynamicArea->getContainerId() !== null ? $dynamicArea->getContainerId() : "bxdynamic_".$area->id;
 				$assets =  Asset::getInstance()->getAssetInfo($dynamicArea->getAssetId(), $dynamicArea->getAssetMode());
-				$areaContent = \CUtil::BinSubstr($content, $area->openTagEnd, $area->closingTagStart - $area->openTagEnd);
-				$areaContentMd5 = mb_substr(md5($areaContent), 0, 12);
+				$areaContent = substr($content, $area->openTagEnd, $area->closingTagStart - $area->openTagEnd);
+				$areaContentMd5 = substr(md5($areaContent), 0, 12);
 
 				$blockId = $dynamicArea->getId();
 				$hasSameContent = isset($pageBlocks[$blockId]) && $pageBlocks[$blockId] === $areaContentMd5;
@@ -628,7 +630,7 @@ final class Engine
 					);
 				}
 
-				$data["static"] .= \CUtil::BinSubstr($content, $offset, $area->openTagStart - $offset);
+				$data["static"] .= substr($content, $offset, $area->openTagStart - $offset);
 
 				if ($dynamicArea->getContainerId() === null)
 				{
@@ -645,7 +647,7 @@ final class Engine
 				$offset = $area->closingTagEnd;
 			}
 
-			$data["static"] .= \CUtil::BinSubstr($content, $offset);
+			$data["static"] .= substr($content, $offset);
 		}
 		else
 		{
@@ -673,9 +675,9 @@ final class Engine
 
 		$areas = array();
 		$offset = 0;
-		while (($openTagStart = \CUtil::BinStrpos($content, $openTag, $offset)) !== false)
+		while (($openTagStart = strpos($content, $openTag, $offset)) !== false)
 		{
-			$endingPos = \CUtil::BinStrpos($content, $ending, $openTagStart);
+			$endingPos = strpos($content, $ending, $openTagStart);
 			if ($endingPos === false)
 			{
 				break;
@@ -683,11 +685,11 @@ final class Engine
 
 			$idStart = $openTagStart + mb_strlen($openTag);
 			$idLength = $endingPos - $idStart;
-			$areaId = \CUtil::BinSubstr($content, $idStart, $idLength);
+			$areaId = substr($content, $idStart, $idLength);
 			$openTagEnd = $endingPos + mb_strlen($ending);
 
 			$realClosingTag = $closingTag.$areaId.$ending;
-			$closingTagStart = \CUtil::BinStrpos($content, $realClosingTag, $openTagEnd);
+			$closingTagStart = strpos($content, $realClosingTag, $openTagEnd);
 			if ($closingTagStart === false)
 			{
 				$offset = $openTagEnd;
@@ -763,7 +765,6 @@ final class Engine
 
 	public static function onBeforeLocalRedirect(&$url, $skip_security_check, $isExternal)
 	{
-		global $APPLICATION;
 		if (!self::isAjaxRequest() || ($isExternal && $skip_security_check !== true))
 		{
 			return;
@@ -787,19 +788,19 @@ final class Engine
 			)
 		);
 
-		if ($APPLICATION->buffered)
-		{
-			$APPLICATION->RestartBuffer();
-		}
-
 		self::$isRedirect = true;
 		Page::getInstance()->delete();
 
-		header("X-Bitrix-Composite: Ajax (error:redirect)");
-		self::sendRandHeader();
-		echo \CUtil::PhpToJSObject($response);
+		$response = new Response\Json($response);
+		$response->addHeader('X-Bitrix-Composite', 'Ajax (error:redirect)');
 
-		die(); //it provokes register_shutdown_function callback which invokes startBuffering/endBuffering
+		$bxRandom = Helper::getAjaxRandom();
+		if ($bxRandom !== false)
+		{
+			$response->addHeader('BX-RAND', $bxRandom);
+		}
+
+		Application::getInstance()->end(0, $response);
 	}
 
 	private static function ensureFileQuota($requiredFreeSpace = 0)

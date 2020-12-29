@@ -19,4 +19,4 @@ $MESS["MENU_MARKETPLACE_ADD"] = "Додати застосунок";
 $MESS["MENU_MARKETPLACE_ADD_WIDGET"] = "Додати віджет";
 $MESS["MENU_MARKETPLACE_TITLE"] = "готових рішень для вашого бізнесу";
 $MESS["REST_MARKETPLACE_ERROR_404_DESCRIPTION"] = "Сталася внутрішня помилка. Будь ласка, оновіть сторінку та спробуйте ще раз. У разі, якщо помилка продовжить виникати, зверніться, будь ласка, у підтримку за допомогою.";
-$MESS["REST_MARKETPLACE_ERROR_404_TITLE"] = "Не так сталося, як гадалося…";
+$MESS["REST_MARKETPLACE_ERROR_404_TITLE"] = "Не так сталося, як гадалося...";

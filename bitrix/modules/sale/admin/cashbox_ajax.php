@@ -2,6 +2,7 @@
 
 use Bitrix\Main\Localization\Loc;
 use Bitrix\Main\Application;
+use Bitrix\Main\Loader;
 use Bitrix\Sale\Cashbox;
 use Bitrix\Sale\Payment;
 use Bitrix\Sale\Order;
@@ -175,6 +176,11 @@ if($arResult["ERROR"] === '' && $saleModulePermissions >= "W" && check_bitrix_se
 					$arResult['OFD'] = '\\'.Cashbox\TaxcomOfd::class;
 				}
 
+				if ($handler === '\Bitrix\Sale\Cashbox\CashboxCheckbox')
+				{
+					$arResult['SHOW_UA_HINT'] = 'Y';
+				}
+
 				ob_start();
 				require_once($_SERVER['DOCUMENT_ROOT']."/bitrix/modules/sale/admin/cashbox_settings.php");
 				$arResult["HTML"] = ob_get_contents();
@@ -304,17 +310,23 @@ if($arResult["ERROR"] === '' && $saleModulePermissions >= "W" && check_bitrix_se
 					}
 				}
 
-				$typeList = Cashbox\CheckManager::getCheckTypeMap();
-				/** @var Cashbox\Check $typeClass */
-				foreach ($typeList as $id => $typeClass)
+				$checkList = Cashbox\CheckManager::getSalesCheckList();
+
+				/** @var Cashbox\Check $check */
+				foreach ($checkList as $check)
 				{
 					if (
-						$typeClass::getSupportedEntityType() === $entityType ||
-						$typeClass::getSupportedEntityType() === Cashbox\Check::SUPPORTED_ENTITY_TYPE_ALL
+						class_exists($check) &&
+						(
+							$check::getSupportedEntityType() === $entityType ||
+							$check::getSupportedEntityType() === Cashbox\Check::SUPPORTED_ENTITY_TYPE_ALL
+						)
 					)
 					{
-						if (class_exists($typeClass))
-							$arResult['CHECK_TYPES'][] = array("ID" => $id, "NAME" => $typeClass::getName());
+						$arResult['CHECK_TYPES'][] = [
+							"ID" => $check::getType(),
+							"NAME" => $check::getName()
+						];
 					}
 				}
 

@@ -1,4 +1,4 @@
-<?
+<?php
 $MESS["LANDING_TPL_ACTIONS"] = "Aktionen";
 $MESS["LANDING_TPL_ACTION_ADD"] = "Neue Website";
 $MESS["LANDING_TPL_ACTION_ADDPAGE"] = "Seite erstellen";
@@ -29,6 +29,9 @@ $MESS["LANDING_TPL_COL_CREATED"] = "Erstellt am";
 $MESS["LANDING_TPL_COL_MODIFIED"] = "Geändert am";
 $MESS["LANDING_TPL_COL_TITLE"] = "Name";
 $MESS["LANDING_TPL_DELETED"] = "Gelöscht";
+$MESS["LANDING_TPL_DEV_BTN"] = "Bestellen";
+$MESS["LANDING_TPL_DEV_HELP"] = "Brauchen Sie Hilfe mit Ihrer Website?";
+$MESS["LANDING_TPL_DEV_ORDER"] = "Sie können Entwicklung bei unseren partnern bestellen";
 $MESS["LANDING_TPL_PUBLIC_URL"] = "Veröffentlicht in der Domain #LINK#";
 $MESS["LANDING_TPL_TITLE"] = "Websites";
 $MESS["LANDING_TPL_TITLE_KNOWLEDGE"] = "Wissensbasis";
@@ -37,4 +40,3 @@ $MESS["LANDING_TPL_TITLE_STORE"] = "Onlineshops";
 $MESS["LANDING_TPL_TTL_DELETE"] = "Tage bis zum endgültigen Löschen";
 $MESS["LANDING_TPL_TTL_DELETE_D"] = "Tage";
 $MESS["LANDING_TPL_UNPUBLIC"] = "Nicht veröffentlicht";
-?>

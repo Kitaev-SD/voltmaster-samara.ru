@@ -81,7 +81,7 @@ if(typeof BX.UI.EntityConfigurationManager === "undefined")
 						parent: parent,
 						typeId: typeId,
 						field: child,
-						mandatoryConfigurator: null
+						mandatoryConfigurator: params.mandatoryConfigurator
 					}
 				);
 			},
@@ -281,7 +281,7 @@ if (typeof BX.UI.EntityEditorFieldConfigurator === "undefined")
 			this._isRequiredCheckBox = this.createOption(
 				{
 					caption: this._mandatoryConfigurator.getTitle() + ":",
-					labelSettings: { props: { className: "ui-entity-new-field-addiction-label" } },
+					//labelSettings: { props: { className: "ui-entity-new-field-addiction-label" } },
 					containerSettings: { style: { alignItems: "center" } },
 					elements: this._mandatoryConfigurator.getButton().prepareLayout()
 				}
@@ -376,7 +376,7 @@ if (typeof BX.UI.EntityEditorFieldConfigurator === "undefined")
 			checkBox = this.createOption(
 				{
 					caption: this._mandatoryConfigurator.getTitle() + ":",
-					labelSettings: { props: { className: "ui-entity-new-field-addiction-label" } },
+					//labelSettings: { props: { className: "ui-entity-new-field-addiction-label" } },
 					containerSettings: { style: { alignItems: "center" } },
 					elements: this._mandatoryConfigurator.getButton().prepareLayout()
 				}
@@ -427,7 +427,8 @@ if (typeof BX.UI.EntityEditorFieldConfigurator === "undefined")
 		});
 
 		var label = BX.create("div", {
-			props: { className: "ui-ctl ui-ctl-checkbox ui-ctl-xs" },
+			props: { className: "ui-ctl ui-ctl-wa ui-ctl-checkbox ui-ctl-xs" },
+			style: { marginBottom: 0 },
 			children: [
 				BX.create("label", {
 					children: [
@@ -529,7 +530,8 @@ if (typeof BX.UI.EntityEditorFieldConfigurator === "undefined")
 		{
 			params["field"] = this._field;
 			params["mandatory"] = this._isRequiredCheckBox
-				? this._isRequiredCheckBox.checked : this._field.isRequired();
+				? this._isRequiredCheckBox.checked
+				: (this._field.isRequired() || this._field.isRequiredByAttribute());
 		}
 		else
 		{
@@ -540,6 +542,13 @@ if (typeof BX.UI.EntityEditorFieldConfigurator === "undefined")
 		}
 
 		params["showAlways"] = this._showAlwaysCheckBox.checked;
+		params['settings'] = (params['settings'] || []);
+
+		if (this._useTimezoneCheckBox)
+		{
+			params['settings']['USE_TIMEZONE'] = (this._useTimezoneCheckBox.checked ? 'Y' : 'N');
+		}
+
 		return params;
 	};
 	BX.UI.EntityEditorFieldConfigurator.prototype.onCancelButtonClick = function(e)

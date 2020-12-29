@@ -438,7 +438,7 @@ class CAdminFilter
 		{
 			foreach ($arFilter as $key => $val)
 			{
-				if ($val == '' || $val=="NOT_REF")
+				if ((string)$val == '' || $val=="NOT_REF")
 					continue;
 
 				switch(mb_strtoupper($key))
@@ -680,8 +680,8 @@ class CAdminFilter
 		}
 		else
 		{
-			$openedTabSes = $_SESSION[self::SESS_PARAMS_NAME][$this->id]["activeTabId"];
-			$filteredTab = $_SESSION[self::SESS_PARAMS_NAME][$this->id]["filteredId"];
+			$openedTabSes = \Bitrix\Main\Application::getInstance()->getSession()[self::SESS_PARAMS_NAME][$this->id]["activeTabId"];
+			$filteredTab = \Bitrix\Main\Application::getInstance()->getSession()[self::SESS_PARAMS_NAME][$this->id]["filteredId"];
 		}
 
 		echo '
@@ -782,7 +782,7 @@ class CAdminFilter
 			return false;
 
 		foreach ($aParams as $paramName => $value)
-			$_SESSION[self::SESS_PARAMS_NAME][$filterId][$paramName] = $value;
+			\Bitrix\Main\Application::getInstance()->getSession()[self::SESS_PARAMS_NAME][$filterId][$paramName] = $value;
 
 		return true;
 	}
@@ -790,7 +790,7 @@ class CAdminFilter
 	//experemental
 	private function IsFiltered()
 	{
-		$fltTable = $_SESSION["SESS_ADMIN"][$this->tableId];
+		$fltTable = \Bitrix\Main\Application::getInstance()->getSession()["SESS_ADMIN"][$this->tableId];
 
 		if(!isset($fltTable) || !is_array($fltTable))
 			return false;

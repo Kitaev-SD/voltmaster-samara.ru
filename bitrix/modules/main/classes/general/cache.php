@@ -173,16 +173,16 @@ class CPageCache
 			if(isset($_GET["clear_cache_session"]))
 			{
 				if(mb_strtoupper($_GET["clear_cache_session"]) == "Y")
-					$_SESSION["SESS_CLEAR_CACHE"] = "Y";
+					\Bitrix\Main\Application::getInstance()->getKernelSession()["SESS_CLEAR_CACHE"] = "Y";
 				elseif($_GET["clear_cache_session"] <> '')
-					unset($_SESSION["SESS_CLEAR_CACHE"]);
+					unset(\Bitrix\Main\Application::getInstance()->getKernelSession()["SESS_CLEAR_CACHE"]);
 			}
 
 			if(isset($_GET["clear_cache"]) && mb_strtoupper($_GET["clear_cache"]) == "Y")
 				return false;
 		}
 
-		if(isset($_SESSION["SESS_CLEAR_CACHE"]) && $_SESSION["SESS_CLEAR_CACHE"] == "Y")
+		if(isset(\Bitrix\Main\Application::getInstance()->getKernelSession()["SESS_CLEAR_CACHE"]) && \Bitrix\Main\Application::getInstance()->getSession()["SESS_CLEAR_CACHE"] == "Y")
 			return false;
 
 		if(!$this->_cache->read($this->content, $this->basedir, $this->initdir, $this->filename, $this->TTL))

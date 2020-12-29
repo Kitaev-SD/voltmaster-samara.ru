@@ -3,10 +3,10 @@ if(!defined("B_PROLOG_INCLUDED") || B_PROLOG_INCLUDED!==true) die();
 IncludeModuleLangFile(__FILE__);
 
 if($_GET["back_url_pub"] <> "" && !is_array($_GET["back_url_pub"]) && mb_strpos($_GET["back_url_pub"], "/") === 0)
-	$_SESSION["BACK_URL_PUB"] = $_GET["back_url_pub"];
+	\Bitrix\Main\Application::getInstance()->getSession()["BACK_URL_PUB"] = $_GET["back_url_pub"];
 
 if($_GET["back_url_additional"] <> "" && !is_array($_GET["back_url_additional"]) && mb_strpos($_GET["back_url_additional"], "/") === 0)
-	$_SESSION["BACK_URL_ADDITIONAL"] = $_GET["back_url_additional"];
+	\Bitrix\Main\Application::getInstance()->getSession()["BACK_URL_ADDITIONAL"] = $_GET["back_url_additional"];
 
 $params = DeleteParam(array("logout", "back_url_pub", "back_url_additional", "sessid"));
 
@@ -130,8 +130,8 @@ if (count($arLangMenu) > 1)
 
 $arPanelButtons[] = $arLangButton;
 
-$sPubUrl = ($_SESSION["BACK_URL_PUB"] <> ""?
-	htmlspecialcharsbx($_SESSION["BACK_URL_PUB"]).(mb_strpos($_SESSION["BACK_URL_PUB"], "?") !== false? "&amp;":"?") : '/?').
+$sPubUrl = (\Bitrix\Main\Application::getInstance()->getSession()["BACK_URL_PUB"] <> ""?
+	htmlspecialcharsbx(\Bitrix\Main\Application::getInstance()->getSession()["BACK_URL_PUB"]).(mb_strpos(\Bitrix\Main\Application::getInstance()->getSession()["BACK_URL_PUB"], "?") !== false? "&amp;":"?") : '/?').
 	'back_url_admin='.urlencode($APPLICATION->GetCurPage().($params<>""? "?".$params:""));
 
 if (\Bitrix\Main\Config\Option::get("sale", "~IS_SALE_CRM_SITE_MASTER_FINISH") === "Y"
@@ -234,8 +234,8 @@ if($USER->IsAuthorized())
 			{
 				$isDefault = false;
 
-				$additionalSiteUrl = ($_SESSION["BACK_URL_ADDITIONAL"] <> ""
-					? htmlspecialcharsbx($_SESSION["BACK_URL_ADDITIONAL"]).(mb_strpos($_SESSION["BACK_URL_ADDITIONAL"], "?") !== false? "&amp;":"?")
+				$additionalSiteUrl = (\Bitrix\Main\Application::getInstance()->getSession()["BACK_URL_ADDITIONAL"] <> ""
+					? htmlspecialcharsbx(\Bitrix\Main\Application::getInstance()->getSession()["BACK_URL_ADDITIONAL"]).(mb_strpos(\Bitrix\Main\Application::getInstance()->getSession()["BACK_URL_ADDITIONAL"], "?") !== false? "&amp;":"?")
 					: '/?').'back_url_admin='.urlencode($APPLICATION->GetCurPage().($params<>"" ? "?".$params : ""));
 
 				$additionalSiteHost = \Bitrix\Main\Context::getCurrent()->getRequest()->isHttps() ? "https://" : "http://";
@@ -276,8 +276,8 @@ if($USER->IsAuthorized())
 					$additionalTabTitle = GetMessage("adm_top_panel_view_b24_title");
 					$additionalTabMessage = GetMessage("admin_panel_b24");
 
-					$additionalSiteUrl = ($_SESSION["BACK_URL_ADDITIONAL"] <> ""
-							? htmlspecialcharsbx($_SESSION["BACK_URL_ADDITIONAL"]).(mb_strpos($_SESSION["BACK_URL_ADDITIONAL"], "?") !== false? "&amp;":"?")
+					$additionalSiteUrl = (\Bitrix\Main\Application::getInstance()->getSession()["BACK_URL_ADDITIONAL"] <> ""
+							? htmlspecialcharsbx(\Bitrix\Main\Application::getInstance()->getSession()["BACK_URL_ADDITIONAL"]).(mb_strpos(\Bitrix\Main\Application::getInstance()->getSession()["BACK_URL_ADDITIONAL"], "?") !== false? "&amp;":"?")
 							: '/?').'back_url_admin='.urlencode($APPLICATION->GetCurPage().($params<>"" ? "?".$params : ""));
 					$defaultServerName .= $additionalSiteUrl;
 					?>
@@ -356,7 +356,7 @@ if ($USER->IsAuthorized()):
 <?
 	}
 
-?><a hidefocus="true" href="<?=htmlspecialcharsbx((defined('BX_ADMIN_SECTION_404') && BX_ADMIN_SECTION_404 == 'Y' ? '/bitrix/admin/' : $APPLICATION->GetCurPage())).'?logout=yes'.htmlspecialcharsbx(($s=DeleteParam(array("logout"))) == ""? "":"&".$s)?>" class="adm-header-exit" id="bx-panel-logout" title="<?=GetMessage('admin_panel_logout_title')?>"><?=GetMessage("admin_panel_logout")?></a><?
+?><a hidefocus="true" href="<?=htmlspecialcharsbx((defined('BX_ADMIN_SECTION_404') && BX_ADMIN_SECTION_404 == 'Y' ? '/bitrix/admin/' : $APPLICATION->GetCurPage()).'?'.CUser::getLogoutParams())?>" class="adm-header-exit" id="bx-panel-logout" title="<?=GetMessage('admin_panel_logout_title')?>"><?=GetMessage("admin_panel_logout")?></a><?
 
 	$Execs = $hkInstance->GetCodeByClassName("bx-panel-logout",GetMessage('admin_panel_logout'));
 	echo $hkInstance->PrintJSExecs($Execs);

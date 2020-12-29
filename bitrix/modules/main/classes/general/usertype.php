@@ -191,7 +191,7 @@ class CAllUserTypeEntity extends CDBResult
 		$arFilter = array();
 		foreach($aFilter as $key => $val)
 		{
-			if(is_array($val) || $val == '')
+			if(is_array($val) || (string)$val == '')
 				continue;
 
 			$key = mb_strtoupper($key);
@@ -2781,7 +2781,7 @@ class CUserTypeManager
 					if(is_callable(array($arUserField["USER_TYPE"]["CLASS_NAME"], "onbeforesave")))
 						$arFields[$FIELD_NAME] = call_user_func_array(array($arUserField["USER_TYPE"]["CLASS_NAME"], "onbeforesave"), array($arUserField, $arFields[$FIELD_NAME], $user_id));
 
-					if($arFields[$FIELD_NAME] <> '')
+					if((string)$arFields[$FIELD_NAME] !== '')
 						$arUpdate[$FIELD_NAME] = $arFields[$FIELD_NAME];
 					else
 						$arUpdate[$FIELD_NAME] = false;
@@ -3595,7 +3595,7 @@ class CUserFieldEnum
 			}
 			else
 			{
-				if($val == '')
+				if((string)$val == '')
 					continue;
 				$val = "('" . $DB->ForSql($val) . "')";
 			}

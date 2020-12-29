@@ -162,7 +162,7 @@ $width = $pageWidth - $margin['left'] - $margin['right'];
 			<?if ($params['BILLLA_PAYER_SHOW'] === 'Y'):?>
 				<table class="inv">
 					<tr align="right">
-						<td><b><?=$params['BILLLA_HEADER'];?> #&nbsp;</b></td>
+						<td><b><?=htmlspecialcharsbx($params['BILLLA_HEADER']);?> #&nbsp;</b></td>
 						<td><?=htmlspecialcharsbx($params["ACCOUNT_NUMBER"]); ?></td>
 					</tr>
 					<tr align="right">

@@ -294,8 +294,14 @@ HTML
 				}
 				$patt = array();
 				foreach ($res as $pat => $rep)
-					$patt[] = "#".$pat."#";
-				$files .= str_ireplace($patt, array_values($res), $t);
+				{
+					$patt["#".$pat."#"] = htmlspecialcharsbx($rep);
+				}
+				if (array_key_exists("#description#", $patt) && strpos($patt["#description#"], "&amp;quot;") !== false)
+				{
+					$patt["#description#"] = str_replace("&amp;quot;", "&quot;", $patt["#description#"]);
+				}
+				$files .= str_ireplace(array_keys($patt), array_values($patt), $t);
 				$this->files[] = $res;
 			}
 		}
@@ -319,7 +325,7 @@ HTML
 			if ($this->uploadSetts["allowUpload"] == "I")
 				$hintMessage = Loc::getMessage("BXU_DNDMessage01");
 			else if ($this->uploadSetts["allowUpload"] == "F")
-				$hintMessage = Loc::getMessage("BXU_DNDMessage02", array("#ext#" => $this->uploadSetts["allowUploadExt"]));
+				$hintMessage = Loc::getMessage("BXU_DNDMessage02", array("#ext#" => htmlspecialcharsbx($this->uploadSetts["allowUploadExt"])));
 			else
 				$hintMessage = Loc::getMessage("BXU_DNDMessage03");
 
@@ -328,11 +334,11 @@ HTML
 		}
 		else
 		{
-			$maxCount = ($this->uploadSetts["maxCount"] > 0 ? GetMessage("BXU_DNDMessage5", array("#maxCount#" => $this->uploadSetts["maxCount"])) : "");
+			$maxCount = ($this->uploadSetts["maxCount"] > 0 ? GetMessage("BXU_DNDMessage5", array("#maxCount#" => htmlspecialcharsbx($this->uploadSetts["maxCount"]))) : "");
 			if ($this->uploadSetts["allowUpload"] == "I")
 				$hintMessage = Loc::getMessage("BXU_DNDMessage1", array("#maxCount#" => $maxCount));
 			else if ($this->uploadSetts["allowUpload"] == "F")
-				$hintMessage = Loc::getMessage("BXU_DNDMessage2", array("#ext#" => $this->uploadSetts["allowUploadExt"], "#maxCount#" => $maxCount));
+				$hintMessage = Loc::getMessage("BXU_DNDMessage2", array("#ext#" => htmlspecialcharsbx($this->uploadSetts["allowUploadExt"]), "#maxCount#" => $maxCount));
 			else
 				$hintMessage = Loc::getMessage("BXU_DNDMessage3", array("#maxCount#" => $maxCount));
 			if ($this->uploadSetts["maxSize"] > 0)

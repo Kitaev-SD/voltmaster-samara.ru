@@ -7,8 +7,17 @@
  */
 namespace Bitrix\Main;
 
+use Bitrix\Main\Config\Configuration;
 use Bitrix\Main\Data;
+use Bitrix\Main\DI\ServiceLocator;
 use Bitrix\Main\Diag;
+use Bitrix\Main\IO;
+use Bitrix\Main\Routing\Route;
+use Bitrix\Main\Routing\Router;
+use Bitrix\Main\Session\CompositeSessionManager;
+use Bitrix\Main\Session\KernelSessionProxy;
+use Bitrix\Main\Session\SessionConfigurationResolver;
+use Bitrix\Main\Session\SessionInterface;
 
 /**
  * Base class for any application.
@@ -33,6 +42,12 @@ abstract class Application
 	 */
 	protected $context;
 
+	/** @var Router */
+	protected $router;
+
+	/** @var Route */
+	protected $currentRoute;
+
 	/**
 	 * Pool of database connections.
 	 * @var Data\ConnectionPool
@@ -51,10 +66,14 @@ abstract class Application
 	 */
 	protected $taggedCache;
 
-	/**
-	 * @var \Bitrix\Main\Diag\ExceptionHandler
-	 */
-	protected $exceptionHandler = null;
+	/** @var SessionInterface */
+	protected $session;
+	/** @var SessionInterface */
+	protected $kernelSession;
+	/** @var CompositeSessionManager */
+	protected $compositeSessionManager;
+	/** @var Data\LocalStorage\SessionLocalStorageManager */
+	protected $sessionLocalStorageManager;
 
 	/*
 	 * @var \SplPriorityQueue
@@ -91,6 +110,7 @@ abstract class Application
 			return;
 		$this->isBasicKernelInitialized = true;
 
+		ServiceLocator::getInstance()->registerByGlobalSettings();
 		$this->initializeExceptionHandler();
 		$this->initializeCache();
 		$this->createDatabaseConnection();
@@ -107,7 +127,77 @@ abstract class Application
 			return;
 		$this->isExtendedKernelInitialized = true;
 
+		$this->initializeSessions();
 		$this->initializeContext($params);
+		$this->initializeSessionLocalStorage();
+	}
+
+	private function initializeSessions()
+	{
+		$resolver = new SessionConfigurationResolver(Configuration::getInstance());
+		$resolver->resolve();
+
+		$this->session = $resolver->getSession();
+		$this->kernelSession = $resolver->getKernelSession();
+
+		$this->compositeSessionManager = new CompositeSessionManager(
+			$this->kernelSession,
+			$this->session
+		);
+	}
+
+	private function initializeSessionLocalStorage()
+	{
+		$cacheEngine = Data\Cache::createCacheEngine();
+		if ($cacheEngine instanceof Data\LocalStorage\Storage\CacheEngineInterface)
+		{
+			$localSessionStorage = new Data\LocalStorage\Storage\CacheStorage($cacheEngine);
+		}
+		else
+		{
+			$localSessionStorage = new Data\LocalStorage\Storage\NativeSessionStorage(
+				$this->getSession()
+			);
+		}
+
+		$this->sessionLocalStorageManager = new Data\LocalStorage\SessionLocalStorageManager($localSessionStorage);
+		$configLocalStorage = Config\Configuration::getValue("session_local_storage") ?: [];
+		if (isset($configLocalStorage['ttl']))
+		{
+			$this->sessionLocalStorageManager->setTtl($configLocalStorage['ttl']);
+		}
+	}
+
+	/**
+	 * @return Router
+	 */
+	public function getRouter(): Router
+	{
+		return $this->router;
+	}
+
+	/**
+	 * @param Router $router
+	 */
+	public function setRouter(Router $router): void
+	{
+		$this->router = $router;
+	}
+
+	/**
+	 * @return Route
+	 */
+	public function getCurrentRoute(): Route
+	{
+		return $this->currentRoute;
+	}
+
+	/**
+	 * @param Route $currentRoute
+	 */
+	public function setCurrentRoute(Route $currentRoute): void
+	{
+		$this->currentRoute = $currentRoute;
 	}
 
 	/**
@@ -163,10 +253,22 @@ abstract class Application
 			}
 		}
 
+		$this->handleResponseBeforeSend($response);
 		//this is the last point of output - all output below will be ignored
 		$response->send();
 
 		$this->terminate($status);
+	}
+
+	protected function handleResponseBeforeSend(Response $response): void
+	{
+		$kernelSession = $this->getKernelSession();
+		if (!($kernelSession instanceof KernelSessionProxy) && $kernelSession->isStarted())
+		{
+			//save session data in cookies
+			$kernelSession->getSessionHandler()->setResponse($response);
+			$kernelSession->save();
+		}
 	}
 
 	/**
@@ -257,7 +359,7 @@ abstract class Application
 			array($this, "createExceptionHandlerLog")
 		);
 
-		$this->exceptionHandler = $exceptionHandler;
+		ServiceLocator::getInstance()->addInstance('exceptionHandler', $exceptionHandler);
 	}
 
 	public function createExceptionHandlerLog()
@@ -340,7 +442,7 @@ abstract class Application
 	 */
 	public function getExceptionHandler()
 	{
-		return $this->exceptionHandler;
+		return ServiceLocator::getInstance()->get('exceptionHandler');
 	}
 
 	/**
@@ -425,6 +527,31 @@ abstract class Application
 		}
 
 		return $this->taggedCache;
+	}
+
+	final public function getSessionLocalStorageManager(): Data\LocalStorage\SessionLocalStorageManager
+	{
+		return $this->sessionLocalStorageManager;
+	}
+
+	final public function getLocalSession($name): Data\LocalStorage\SessionLocalStorage
+	{
+		return $this->sessionLocalStorageManager->get($name);
+	}
+
+	final public function getKernelSession(): SessionInterface
+	{
+		return $this->kernelSession;
+	}
+
+	final public function getSession(): SessionInterface
+	{
+		return $this->session;
+	}
+
+	final public function getCompositeSessionManager(): CompositeSessionManager
+	{
+		return $this->compositeSessionManager;
 	}
 
 	/**
@@ -536,16 +663,28 @@ abstract class Application
 		$lastException = null;
 		$exceptionHandler = $this->getExceptionHandler();
 
-		foreach ($this->backgroundJobs as $job)
+		//jobs can be added from jobs
+		while($this->backgroundJobs->valid())
 		{
-			try
+			//clear the queue
+			$jobs = [];
+			foreach ($this->backgroundJobs as $job)
 			{
-				call_user_func_array($job[0], $job[1]);
+				$jobs[] = $job;
 			}
-			catch (\Throwable $exception)
+
+			//do jobs
+			foreach ($jobs as $job)
 			{
-				$lastException = $exception;
-				$exceptionHandler->writeToLog($exception);
+				try
+				{
+					call_user_func_array($job[0], $job[1]);
+				}
+				catch (\Throwable $exception)
+				{
+					$lastException = $exception;
+					$exceptionHandler->writeToLog($exception);
+				}
 			}
 		}
 
@@ -553,5 +692,10 @@ abstract class Application
 		{
 			throw $lastException;
 		}
+	}
+
+	public function isExtendedKernelInitialized(): bool
+	{
+		return (bool)$this->isExtendedKernelInitialized;
 	}
 }

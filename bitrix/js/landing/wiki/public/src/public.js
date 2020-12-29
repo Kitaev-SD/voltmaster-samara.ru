@@ -10,6 +10,7 @@ Event.bind(document, 'click', (event: MouseEvent) => {
 			if (Type.isStringFilled(link.href) && link.target !== '_blank')
 			{
 				event.preventDefault();
+				BX.Landing.Pub.TopPanel.pushHistory(link.href);
 				void SliderHacks.reloadSlider(link.href);
 			}
 		}
@@ -32,6 +33,7 @@ Event.bind(document, 'click', (event: MouseEvent) => {
 				if (urlParams.target === '_self')
 				{
 					event.stopImmediatePropagation();
+					BX.Landing.Pub.TopPanel.pushHistory(urlParams.href);
 					void SliderHacks.reloadSlider(urlParams.href);
 				}
 				else

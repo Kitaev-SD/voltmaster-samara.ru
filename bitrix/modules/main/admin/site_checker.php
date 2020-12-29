@@ -45,8 +45,13 @@ if ($_REQUEST['unique_id'])
 			define("NOT_CHECK_PERMISSIONS", true);
 			define("LDAP_NO_PORT_REDIRECTION", true);
 			require_once($_SERVER["DOCUMENT_ROOT"]."/bitrix/modules/main/include/prolog_before.php");
-			require_once($_SERVER["DOCUMENT_ROOT"]."/bitrix/modules/main/include/epilog_after.php");
-			echo $main_exec_time;
+
+			foreach(GetModuleEvents("main", "OnEpilog", true) as $arEvent)
+				ExecuteModuleEventEx($arEvent);
+
+			$APPLICATION->EndBufferContentMan();
+
+			echo round(microtime(true) - START_EXEC_TIME, 4);
 		break;
 		case 'fast_download':
 			header('X-Accel-Redirect: /bitrix/tmp/success.txt');
@@ -443,7 +448,7 @@ elseif ($_REQUEST['read_log']) // after prolog to send correct charset
 	$oTest = new CSiteCheckerTest();
 	$str = htmlspecialcharsEx(file_get_contents($_SERVER['DOCUMENT_ROOT'].$oTest->LogFile));
 
-	if (($s = CUtil::BinStrlen($str)) > ini_get('pcre.backtrack_limit'))
+	if (($s = strlen($str)) > ini_get('pcre.backtrack_limit'))
 		@ini_set('pcre.backtrack_limit', $s);
 
 	?><!DOCTYPE HTML><html><body style="color:#666"><h1 style="color:#000"><?=GetMessage("MAIN_SC_SYSTEST_LOG")?></h1><?

@@ -2,6 +2,7 @@
 namespace Bitrix\Main;
 
 use Bitrix\Main\Config;
+use Bitrix\Main\Engine;
 use Bitrix\Main\Web;
 
 class HttpResponse extends Response
@@ -60,11 +61,7 @@ class HttpResponse extends Response
 
 			$size = ob_get_length();
 
-			$this
-				->addHeader('Connection', 'close')
-				->addHeader('Content-Encoding', 'none')
-				->addHeader('Content-Length', $size)
-			;
+			$this->addHeader('Content-Length', $size);
 
 			$this->writeHeaders();
 
@@ -173,8 +170,6 @@ class HttpResponse extends Response
 	 */
 	public function getHeaders()
 	{
-		$this->initializeHeaders();
-
 		return $this->headers;
 	}
 
@@ -207,9 +202,20 @@ class HttpResponse extends Response
 			}
 		}
 
+		$cookiesCrypter = new Web\CookiesCrypter();
 		foreach ($this->cookies as $cookie)
 		{
-			$this->setCookie($cookie);
+			if (!$cookiesCrypter->shouldEncrypt($cookie))
+			{
+				$this->setCookie($cookie);
+			}
+			else
+			{
+				foreach ($cookiesCrypter->encrypt($cookie) as $cryptoCookie)
+				{
+					$this->setCookie($cryptoCookie);
+				}
+			}
 		}
 	}
 
@@ -246,15 +252,13 @@ class HttpResponse extends Response
 	 *
 	 * @param string $status
 	 * @return $this
-	 * @throws ArgumentNullException
-	 * @throws ArgumentOutOfRangeException
 	 */
 	public function setStatus($status)
 	{
 		$httpStatus = Config\Configuration::getValue("http_status");
 
-		$cgiMode = (mb_stristr(php_sapi_name(), "cgi") !== false);
-		if ($cgiMode && (($httpStatus == null) || ($httpStatus == false)))
+		$cgiMode = (stristr(php_sapi_name(), "cgi") !== false);
+		if ($cgiMode && ($httpStatus == null || $httpStatus == false))
 		{
 			$this->addHeader("Status", $status);
 		}
@@ -263,8 +267,9 @@ class HttpResponse extends Response
 			$httpHeaders = $this->getHeaders();
 			$httpHeaders->delete($this->getStatus());
 
-			$server = Context::getCurrent()->getServer();
-			$this->addHeader($server->get("SERVER_PROTOCOL")." ".$status);
+			$proto = $this->getServerProtocol();
+
+			$this->addHeader("{$proto} {$status}");
 		}
 
 		return $this;
@@ -282,17 +287,27 @@ class HttpResponse extends Response
 			return $cgiStatus;
 		}
 
-		$prefixStatus = mb_strtolower(Context::getCurrent()->getServer()->get("SERVER_PROTOCOL").' ');
-		$prefixStatusLength = mb_strlen($prefixStatus);
+		$prefixStatus = strtolower($this->getServerProtocol().' ');
+		$prefixStatusLength = strlen($prefixStatus);
 		foreach ($this->getHeaders() as $name => $value)
 		{
-			if (mb_substr(mb_strtolower($name), 0, $prefixStatusLength) === $prefixStatus)
+			if (substr(strtolower($name), 0, $prefixStatusLength) === $prefixStatus)
 			{
 				return $name;
 			}
 		}
 
 		return null;
+	}
+
+	protected function getServerProtocol()
+	{
+		$context = Context::getCurrent();
+		if ($context !== null)
+		{
+			return $context->getServer()->get("SERVER_PROTOCOL");
+		}
+		return "HTTP/1.0";
 	}
 
 	/**
@@ -309,5 +324,59 @@ class HttpResponse extends Response
 		}
 
 		return $this;
+	}
+
+	/**
+	 * @param $url
+	 * @return Engine\Response\Redirect
+	 */
+	final public function redirectTo($url): HttpResponse
+	{
+		$redirectResponse = new Engine\Response\Redirect($url);
+
+		return $this->copyHeadersTo($redirectResponse);
+	}
+
+	public function copyHeadersTo(HttpResponse $response): HttpResponse
+	{
+		$httpHeaders = $response->getHeaders();
+
+		$status = $response->getStatus();
+		$previousStatus = $this->getStatus();
+		foreach ($this->getHeaders() as $headerName => $values)
+		{
+			if ($this->shouldIgnoreHeaderToClone($headerName))
+			{
+				continue;
+			}
+
+			if ($status && $headerName === $previousStatus)
+			{
+				continue;
+			}
+
+			if ($httpHeaders->get($headerName))
+			{
+				continue;
+			}
+
+			$httpHeaders->add($headerName, $values);
+		}
+
+		foreach ($this->getCookies() as $cookie)
+		{
+			$response->addCookie($cookie, false);
+		}
+
+		return $response;
+	}
+
+	private function shouldIgnoreHeaderToClone($headerName)
+	{
+		return in_array(strtolower($headerName), [
+			'content-encoding',
+			'content-length',
+			'content-type',
+		], true);
 	}
 }

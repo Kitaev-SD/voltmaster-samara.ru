@@ -1,4 +1,6 @@
 <?
+
+use Bitrix\Main\Loader;
 use Bitrix\Main\Localization\Loc;
 use Bitrix\Main\Application;
 use Bitrix\Main\Page;
@@ -29,6 +31,13 @@ $request = $context->getRequest();
 $server = $context->getServer();
 $lang = $context->getLanguage();
 $documentRoot = Application::getDocumentRoot();
+
+$isCloud = Loader::includeModule("bitrix24");
+$zone = '';
+if (!$isCloud && Loader::includeModule('intranet'))
+{
+	$zone = \CIntranetUtils::getPortalZone();
+}
 
 \Bitrix\Sale\Cashbox\Cashbox::init();
 
@@ -77,7 +86,7 @@ if ($server->getRequestMethod() == "POST"
 	{
 		$adminSidePanelHelper->sendJsonErrorResponse($errorMessage);
 	}
-	
+
 	if (class_exists($handler))
 	{
 		$cashbox['SETTINGS'] = $handler::extractSettingsFromRequest($request);
@@ -302,7 +311,12 @@ $tabControl->BeginCustomField('HANDLER', GetMessage("SALE_CASHBOX_HANDLER"));
 					if (class_exists($handler))
 					{
 						$selected = ($handler === $cashbox['HANDLER']) ? 'selected' : '';
-						echo '<option value="'.$handler.'" '.$selected.'>'.$handler::getName().'</option>';
+						$handlerName = $handler::getName();
+						if ($handler === '\Bitrix\Sale\Cashbox\CashboxCheckbox' && (!$isCloud && $zone !== 'ua'))
+						{
+							$handlerName .= ' ' . Loc::getMessage('SALE_CASHBOX_FOR_UA');
+						}
+						echo '<option value="'.$handler.'" '.$selected.'>'.$handlerName.'</option>';
 					}
 				}
 				?>
@@ -310,13 +324,36 @@ $tabControl->BeginCustomField('HANDLER', GetMessage("SALE_CASHBOX_HANDLER"));
 			<?if ($cashboxObject instanceof Cashbox\ITestConnection):?>
 				<input type="button" id="TEST_BUTTON" value="<?=Loc::getMessage('SALE_CASHBOX_CONNECTION')?>" onclick="BX.Sale.Cashbox.testConnection(<?=$id?>)">
 			<?endif;?>
+			<?php if (!$isCloud && $zone !== 'ua'): ?>
+			<span id="hint_cashbox_ua_wrapper">
+				<span id="hint_CASHBOX_UA"></span>
+				<?php if ($cashbox['HANDLER'] === '\Bitrix\Sale\Cashbox\CashboxCheckbox'): ?>
+				<script>
+				BX.hint_replace(BX('hint_CASHBOX_UA'), '<?=Loc::getMessage('SALE_CASHBOX_UA_HINT');?>');
+				</script>
+				<?php endif; ?>
+			</span>
+			<?php endif; ?>
 		</td>
 	</tr>
 <?
 $tabControl->EndCustomField('HANDLER', '');
 
-$tabControl->BeginCustomField('OFD', GetMessage("SALE_CASHBOX_OFD"));
+$zone = 'ru';
+if (Loader::includeModule("bitrix24"))
+{
+	$zone = \CBitrix24::getLicensePrefix();
+}
+elseif (Loader::includeModule('intranet'))
+{
+	$zone = \CIntranetUtils::getPortalZone();
+}
+if ($zone === 'ru')
+{
+	$tabControl->BeginCustomField('OFD', GetMessage("SALE_CASHBOX_OFD"));
+}
 ?>
+<?php if ($zone === 'ru'): ?>
 	<tr id="tr_OFD">
 		<td width="40%">
 			<span <?=(isset($requireFields['OFD']) ? 'class="adm-required-field"' : '')?>><?=Loc::getMessage("SALE_CASHBOX_OFD");?>:</span>
@@ -337,9 +374,12 @@ $tabControl->BeginCustomField('OFD', GetMessage("SALE_CASHBOX_OFD"));
 			</select>
 		</td>
 	</tr>
-
+<?php endif; ?>
 <?
-$tabControl->EndCustomField('OFD', '');
+if ($zone === 'ru')
+{
+	$tabControl->EndCustomField('OFD', '');
+}
 
 $name = $request->get('NAME') ? $request->get('NAME') : $cashbox['NAME'];
 $tabControl->AddEditField('NAME', Loc::getMessage("SALE_CASHBOX_NAME").':', true, array('SIZE' => 40), $name);
@@ -437,16 +477,26 @@ $tabControl->BeginCustomField('CASHBOX_SETTINGS', GetMessage("CASHBOX_SETTINGS")
 	<tbody id="sale-cashbox-settings-container"><?=$cashboxSettings?></tbody>
 <?$tabControl->EndCustomField('CASHBOX_SETTINGS');
 
-$tabControl->BeginNextFormTab();
+if ($zone === 'ru')
+{
+	$tabControl->BeginNextFormTab();
 
-ob_start();
-require_once($documentRoot."/bitrix/modules/sale/admin/cashbox_ofd_settings.php");
-$cashboxOfdSettings = ob_get_contents();
-ob_end_clean();
+	ob_start();
+	require_once($documentRoot."/bitrix/modules/sale/admin/cashbox_ofd_settings.php");
+	$cashboxOfdSettings = ob_get_contents();
+	ob_end_clean();
 
-$tabControl->BeginCustomField('OFD_SETTINGS', GetMessage("CASHBOX_OFD_SETTINGS"));?>
+	$tabControl->BeginCustomField('OFD_SETTINGS', GetMessage("CASHBOX_OFD_SETTINGS"));
+}
+?>
+<?php if ($zone === 'ru'): ?>
 	<tbody id="sale-cashbox-ofd-settings-container"><?=$cashboxOfdSettings?></tbody>
-<?$tabControl->EndCustomField('OFD_SETTINGS');
+<?php endif; ?>
+<?php
+if ($zone === 'ru')
+{
+	$tabControl->EndCustomField('OFD_SETTINGS');
+}
 
 $tabControl->Buttons(array("disabled" => ($saleModulePermissions < "W"), "back_url" => $listUrl));
 
@@ -458,7 +508,8 @@ $tabControl->Show();
 		CASHBOX_CHECK_CONNECTION_TITLE: '<?=Loc::getMessage("CASHBOX_CHECK_CONNECTION_TITLE")?>',
 		CASHBOX_CHECK_CONNECTION_TITLE_POPUP_CLOSE: '<?=Loc::getMessage("CASHBOX_CHECK_CONNECTION_TITLE_POPUP_CLOSE")?>',
 		SALE_RDL_RESTRICTION: '<?=Loc::getMessage("SALE_CASHBOX_RDL_RESTRICTION")?>',
-		SALE_RDL_SAVE: '<?=Loc::getMessage("SALE_CASHBOX_RDL_SAVE")?>'
+		SALE_RDL_SAVE: '<?=Loc::getMessage("SALE_CASHBOX_RDL_SAVE")?>',
+		SALE_CASHBOX_UA_HINT: '<?=Loc::getMessage("SALE_CASHBOX_UA_HINT")?>'
 	});
 </script>
 <?

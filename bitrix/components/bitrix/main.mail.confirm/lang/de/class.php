@@ -1,4 +1,4 @@
-<?
+<?php
 $MESS["MAIN_MAIL_CONFIRM_AJAX_ERROR"] = "Fehler bei Verarbeitung der Anfrage.";
 $MESS["MAIN_MAIL_CONFIRM_AUTH"] = "Authentifizierungsfehler";
 $MESS["MAIN_MAIL_CONFIRM_BACK"] = "Zurück";
@@ -29,8 +29,17 @@ $MESS["MAIN_MAIL_CONFIRM_MENU"] = "Absender hinzufügen";
 $MESS["MAIN_MAIL_CONFIRM_MENU_PLACEHOLDER"] = "Standardabsender (\"Von\")";
 $MESS["MAIN_MAIL_CONFIRM_MENU_UNKNOWN"] = "Absender auswählen";
 $MESS["MAIN_MAIL_CONFIRM_NAME"] = "Name";
+$MESS["MAIN_MAIL_CONFIRM_POST_DELETE_ACCESS_ERROR"] = "Sie können diese Absender nicht löschen";
+$MESS["MAIN_MAIL_CONFIRM_POST_DELETE_ACCESS_ERROR_TITTLE"] = "Zugriff verweigert";
+$MESS["MAIN_MAIL_CONFIRM_POST_DELETE_EMPTY_LIST_WARN"] = "Absender konnten nicht gefunden werden";
+$MESS["MAIN_MAIL_CONFIRM_POST_DELETE_EMPTY_LIST_WARN_TITTLE"] = "Warnung";
+$MESS["MAIN_MAIL_CONFIRM_POST_DELETE_NOT_FULL_LIST_WARN"] = "Nicht alle Absender konnten gefunden werden";
+$MESS["MAIN_MAIL_CONFIRM_POST_DELETE_NOT_FULL_LIST_WARN_TITTLE"] = "Warnung";
+$MESS["MAIN_MAIL_CONFIRM_POST_DELETE_SUCCESS"] = "Absender wurden gelöscht";
+$MESS["MAIN_MAIL_CONFIRM_POST_DELETE_SUCCESS_TITLE"] = "Gelöscht";
 $MESS["MAIN_MAIL_CONFIRM_PUBLIC"] = "Verfügbar für alle";
 $MESS["MAIN_MAIL_CONFIRM_PUBLIC_HINT"] = "Diese Adresse wird für alle Mitarbeiter verfügbar sein, die CRM nutzen";
+$MESS["MAIN_MAIL_CONFIRM_PUBLIC_HINT1"] = "Die von Ihnen zugefügte Adresse kann von jedem Mitarbeiter ausgewählt werden";
 $MESS["MAIN_MAIL_CONFIRM_SAVE"] = "Speichern";
 $MESS["MAIN_MAIL_CONFIRM_SMTP_LOGIN"] = "Login";
 $MESS["MAIN_MAIL_CONFIRM_SMTP_PASSWORD"] = "Passwort";
@@ -40,5 +49,6 @@ $MESS["MAIN_MAIL_CONFIRM_SMTP_SSL"] = "SSL nutzen";
 $MESS["MAIN_MAIL_CONFIRM_SMTP_WARNING"] = "Wichtig! Stellen Sie bitte sicher, dass die von Ihnen angegebenen Daten des SMTP-Servers korrekt sind. Sonst wird die E-Mail nicht zugestellt.";
 $MESS["MAIN_MAIL_CONFIRM_SPACE_SMTP_PASSWORD"] = "Passwort fängt an oder endet mit einem Leerzeichen";
 $MESS["MAIN_MAIL_CONFIRM_TITLE"] = "Neue Adresse hinzufügen";
+$MESS["MAIN_MAIL_CONFIRM_UI_GRID_EMAIL_COLUMN"] = "E-Mail";
+$MESS["MAIN_MAIL_CONFIRM_UI_GRID_NAME_COLUMN"] = "Name";
 $MESS["MAIN_MAIL_DELETE_SENDER_ERROR"] = "Fehler beim Löschen des Absenders";
-?>

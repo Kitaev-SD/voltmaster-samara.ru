@@ -71,7 +71,7 @@ abstract class CAllDatabase
 	 *
 	 * @return boolean|CDatabase
 	 */
-	function GetDBNodeConnection($node_id, $bIgnoreErrors = false, $bCheckStatus = true)
+	public static function GetDBNodeConnection($node_id, $bIgnoreErrors = false, $bCheckStatus = true)
 	{
 		global $DB;
 
@@ -129,11 +129,24 @@ abstract class CAllDatabase
 		}
 		else
 		{
-			if(file_exists($_SERVER["DOCUMENT_ROOT"].BX_PERSONAL_ROOT."/php_interface/dbconn_error.php"))
-				include($_SERVER["DOCUMENT_ROOT"].BX_PERSONAL_ROOT."/php_interface/dbconn_error.php");
-			else
-				include($_SERVER["DOCUMENT_ROOT"].BX_ROOT."/modules/main/include/dbconn_error.php");
+			static::showConnectionError();
 			die();
+		}
+	}
+
+	public static function showConnectionError()
+	{
+		$response = new Main\HttpResponse();
+		$response->setStatus('500 Internal Server Error');
+		$response->writeHeaders();
+
+		if(file_exists($_SERVER["DOCUMENT_ROOT"].BX_PERSONAL_ROOT."/php_interface/dbconn_error.php"))
+		{
+			include($_SERVER["DOCUMENT_ROOT"].BX_PERSONAL_ROOT."/php_interface/dbconn_error.php");
+		}
+		else
+		{
+			echo "Error connecting to database. Please try again later.";
 		}
 	}
 
@@ -393,8 +406,6 @@ abstract class CAllDatabase
 	{
 		if(mb_strtolower($this->type) == "mysql")
 			$delimiter = ";";
-		elseif(mb_strtolower($this->type) == "mssql")
-			$delimiter = "\nGO";
 		else
 			$delimiter = "(?<!\\*)/(?!\\*)";
 
@@ -1083,8 +1094,8 @@ abstract class CAllDBResult
 		$SESS_ALL = $md5Path."SESS_ALL_".($NavNum+1);
 		if(intval($PAGEN) <= 0)
 		{
-			if(CPageOption::GetOptionString("main", "nav_page_in_session", "Y")=="Y" && intval($_SESSION[$SESS_PAGEN])>0)
-				$PAGEN = $_SESSION[$SESS_PAGEN];
+			if(CPageOption::GetOptionString("main", "nav_page_in_session", "Y")=="Y" && intval(\Bitrix\Main\Application::getInstance()->getSession()[$SESS_PAGEN])>0)
+				$PAGEN = \Bitrix\Main\Application::getInstance()->getSession()[$SESS_PAGEN];
 			elseif($bDescPageNumbering === true)
 				$PAGEN = 0;
 			else
@@ -1097,7 +1108,7 @@ abstract class CAllDBResult
 			$SIZEN = 10;
 
 		//Show all records
-		$SHOW_ALL = ($bShowAll? (isset($SHOWALL) ? ($SHOWALL == 1) : (CPageOption::GetOptionString("main", "nav_page_in_session", "Y")=="Y" && $_SESSION[$SESS_ALL] == 1)) : false);
+		$SHOW_ALL = ($bShowAll? (isset($SHOWALL) ? ($SHOWALL == 1) : (CPageOption::GetOptionString("main", "nav_page_in_session", "Y")=="Y" && \Bitrix\Main\Application::getInstance()->getSession()[$SESS_ALL] == 1)) : false);
 
 		//$NavShowAll comes from $nPageSize array
 		$res = array(
@@ -1108,8 +1119,8 @@ abstract class CAllDBResult
 
 		if(CPageOption::GetOptionString("main", "nav_page_in_session", "Y")=="Y")
 		{
-			$_SESSION[$SESS_PAGEN] = $PAGEN;
-			$_SESSION[$SESS_ALL] = $SHOW_ALL;
+			\Bitrix\Main\Application::getInstance()->getSession()[$SESS_PAGEN] = $PAGEN;
+			\Bitrix\Main\Application::getInstance()->getSession()[$SESS_ALL] = $SHOW_ALL;
 			$res["SESS_PAGEN"] = $SESS_PAGEN;
 			$res["SESS_ALL"] = $SESS_ALL;
 		}
@@ -1176,12 +1187,12 @@ abstract class CAllDBResult
 				($this->PAGEN < 1 || $this->PAGEN > $this->NavPageCount
 				?
 					(CPageOption::GetOptionString("main", "nav_page_in_session", "Y")!="Y"
-						|| $_SESSION[$this->SESS_PAGEN] < 1
-						|| $_SESSION[$this->SESS_PAGEN] > $this->NavPageCount
+						|| \Bitrix\Main\Application::getInstance()->getSession()[$this->SESS_PAGEN] < 1
+						|| \Bitrix\Main\Application::getInstance()->getSession()[$this->SESS_PAGEN] > $this->NavPageCount
 					?
 						1
 					:
-						$_SESSION[$this->SESS_PAGEN]
+						\Bitrix\Main\Application::getInstance()->getSession()[$this->SESS_PAGEN]
 					)
 				:
 					$this->PAGEN

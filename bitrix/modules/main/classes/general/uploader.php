@@ -405,7 +405,7 @@ class CImageUploader
 	{
 		//$savedPath = self::$sTmpPath."_sd.tmp";
 		self::$savedData = $savedData;
-		$_SESSION['BX_PHOTO_TMP_SAVED_DATA'] = $savedData;
+		\Bitrix\Main\Application::getInstance()->getSession()['BX_PHOTO_TMP_SAVED_DATA'] = $savedData;
 		return true;
 	}
 
@@ -414,7 +414,7 @@ class CImageUploader
 		if (is_array(self::$savedData))
 			return self::$savedData;
 
-		$savedData = $_SESSION['BX_PHOTO_TMP_SAVED_DATA'];
+		$savedData = \Bitrix\Main\Application::getInstance()->getSession()['BX_PHOTO_TMP_SAVED_DATA'];
 
 		if (!is_array($savedData))
 			$savedData = array();
@@ -424,7 +424,7 @@ class CImageUploader
 
 	public static function CleanSavedData()
 	{
-		unset($_SESSION['BX_PHOTO_TMP_SAVED_DATA']);
+		unset(\Bitrix\Main\Application::getInstance()->getSession()['BX_PHOTO_TMP_SAVED_DATA']);
 	}
 
 	public static function CheckErrors()

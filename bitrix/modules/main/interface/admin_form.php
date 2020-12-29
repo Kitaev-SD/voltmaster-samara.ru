@@ -173,7 +173,7 @@ class CAdminForm extends CAdminTabControl
 
 				if($this->bCustomFields)
 				{
-					if(is_array($_SESSION["ADMIN_CUSTOM_FIELDS"]) && array_key_exists($this->name, $_SESSION["ADMIN_CUSTOM_FIELDS"]))
+					if(is_array(\Bitrix\Main\Application::getInstance()->getSession()["ADMIN_CUSTOM_FIELDS"]) && array_key_exists($this->name, \Bitrix\Main\Application::getInstance()->getSession()["ADMIN_CUSTOM_FIELDS"]))
 					{
 						$aAdditionalMenu[] = array(
 							"TEXT" => GetMessage("admin_lib_sett_sett_enable_text"),
@@ -197,7 +197,7 @@ class CAdminForm extends CAdminTabControl
 				if (count($aAdditionalMenu) > 1)
 				{
 					$sMenuUrl = "BX.adminShowMenu(this, ".htmlspecialcharsbx(CAdminPopup::PhpToJavaScript($aAdditionalMenu)).", {active_class: 'bx-settings-btn-active'});";
-					$bCustomFieldsOff = is_array($_SESSION["ADMIN_CUSTOM_FIELDS"]) && array_key_exists($this->name, $_SESSION["ADMIN_CUSTOM_FIELDS"]);
+					$bCustomFieldsOff = is_array(\Bitrix\Main\Application::getInstance()->getSession()["ADMIN_CUSTOM_FIELDS"]) && array_key_exists($this->name, \Bitrix\Main\Application::getInstance()->getSession()["ADMIN_CUSTOM_FIELDS"]);
 
 					$s .= '<span id="'.$this->name.'_settings_btn" class="adm-detail-settings adm-detail-settings-arrow'.($bCustomFieldsOff ? '' : ' adm-detail-settings-active').'" onclick="'.$sMenuUrl.'"></span>';
 				}
@@ -376,18 +376,18 @@ class CAdminForm extends CAdminTabControl
 			ob_end_flush();
 		}
 
-		if(!is_array($_SESSION["ADMIN_CUSTOM_FIELDS"]))
-			$_SESSION["ADMIN_CUSTOM_FIELDS"] = array();
+		if(!is_array(\Bitrix\Main\Application::getInstance()->getSession()["ADMIN_CUSTOM_FIELDS"]))
+			\Bitrix\Main\Application::getInstance()->getSession()["ADMIN_CUSTOM_FIELDS"] = array();
 		$arDisabled = CUserOptions::GetOption("form", $this->name."_disabled", "N");
 		if(is_array($arDisabled) && $arDisabled["disabled"] === "Y")
 		{
-			$_SESSION["ADMIN_CUSTOM_FIELDS"][$this->name] = true;
+			\Bitrix\Main\Application::getInstance()->getSession()["ADMIN_CUSTOM_FIELDS"][$this->name] = true;
 			$this->tabs = $this->arSavedTabs;
 			$this->arFields = $this->arSystemFields;
 		}
 		else
 		{
-			unset($_SESSION["ADMIN_CUSTOM_FIELDS"][$this->name]);
+			unset(\Bitrix\Main\Application::getInstance()->getSession()["ADMIN_CUSTOM_FIELDS"][$this->name]);
 		}
 
 		if(isset($_REQUEST[$this->name."_active_tab"]))

@@ -44,7 +44,7 @@
 					{
 						BX.UI.Notification.Center.notify({
 							content: BX.message('LANDING_JS_NOTE_WIKI_CREATED_MESS')
-								.replace('#LINK#', result.data['PUBLIC_URL'])
+								.replace('#LINK#', BX.util.htmlspecialchars(result.data['PUBLIC_URL']))
 						});
 					}
 					else
@@ -78,7 +78,7 @@
 				var menuItemNode = menuItem.getLayout().item;
 				var loader = new BX.Loader({
 					target: menuItemNode,
-					size: 30
+					size: 25
 				});
 
 				menuItem.closeSubMenu();
@@ -104,7 +104,7 @@
 								result.data.list.map(function(item)
 								{
 									items.push({
-										text: item['TITLE'],
+										text: BX.util.htmlspecialchars(item['TITLE']),
 										onclick: function(item)
 										{
 											menuItem.menuWindow.close();

@@ -3,9 +3,7 @@ this.BX.UI = this.BX.UI || {};
 (function (exports,main_core) {
 	'use strict';
 
-	var Step =
-	/*#__PURE__*/
-	function (_Event$EventEmitter) {
+	var Step = /*#__PURE__*/function (_Event$EventEmitter) {
 	  babelHelpers.inherits(Step, _Event$EventEmitter);
 
 	  function Step(options) {
@@ -252,9 +250,7 @@ this.BX.UI = this.BX.UI || {};
 
 	  return data;
 	}
-	var Guide =
-	/*#__PURE__*/
-	function (_Event$EventEmitter) {
+	var Guide = /*#__PURE__*/function (_Event$EventEmitter) {
 	  babelHelpers.inherits(Guide, _Event$EventEmitter);
 
 	  function Guide() {
@@ -395,7 +391,7 @@ this.BX.UI = this.BX.UI || {};
 	      }
 
 	      this.showStep();
-	      main_core.Dom.addClass(this.layout.backBtn, "ui-tour-popup-btn-disabled");
+	      main_core.Dom.addClass(this.layout.backBtn, "ui-tour-popup-btn-hidden");
 
 	      if (this.getCurrentStep().getTarget()) {
 	        main_core.Dom.addClass(this.getCurrentStep().getTarget(), "ui-tour-selector");
@@ -676,7 +672,9 @@ this.BX.UI = this.BX.UI || {};
 	      }
 
 	      if (this.currentStepIndex < this.steps.length && !this.finalStep) {
-	        this.layout.nextBtn.textContent = main_core.Loc.getMessage("JS_UI_TOUR_BUTTON");
+	        setTimeout(function () {
+	          this.layout.nextBtn.textContent = main_core.Loc.getMessage("JS_UI_TOUR_BUTTON");
+	        }.bind(this), 200);
 	      }
 
 	      this.currentStepIndex--;
@@ -916,8 +914,8 @@ this.BX.UI = this.BX.UI || {};
 	          this.showStep();
 	        }.bind(this), 200);
 
-	        if (main_core.Dom.hasClass(this.layout.backBtn, 'ui-tour-popup-btn-disabled')) {
-	          main_core.Dom.removeClass(this.layout.backBtn, 'ui-tour-popup-btn-disabled');
+	        if (main_core.Dom.hasClass(this.layout.backBtn, 'ui-tour-popup-btn-hidden')) {
+	          main_core.Dom.removeClass(this.layout.backBtn, 'ui-tour-popup-btn-hidden');
 	        }
 	      }
 	    }
@@ -930,7 +928,7 @@ this.BX.UI = this.BX.UI || {};
 	      this.reduceCurrentStepIndex();
 
 	      if (this.currentStepIndex === 0) {
-	        main_core.Dom.addClass(this.layout.backBtn, 'ui-tour-popup-btn-disabled');
+	        main_core.Dom.addClass(this.layout.backBtn, 'ui-tour-popup-btn-hidden');
 	      }
 
 	      this.clickOnBackBtn = true;
@@ -1027,9 +1025,7 @@ this.BX.UI = this.BX.UI || {};
 	  return Guide;
 	}(main_core.Event.EventEmitter);
 
-	var Manager =
-	/*#__PURE__*/
-	function () {
+	var Manager = /*#__PURE__*/function () {
 	  function Manager() {
 	    babelHelpers.classCallCheck(this, Manager);
 	    this.guides = new Map();

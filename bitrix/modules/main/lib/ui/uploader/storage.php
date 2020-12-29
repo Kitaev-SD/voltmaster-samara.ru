@@ -203,18 +203,18 @@ class CloudStorage extends Storage implements Storable
 			$relativePath = mb_substr($path, mb_strpos($path, "/bxu/"));
 		$subdir = explode("/", trim($relativePath, "/"));
 		$filename = array_pop($subdir);
-		if (!isset($_SESSION["upload_tmp"]))
+		if (!isset(\Bitrix\Main\Application::getInstance()->getSession()["upload_tmp"]))
 		{
-			$_SESSION["upload_tmp"] = array();
+			\Bitrix\Main\Application::getInstance()->getSession()["upload_tmp"] = array();
 		}
 
-		if (!isset($_SESSION["upload_tmp"][$path]))
+		if (!isset(\Bitrix\Main\Application::getInstance()->getSession()["upload_tmp"][$path]))
 		{
-			$relativePath = $_SESSION["upload_tmp"][$path] =\CCloudTempFile::GetDirectoryName($bucket, 12).$filename;
+			$relativePath = \Bitrix\Main\Application::getInstance()->getSession()["upload_tmp"][$path] =\CCloudTempFile::GetDirectoryName($bucket, 12).$filename;
 		}
 		else
 		{
-			$relativePath = $_SESSION["upload_tmp"][$path];
+			$relativePath = \Bitrix\Main\Application::getInstance()->getSession()["upload_tmp"][$path];
 		}
 
 		$upload = new \CCloudStorageUpload($relativePath);

@@ -609,7 +609,7 @@ button.ui-ctl-after:active { background-color: #e0e5ea; }
 }
 
 /*region Type Dropdown*/
-.ui-ctl-dropdown div.ui-ctl-element { padding-top: 10px; }
+/*.ui-ctl-dropdown div.ui-ctl-element { padding-top: 10px; }*/ /* Comment on task 223275 */
 
 /*endregion*/
 
@@ -795,7 +795,10 @@ button.ui-ctl-after:active { background-color: #e0e5ea; }
 	width: calc(80px + var(--icon-width-before) + var(--icon-width-after));
 }
 
-.ui-ctl-date div.ui-ctl-element { padding-top: 10px; }
+.ui-ctl-date div.ui-ctl-element {
+	padding-top: 10px;
+	line-height: normal;
+}
 
 /*endregion*/
 
