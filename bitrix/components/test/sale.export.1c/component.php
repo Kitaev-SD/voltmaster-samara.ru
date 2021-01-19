@@ -1,6 +1,10 @@
 <?
 if(!defined("B_PROLOG_INCLUDED") || B_PROLOG_INCLUDED!==true) die();
 
+// include_once $_SERVER['DOCUMENT_ROOT'] . '/bitrix/components/test/sale.export.1c/functions.php';
+include('functions.php');
+// include('/bitrix/components/test/sale.export.1c/functions.php');
+
 $instance = \Bitrix\Main\Application::getInstance();
 $context = $instance->getContext();
 $request = $context->getRequest();
@@ -316,7 +320,7 @@ else
         }
         else
         {
-            $arResultStat = $export::ExportOrders2Xml(
+            $arResultStat = CSaleExportCustom::ExportOrders2XmlCustom (
                 $arFilter, $nTopCount, $arParams["REPLACE_CURRENCY"], $bCrmMode, $arParams["INTERVAL"],
                 $_SESSION["BX_CML2_EXPORT"]["version"], $options
             );
