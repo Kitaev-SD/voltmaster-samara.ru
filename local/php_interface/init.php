@@ -200,7 +200,7 @@ function onAfterMessageAddHandler ($id, $arFields) {
 
 # Обработчик события для смены статуса заказа
 
-if (isset($_GET['type'], $_GET['mode']) && $_GET['type'] === 'shop' && $_GET['mode'] === 'import') {
+// if (isset($_GET['type'], $_GET['mode']) && $_GET['type'] === 'shop' && $_GET['mode'] === 'import') {
 	use Bitrix\Main; 
 	Main\EventManager::getInstance()->addEventHandler(
 		'sale',
@@ -217,7 +217,7 @@ if (isset($_GET['type'], $_GET['mode']) && $_GET['type'] === 'shop' && $_GET['mo
 			$order->setField('STATUS_ID', 'AC');
 		}	
 	}
-}
+// }
 
 #------ Debug block --------------------------------------
 // $file = '/var/www/voltmaster-samara.ru/test_111.txt';
