@@ -200,8 +200,9 @@ function onAfterMessageAddHandler ($id, $arFields) {
 
 # Обработчик события для смены статуса заказа
 
-// if (isset($_GET['type'], $_GET['mode']) && $_GET['type'] === 'shop' && $_GET['mode'] === 'import') {
-	use Bitrix\Main; 
+use Bitrix\Main; 
+
+if (isset($_GET['type'], $_GET['mode']) && $_GET['type'] === 'shop' && $_GET['mode'] === 'import') {
 	Main\EventManager::getInstance()->addEventHandler(
 		'sale',
 		'OnSaleOrderBeforeSaved',
@@ -217,7 +218,7 @@ function onAfterMessageAddHandler ($id, $arFields) {
 			$order->setField('STATUS_ID', 'AC');
 		}	
 	}
-// }
+}
 
 #------ Debug block --------------------------------------
 // $file = '/var/www/voltmaster-samara.ru/test_111.txt';
