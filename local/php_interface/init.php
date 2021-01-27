@@ -196,3 +196,31 @@ function onAfterMessageAddHandler ($id, $arFields) {
 #    return $arFields;
 # }
 #-----------------------------------------------------------------------
+
+
+# Обработчик события для смены статуса заказа
+
+if (isset($_GET['type'], $_GET['mode']) && $_GET['type'] === 'shop' && $_GET['mode'] === 'import') {
+	use Bitrix\Main; 
+	Main\EventManager::getInstance()->addEventHandler(
+		'sale',
+		'OnSaleOrderBeforeSaved',
+		'myFunction'
+	);
+
+	function myFunction(Main\Event $event) {
+		$order = $event->getParameter("ENTITY");
+		$status = $order->getField('STATUS_ID');
+		$delivery = $order->getField('DELIVERY_ID');
+
+		if ($status == 'OP' && $delivery == 3) {
+			$order->setField('STATUS_ID', 'AC');
+		}	
+	}
+}
+
+#------ Debug block --------------------------------------
+// $file = '/var/www/voltmaster-samara.ru/test_111.txt';
+// $output = implode(" :: ", $events)."\n";
+// file_put_contents($file, $output, LOCK_EX);
+#------ Debug block END ----------------------------------
