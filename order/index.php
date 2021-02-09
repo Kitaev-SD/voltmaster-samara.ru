@@ -51,7 +51,7 @@ $APPLICATION->SetTitle("Оформление заказа");
 		"SHOW_COUPONS_DELIVERY" => "N",
 		"SHOW_COUPONS_PAY_SYSTEM" => "N",
 		"SHOW_NEAREST_PICKUP" => "Y",
-		"DELIVERIES_PER_PAGE" => "8",
+		"DELIVERIES_PER_PAGE" => "10",
 		"PAY_SYSTEMS_PER_PAGE" => "8",
 		"PICKUPS_PER_PAGE" => "5",
 		"SHOW_MAP_IN_PROPS" => "Y",
