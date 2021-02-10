@@ -4292,49 +4292,49 @@ BX.namespace('BX.Sale.OrderAjaxComponent');
                 }
             }
 
-            // location = this.locations[locationId];
-            // if (location && location[0] && location[0].output)
-            // {
-            //     this.regionBlockNotEmpty = true;
-            //
-            //     labelHtml = '<label class="bx-soa-custom-label" for="soa-property-' + parseInt(locationId) + '">'
-            //         + (currentProperty.REQUIRED == 'Y' ? '<span class="bx-authform-starrequired">*</span> ' : '')
-            //         + BX.util.htmlspecialchars(currentProperty.NAME)
-            //         + (currentProperty.DESCRIPTION.length ? ' <small>(' + BX.util.htmlspecialchars(currentProperty.DESCRIPTION) + ')</small>' : '')
-            //         + '</label>';
-            //
-            //     currentLocation = location[0].output;
-            //     insertedLoc = BX.create('DIV', {
-            //         attrs: {'data-property-id-row': locationId},
-            //         props: {className: 'form-group bx-soa-location-input-container'},
-            //         style: {visibility: 'hidden'},
-            //         html:  labelHtml + currentLocation.HTML
-            //     });
-            //     node.appendChild(insertedLoc);
-            //     node.appendChild(BX.create('INPUT', {
-            //         props: {
-            //             type: 'hidden',
-            //             name: 'RECENT_DELIVERY_VALUE',
-            //             value: location[0].lastValue
-            //         }
-            //     }));
-            //
-            //     for (k in currentLocation.SCRIPT)
-            //         if (currentLocation.SCRIPT.hasOwnProperty(k))
-            //             BX.evalGlobal(currentLocation.SCRIPT[k].JS);
-            // }
-            //
-            // if (location && location[0] && location[0].showAlt && altId > 0)
-            // {
-            //     for (k in this.result.ORDER_PROP.properties)
-            //     {
-            //         if (parseInt(this.result.ORDER_PROP.properties[k].ID) == altId)
-            //         {
-            //             altProperty = this.result.ORDER_PROP.properties[k];
-            //             break;
-            //         }
-            //     }
-            // }
+            location = this.locations[locationId];
+            if (location && location[0] && location[0].output)
+            {
+                this.regionBlockNotEmpty = true;
+            
+                labelHtml = '<label class="bx-soa-custom-label" for="soa-property-' + parseInt(locationId) + '">'
+                    + (currentProperty.REQUIRED == 'Y' ? '<span class="bx-authform-starrequired">*</span> ' : '')
+                    + BX.util.htmlspecialchars(currentProperty.NAME)
+                    + (currentProperty.DESCRIPTION.length ? ' <small>(' + BX.util.htmlspecialchars(currentProperty.DESCRIPTION) + ')</small>' : '')
+                    + '</label>';
+            
+                currentLocation = location[0].output;
+                insertedLoc = BX.create('DIV', {
+                    attrs: {'data-property-id-row': locationId},
+                    props: {className: 'form-group bx-soa-location-input-container'},
+                    style: {visibility: 'hidden'},
+                    html:  labelHtml + currentLocation.HTML
+                });
+                node.appendChild(insertedLoc);
+                node.appendChild(BX.create('INPUT', {
+                    props: {
+                        type: 'hidden',
+                        name: 'RECENT_DELIVERY_VALUE',
+                        value: location[0].lastValue
+                    }
+                }));
+            
+                for (k in currentLocation.SCRIPT)
+                    if (currentLocation.SCRIPT.hasOwnProperty(k))
+                        BX.evalGlobal(currentLocation.SCRIPT[k].JS);
+            }
+            
+            if (location && location[0] && location[0].showAlt && altId > 0)
+            {
+                for (k in this.result.ORDER_PROP.properties)
+                {
+                    if (parseInt(this.result.ORDER_PROP.properties[k].ID) == altId)
+                    {
+                        altProperty = this.result.ORDER_PROP.properties[k];
+                        break;
+                    }
+                }
+            }
 
             if (altProperty)
             {
@@ -4377,8 +4377,9 @@ BX.namespace('BX.Sale.OrderAjaxComponent');
             {
                 node.appendChild(
                     BX.create('DIV', {
-                        props: {className: 'bx-soa-reference'},
-                        html: this.params.MESS_REGION_REFERENCE
+                        props: {className: 'bx-soa-reference bx-soa-custom-label'},
+                        // html: this.params.MESS_REGION_REFERENCE
+                        html: 'Выберите свой город в списке. Если вы не нашли свой город, выберите "другое местоположение", а город впишите в поле "Город"'
                     })
                 );
             }
