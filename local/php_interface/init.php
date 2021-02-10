@@ -202,7 +202,7 @@ function onAfterMessageAddHandler ($id, $arFields) {
 
 use Bitrix\Main; 
 
-if (isset($_GET['type'], $_GET['mode']) && $_GET['type'] === 'shop' && $_GET['mode'] === 'import') {
+// if (isset($_GET['type'], $_GET['mode']) && $_GET['type'] === 'shop' && $_GET['mode'] === 'import') {
 	Main\EventManager::getInstance()->addEventHandler(
 		'sale',
 		'OnSaleOrderBeforeSaved',
@@ -218,7 +218,7 @@ if (isset($_GET['type'], $_GET['mode']) && $_GET['type'] === 'shop' && $_GET['mo
 			$order->setField('STATUS_ID', 'AC');
 		}	
 	}
-}
+// }
 
 #------ Debug block --------------------------------------
 // $file = '/var/www/voltmaster-samara.ru/test_111.txt';
