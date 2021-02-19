@@ -126,7 +126,10 @@ $APPLICATION->SetTitle("Помощь");
  <a href="http://www.voltmaster-samara.ru/oferta.html">Договор оферты</a>,&nbsp;<a href="http://www.voltmaster-samara.ru/vozvrat.html">условия возврата товара</a>,&nbsp;<a href="http://www.voltmaster-samara.ru/otkaz.html">отказ от услуги</a>
 </p>
 <hr>
-<h2>СПОСОБЫ ДОСТАВКИ</h2>
+<h2>СПОСОБЫ ДОСТАВКИ&nbsp;</h2>
+<b>
+<h2>! доставка BOXBERRY находится в режиме тестирования!</h2>
+</b><br>
 <h3>Самовывоз — бесплатно</h3>
 <p>
 	 Самостоятельное получение по адресу:

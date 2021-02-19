@@ -3,6 +3,8 @@ BX.namespace('BX.Sale.OrderAjaxComponent');
 (function() {
     'use strict';
 
+    let targetDelivery;
+
     /**
      * Show empty default property value to multiple properties without default values
      */
@@ -5615,7 +5617,15 @@ BX.namespace('BX.Sale.OrderAjaxComponent');
                 selectedInput.checked = false;
             }
 
+            if ($(target).closest('.bx-soa-pp-company').find('#ID_DELIVERY_ID_25').length === 1) {
+                $('#soa-property-7').val('Введите адрес');
+            }
+
+
+
             this.sendRequest();
+
+            return targetDelivery = target;
         },
 
         getSelectedDelivery: function()
@@ -6972,6 +6982,12 @@ BX.namespace('BX.Sale.OrderAjaxComponent');
                 if (settings.IS_PHONE == 'Y')
                     textNode.setAttribute('autocomplete', 'tel');
 
+                if ($(targetDelivery).closest('.bx-soa-pp-company').find('#ID_DELIVERY_ID_25').length === 1) {
+                    if (settings.IS_ADDRESS == 'Y') {
+                        textNode.setAttribute('disabled', '');
+                    }
+                }
+
                 if (settings.PATTERN && settings.PATTERN.length)
                 {
                     textNode.removeAttribute('pattern');
@@ -8187,5 +8203,5 @@ BX.namespace('BX.Sale.OrderAjaxComponent');
                 }
             }, this));
         }
-    };
+    };    
 })();
