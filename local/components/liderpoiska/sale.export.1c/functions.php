@@ -221,11 +221,21 @@ class CSaleExportCustom extends CSaleExport
                 $comment .= ', ' . $customer['ADDRESS'];
             }
 
-            $comment .= '] ';
+            $comment .= '] [';
+
+            if ($arProp['PROPERTY'][2]) {
+                $comment .= $arProp['PROPERTY'][2] . '; ';
+            }
+
+            if ($arPayment[0]['PAY_SYSTEM_NAME']) {
+                $comment .= $arPayment[0]['PAY_SYSTEM_NAME'] . '; ';
+            }
 
             if ($paymentVoucherNumber) {
                 $comment .= '[Оплата:' . $paymentVoucherDate . ' - ПП:' . $paymentVoucherNumber . '] ';
             }
+
+            $comment .= ']';
 
             $customerComment = $order->getField('USER_DESCRIPTION');
             if ($customerComment) {
