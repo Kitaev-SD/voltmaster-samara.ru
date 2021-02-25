@@ -5617,9 +5617,10 @@ BX.namespace('BX.Sale.OrderAjaxComponent');
                 selectedInput.checked = false;
             }
 
-            if ($(target).closest('.bx-soa-pp-company').find('#ID_DELIVERY_ID_25').length === 1) {
-                $('#soa-property-7').val('Введите адрес');
-            }
+            // if ($(target).closest('.bx-soa-pp-company').find('#ID_DELIVERY_ID_25').length === 1) {
+            //     $('#soa-property-7').val('г. Самара, ул. Революционная, д. 70, литера 1, офис 201');
+            //     $('#soa-property-7').setAttribute('disabled', '');
+            // }
 
 
 
@@ -6984,7 +6985,8 @@ BX.namespace('BX.Sale.OrderAjaxComponent');
 
                 if ($(targetDelivery).closest('.bx-soa-pp-company').find('#ID_DELIVERY_ID_25').length === 1) {
                     if (settings.IS_ADDRESS == 'Y') {
-                        textNode.setAttribute('disabled', '');
+                        textNode.value = 'г. Самара, ул. Революционная, д. 70, литера 1, офис 201';
+                        textNode.closest('.bx-soa-customer-field').setAttribute('style', 'display: none');
                     }
                 }
 

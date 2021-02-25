@@ -576,6 +576,8 @@ setViewedProduct(<?=$arResult['ID']?>, <?=CUtil::PhpToJSObject($arViewedData, fa
 
                             </style>
                             <div class = "tax_prices_block"><?
+								// print_r($arResult["CUR_DISCONTS"]);
+								// print_r($arResult);
                                 foreach ($arResult["CUR_DISCONTS"] as $key => $cur_disc_item){   ?>
                                     <script>
                                         disconts_arr__quant.push("<?=$cur_disc_item['QUANTITY_ALL']?>");

@@ -1065,19 +1065,20 @@ if (is_array($arParams["SECTION_TIZER"]) && $arParams["SECTION_TIZER"]) {
 
 
 $arResult["CUR_DISCONTS"] = [];
-//$cur_price = CPrice::GetBasePrice($arResult["ID"])["PRICE"];
+$cur_price = CPrice::GetBasePrice($arResult["ID"])["PRICE"];
 $cur_id = $arResult['ID'];
 
 $start_quant = 2;
-$end_quant = 120;
+// $end_quant = 120;
+$end_quant = $arResult["CATALOG_QUANTITY"];
 if($arResult["CATALOG_QUANTITY"] >= $start_quant ){$dostart = true;}
-if($arResult["CATALOG_QUANTITY"] <= $end_quant ){$end_quant = $arResult["CATALOG_QUANTITY"];}
+// if($arResult["CATALOG_QUANTITY"] <= $end_quant ){$end_quant = $arResult["CATALOG_QUANTITY"];}
 
 
 if($dostart){
 	for ($cur_quant = $start_quant; $cur_quant <= $end_quant; $cur_quant++) {
-		//$tmp_disc_arr = check_discond($cur_id, $cur_price, $cur_quant);
-		$tmp_disc_arr = check_discond($cur_id, $cur_quant);
+		$tmp_disc_arr = check_discond($cur_id, $cur_price, $cur_quant);
+		// $tmp_disc_arr = check_discond($cur_id, $cur_quant);
 		if (
 			$tmp_disc_arr['DISCOUNT_ONE'] != 0
 		) {
@@ -1089,116 +1090,116 @@ if($dostart){
 		}
 	}
 }
-function check_discond($cur_id, $cur_quant)
+// function check_discond($cur_id, $cur_quant)
+// {
+//     $PRICE_ALL = 0;
+//     $DISCOUNT_PRICE_ALL = 0;
+//     $QUANTITY_ALL = 0;
+
+//     $siteId = 's1'; //
+//     $basket = \Bitrix\Sale\Basket::create($siteId);
+
+//     $basketItem = $basket->createItem('catalog', $cur_id);
+//     $basketItem->setFields(array(
+//         'QUANTITY' => $cur_quant,
+//         'CURRENCY' => \Bitrix\Currency\CurrencyManager::getBaseCurrency(),
+//         'LID' => \Bitrix\Main\Context::getCurrent()->getSite(),
+//         'PRODUCT_PROVIDER_CLASS' => 'CCatalogProductProvider',
+//     ));
+
+//     $discounts = \Bitrix\Sale\Discount::buildFromBasket($basket, new \Bitrix\Sale\Discount\Context\Fuser($basket->getFUserId(true)));
+//     $discounts->setExecuteModuleFilter(array('all', 'catalog', 'sale'));
+//     $discounts->calculate();
+
+//     $result_cus = $discounts->getApplyResult(true);
+
+//     $prices = $result_cus['PRICES']['BASKET'];
+//     foreach ($prices as $arOneItem) {
+//         $PRICE_ALL += $arOneItem["PRICE"] * $cur_quant;
+//         $DISCOUNT_PRICE_ALL += $arOneItem["DISCOUNT"] * $cur_quant;
+//         $QUANTITY_ALL += $cur_quant;
+//     }
+
+//     $result['PRICE_ALL'] = $PRICE_ALL;
+//     $result['DISCOUNT_PRICE_ALL'] = $DISCOUNT_PRICE_ALL;
+//     $result['DISCOUNT_ONE'] = $DISCOUNT_PRICE_ALL / $QUANTITY_ALL;
+//     $result['PRICE_ONE'] = $PRICE_ALL / $QUANTITY_ALL;
+//     $result['QUANTITY_ALL'] = $QUANTITY_ALL;
+//     return $result;
+// }
+function check_discond($cur_id, $cur_price, $cur_quant)
 {
-    $PRICE_ALL = 0;
-    $DISCOUNT_PRICE_ALL = 0;
-    $QUANTITY_ALL = 0;
+   $dbBasketItems = CSaleBasket::GetList(
+       array("ID" => "ASC"),
+       array(
+           'FUSER_ID' => CSaleBasket::GetBasketUserID(),
+           'LID' => SITE_ID,
+           'ORDER_ID' => 'NULL'
+       ),
+       false,
+       false,
+       array(
+           'ID', 'PRODUCT_ID', 'QUANTITY', 'PRICE', 'DISCOUNT_PRICE', 'WEIGHT'
+       )
+   );
+   $cur_item = [[
+       'PRODUCT_ID' => strval($cur_id),
+       'QUANTITY' => strval($cur_quant),
+       'PRICE' => $cur_price,
+       'DISCOUNT_PRICE' => '0',
+       'WEIGHT' => '0'
+   ]];
+   $dbBasketItems->arResult = $cur_item;
+   $allSum = 0;
+   $allWeight = 0;
+   $arItems = array();
 
-    $siteId = 's1'; //
-    $basket = \Bitrix\Sale\Basket::create($siteId);
+   while ($arBasketItems = $dbBasketItems->Fetch()) {
+       $allSum += ($arItem["PRICE"] * $arItem["QUANTITY"]);
+       $allWeight += ($arItem["WEIGHT"] * $arItem["QUANTITY"]);
+       $arItems[] = $arBasketItems;
+   }
 
-    $basketItem = $basket->createItem('catalog', $cur_id);
-    $basketItem->setFields(array(
-        'QUANTITY' => $cur_quant,
-        'CURRENCY' => \Bitrix\Currency\CurrencyManager::getBaseCurrency(),
-        'LID' => \Bitrix\Main\Context::getCurrent()->getSite(),
-        'PRODUCT_PROVIDER_CLASS' => 'CCatalogProductProvider',
-    ));
+   $arOrder = array(
+       'SITE_ID' => SITE_ID,
+       'USER_ID' => $GLOBALS["USER"]->GetID(),
+       'ORDER_PRICE' => $allSum,
+       'ORDER_WEIGHT' => $allWeight,
+       'BASKET_ITEMS' => $arItems
+   );
 
-    $discounts = \Bitrix\Sale\Discount::buildFromBasket($basket, new \Bitrix\Sale\Discount\Context\Fuser($basket->getFUserId(true)));
-    $discounts->setExecuteModuleFilter(array('all', 'catalog', 'sale'));
-    $discounts->calculate();
+   $arOptions = array(
+       'COUNT_DISCOUNT_4_ALL_QUANTITY' => 'Y',
+   );
 
-    $result_cus = $discounts->getApplyResult(true);
+   $arErrors = array();
 
-    $prices = $result_cus['PRICES']['BASKET'];
-    foreach ($prices as $arOneItem) {
-        $PRICE_ALL += $arOneItem["PRICE"] * $cur_quant;
-        $DISCOUNT_PRICE_ALL += $arOneItem["DISCOUNT"] * $cur_quant;
-        $QUANTITY_ALL += $cur_quant;
-    }
+   CSaleDiscount::DoProcessOrder($arOrder, $arOptions, $arErrors);
 
-    $result['PRICE_ALL'] = $PRICE_ALL;
-    $result['DISCOUNT_PRICE_ALL'] = $DISCOUNT_PRICE_ALL;
-    $result['DISCOUNT_ONE'] = $DISCOUNT_PRICE_ALL / $QUANTITY_ALL;
-    $result['PRICE_ONE'] = $PRICE_ALL / $QUANTITY_ALL;
-    $result['QUANTITY_ALL'] = $QUANTITY_ALL;
-    return $result;
+   $PRICE_ALL = 0;
+   $DISCOUNT_PRICE_ALL = 0;
+   $QUANTITY_ALL = 0;
+
+
+   foreach ($arOrder["BASKET_ITEMS"] as $arOneItem) {
+       $PRICE_ALL += $arOneItem["PRICE"] * $arOneItem["QUANTITY"];
+       $DISCOUNT_PRICE_ALL += $arOneItem["DISCOUNT_PRICE"] * $arOneItem["QUANTITY"];
+       $QUANTITY_ALL += $arOneItem['QUANTITY'];
+
+	/*	echo "<pre>";
+		 echo "PRICE_ALL ".$PRICE_ALL."<br>";
+		 echo "DISCOUNT_PRICE_ALL ".$DISCOUNT_PRICE_ALL."<br>";
+		print_r($arOneItem);
+		echo "</pre>";*/
+   }
+
+   $result['PRICE_ALL'] = $PRICE_ALL;
+   $result['DISCOUNT_PRICE_ALL'] = $DISCOUNT_PRICE_ALL;
+   $result['DISCOUNT_ONE'] = $DISCOUNT_PRICE_ALL / $QUANTITY_ALL;
+   $result['PRICE_ONE'] = $PRICE_ALL / $QUANTITY_ALL;
+   $result['QUANTITY_ALL'] = $QUANTITY_ALL;
+   return $result;
 }
-//function check_discond($cur_id, $cur_price, $cur_quant)
-//{
-//    $dbBasketItems = CSaleBasket::GetList(
-//        array("ID" => "ASC"),
-//        array(
-//            'FUSER_ID' => CSaleBasket::GetBasketUserID(),
-//            'LID' => SITE_ID,
-//            'ORDER_ID' => 'NULL'
-//        ),
-//        false,
-//        false,
-//        array(
-//            'ID', 'PRODUCT_ID', 'QUANTITY', 'PRICE', 'DISCOUNT_PRICE', 'WEIGHT'
-//        )
-//    );
-//    $cur_item = [[
-//        'PRODUCT_ID' => strval($cur_id),
-//        'QUANTITY' => strval($cur_quant),
-//        'PRICE' => $cur_price,
-//        'DISCOUNT_PRICE' => '0',
-//        'WEIGHT' => '0'
-//    ]];
-//    $dbBasketItems->arResult = $cur_item;
-//    $allSum = 0;
-//    $allWeight = 0;
-//    $arItems = array();
-//
-//    while ($arBasketItems = $dbBasketItems->Fetch()) {
-//        $allSum += ($arItem["PRICE"] * $arItem["QUANTITY"]);
-//        $allWeight += ($arItem["WEIGHT"] * $arItem["QUANTITY"]);
-//        $arItems[] = $arBasketItems;
-//    }
-//
-//    $arOrder = array(
-//        'SITE_ID' => SITE_ID,
-//        'USER_ID' => $GLOBALS["USER"]->GetID(),
-//        'ORDER_PRICE' => $allSum,
-//        'ORDER_WEIGHT' => $allWeight,
-//        'BASKET_ITEMS' => $arItems
-//    );
-//
-//    $arOptions = array(
-//        'COUNT_DISCOUNT_4_ALL_QUANTITY' => 'Y',
-//    );
-//
-//    $arErrors = array();
-//
-//    CSaleDiscount::DoProcessOrder($arOrder, $arOptions, $arErrors);
-//
-//    $PRICE_ALL = 0;
-//    $DISCOUNT_PRICE_ALL = 0;
-//    $QUANTITY_ALL = 0;
-//
-//
-//    foreach ($arOrder["BASKET_ITEMS"] as $arOneItem) {
-//        $PRICE_ALL += $arOneItem["PRICE"] * $arOneItem["QUANTITY"];
-//        $DISCOUNT_PRICE_ALL += $arOneItem["DISCOUNT_PRICE"] * $arOneItem["QUANTITY"];
-//        $QUANTITY_ALL += $arOneItem['QUANTITY'];
-//
-//	/*	echo "<pre>";
-//		 echo "PRICE_ALL ".$PRICE_ALL."<br>";
-//		 echo "DISCOUNT_PRICE_ALL ".$DISCOUNT_PRICE_ALL."<br>";
-//		print_r($arOneItem);
-//		echo "</pre>";*/
-//    }
-//
-//    $result['PRICE_ALL'] = $PRICE_ALL;
-//    $result['DISCOUNT_PRICE_ALL'] = $DISCOUNT_PRICE_ALL;
-//    $result['DISCOUNT_ONE'] = $DISCOUNT_PRICE_ALL / $QUANTITY_ALL;
-//    $result['PRICE_ONE'] = $PRICE_ALL / $QUANTITY_ALL;
-//    $result['QUANTITY_ALL'] = $QUANTITY_ALL;
-//    return $result;
-//}
 
 ##Вывод единиц измерения товара для скидок
 $arMeasure = \Bitrix\Catalog\ProductTable::getCurrentRatioWithMeasure($arResult['ID']);   
