@@ -1,6 +1,6 @@
 <?Bitrix\Main\Page\Frame::getInstance()->startDynamicWithID("footer-subscribe");?>
 	<?if(\Bitrix\Main\ModuleManager::isModuleInstalled("subscribe")):?>
-		<!-- <div class="subscribe-block-wrapper">
+		<div class="subscribe-block-wrapper">
 			<div class="maxwidth-theme">
 				<div class="row">
 					<div class="col-md-12">
@@ -45,6 +45,6 @@
 					</div>
 				</div>
 			</div>
-		</div> -->
+		</div>
 	<?endif;?>
 <?Bitrix\Main\Page\Frame::getInstance()->finishDynamicWithID("footer-subscribe", "");?>

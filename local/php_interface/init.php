@@ -225,3 +225,33 @@ use Bitrix\Main;
 // $output = implode(" :: ", $events)."\n";
 // file_put_contents($file, $output, LOCK_EX);
 #------ Debug block END ----------------------------------
+
+// reCaptcha v3 для подписок
+
+AddEventHandler("subscribe", "OnBeforeSubscriptionAdd", "GoogleCaptcha_v3");
+AddEventHandler("subscribe", "OnStartSubscriptionUpdate", "GoogleCaptcha_v3");
+
+function GoogleCaptcha_v3($arFields) {
+	global $APPLICATION;
+
+	$g_recaptcha_response = $_REQUEST['recaptcha'];
+
+	if (isset($g_recaptcha_response)) {
+		$response = json_decode(file_get_contents("https://www.google.com/recaptcha/api/siteverify?secret=6Lf4HGcaAAAAABmMjCT9LTiMtD5-S0H18qRP3dHi&response=".$g_recaptcha_response."&remoteip=".$_SERVER["REMOTE_ADDR"],true));	
+
+		$g_recaptcha_response_check = false;
+
+		if (($response->success and $response->score >= 0.5 and $response->action == 'submit')) {
+			$g_recaptcha_response_check = true;
+		}
+
+		if (!$g_recaptcha_response_check) {
+			exit('Не пройдена проверка Google reCAPTCHA v3');
+		}
+	
+	} else {
+		exit('Не пройдена проверка Google reCAPTCHA v3');
+	}
+		
+}
+

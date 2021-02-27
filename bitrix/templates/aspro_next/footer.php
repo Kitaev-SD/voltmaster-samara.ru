@@ -138,6 +138,33 @@ $(function(){
 });
 
 </script>
+
+<script src="https://www.google.com/recaptcha/api.js?onload=onloadCallbackRecap&render=6Lf4HGcaAAAAAMMWRfJZfoUeBflYtpc3jGiGLDYf"></script>
+<script>
+  var onloadCallbackRecap = function () {
+    grecaptcha.ready(function () {
+      grecaptcha.execute('6Lf4HGcaAAAAAMMWRfJZfoUeBflYtpc3jGiGLDYf', {action: 'submit'}).then(function (token) {
+        let recapResponse = document.createElement("input");
+        recapResponse.type = "hidden";
+        recapResponse.className = "g_recaptcha_response";
+        recapResponse.name = "g_recaptcha_response";
+        recapResponse.id = "g_recaptcha_response";
+        recapResponse.value = token;
+ 
+ 
+        //!!! выбираем нужную форму селектором
+        let form = document.querySelectorAll('form[action="/personal/subscribe/"]');
+		for (elem of form) {
+			if (elem) {
+				elem.appendChild(recapResponse);
+				elem.setAttribute("action", `/personal/subscribe/?recaptcha=${token}`);
+			}
+		}
+      });
+    });
+  };
+</script>
+
 <?
 ###Скрытие быстрого заказа для авторизованных пользователей
 global $USER;
